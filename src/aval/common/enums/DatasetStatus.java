@@ -4,6 +4,10 @@ package aval.common.enums;
 //Status: In Progress
 //Explanation: This class is responsible for Enums, covers UC2-UC4
 public enum DatasetStatus {
+    RAW,
+    VALIDATED,
+    STANDARDIZED,
+    VECTORIZED
 }
 
 
