@@ -1,0 +1,8 @@
+package aval.domain.ingestion;
+
+//Responsibility: Safwan
+//Status: In Progress
+//Explanation: This class is responsible for Layer 2 - Ingestion, covers UC2
+public class RawInternalLedger {
+}
+
