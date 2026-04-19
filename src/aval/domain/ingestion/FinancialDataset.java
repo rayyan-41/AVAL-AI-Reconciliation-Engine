@@ -4,16 +4,17 @@ package aval.domain.ingestion;
 //Status: In Progress
 //Explanation: This class is responsible for Layer 2 - Ingestion, covers UC2, UC3
 
+import aval.common.enums.DataSourceType;
+import aval.common.enums.DatasetStatus;
+import aval.domain.ai.StandardizedTransaction;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import enums.DataSourceType;
-import enums.DatasetStatus;
-import ai.StandardizedTransaction;
 
-//@desc:   Shared abstraction for raw internal ledgers and bank statements.
-//@grasp:  Polymorphism
+//@desc:   Abstract base class representing any uploaded financial file with shared state and processing status.
+//@grasp:  Information Expert, Polymorphism
 //@gof:    N/A
 public abstract class FinancialDataset {
     private UUID datasetId;

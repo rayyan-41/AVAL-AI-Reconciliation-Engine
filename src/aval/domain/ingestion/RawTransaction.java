@@ -4,7 +4,12 @@ package aval.domain.ingestion;
 //Status: In Progress
 //Explanation: This class is responsible for Layer 2 - Ingestion, covers UC2, UC3
 
-//@desc:   An individual row extracted from a raw dataset before schema standardization.
+import aval.common.enums.TransactionType;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+//@desc:   Value object holding a single parsed line from a financial document before schema standardization.
 //@grasp:  Information Expert
 //@gof:    N/A
 public class RawTransaction {

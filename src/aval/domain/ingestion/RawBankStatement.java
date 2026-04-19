@@ -4,16 +4,17 @@ package aval.domain.ingestion;
 //Status: In Progress
 //Explanation: This class is responsible for Layer 2 - Ingestion, covers UC3
 
-import enums.DataSourceType;
-import enums.DatasetStatus;
+import aval.common.enums.DataSourceType;
+import aval.common.enums.DatasetStatus;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-//@desc:   Represents an unparsed, raw external bank statement file.
-//@grasp:  Information Expert.
-//@gof:    N/A.
+//@desc:   Represents an unparsed, raw external bank statement imported as a PDF document.
+//@grasp:  Information Expert
+//@gof:    N/A
 public class RawBankStatement extends FinancialDataset {
     private String bankName;
     private String accountNumber;
@@ -30,7 +31,7 @@ public class RawBankStatement extends FinancialDataset {
 
     @Override
     public DataSourceType getSourceType() {
-        return DataSourceType.BANK_STATEMENT;
+        return DataSourceType.EXTERNAL_PDF;
     }
 
     @Override
