@@ -4,15 +4,12 @@ package aval.common.enums;
 //Status: In Progress
 //Explanation: This class is responsible for Enums, covers UC2, UC3
 
-//@desc:   Categorizes transactions into specific financial types for matching and analysis.
+//@desc:   Classifies each RawTransaction for matching and standardization.
 //@grasp:  Information Expert
 //@gof:    N/A
 public enum TransactionType {
     DEBIT,
     CREDIT,
-    IBFT,
-    CHEQUE,
-    CASH,
-    BANK_FEE,
-    UNKNOWN
+    REVERSAL,
+    ADJUSTMENT
 }

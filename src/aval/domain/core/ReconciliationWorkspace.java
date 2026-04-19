@@ -5,7 +5,6 @@ package aval.domain.core;
 //Explanation: This class is responsible for Layer 1 - Core, covers UC1
 
 import enums.WorkspaceStatus;
-import ai.Anomaly;
 import ai.MatchHypothesis;
 import ai.ReconciliationRecord;
 import ingestion.FinancialDataset;
@@ -23,7 +22,6 @@ public class ReconciliationWorkspace {
     private WorkspaceStatus status;
     private List<FinancialDataset> datasets;
     private List<MatchHypothesis> hypotheses;
-    private List<Anomaly> anomalies;
     private ReconciliationRecord record;
     private ClientOrganization clientOrg;
 
@@ -34,7 +32,6 @@ public class ReconciliationWorkspace {
         this.clientOrg = clientOrg;
         this.datasets = new ArrayList<>();
         this.hypotheses = new ArrayList<>();
-        this.anomalies = new ArrayList<>();
     }
 
     public double getMatchRate() {
@@ -50,10 +47,6 @@ public class ReconciliationWorkspace {
     }
 
     public void lockWorkspace() {
-    }
-
-    public List<Anomaly> getAnomalies() {
-        return this.anomalies;
     }
 
     public void addDataset(FinancialDataset ds) {

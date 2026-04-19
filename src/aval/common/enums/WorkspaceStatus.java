@@ -4,15 +4,12 @@ package aval.common.enums;
 //Status: In Progress
 //Explanation: This class is responsible for Enums, covers UC1
 
-//@desc:   Represents the current lifecycle phase of a reconciliation workspace[cite: 136].
-//@grasp:  Information Expert [cite: 104]
+//@desc:   Represents the lifecycle state of a ReconciliationWorkspace.
+//@grasp:  Information Expert
 //@gof:    N/A
 public enum WorkspaceStatus {
-    SETUP,
-    INGESTING,
-    STANDARDIZING,
-    VECTORIZING,
-    MATCHING,
-    REVIEW_REQUIRED,
-    SEALED
+    OPEN,
+    IN_PROGRESS,
+    COMPLETED,
+    LOCKED
 }

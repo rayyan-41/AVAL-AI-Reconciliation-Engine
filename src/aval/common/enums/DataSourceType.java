@@ -4,10 +4,10 @@ package aval.common.enums;
 //Status: In Progress
 //Explanation: This class is responsible for Enums, covers UC2, UC3
 
-//@desc:   Identifies whether the financial data originates from an internal ledger or an external bank statement.
+//@desc:   Enumerates the origin of a financial dataset uploaded into AVAL.
 //@grasp:  Information Expert
 //@gof:    N/A
 public enum DataSourceType {
-    INTERNAL_LEDGER,
-    BANK_STATEMENT
+    INTERNAL_CSV,
+    EXTERNAL_PDF
 }
