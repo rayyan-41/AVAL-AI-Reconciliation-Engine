@@ -7,6 +7,9 @@ package aval.domain.ingestion;
 import aval.common.enums.DataSourceType;
 import aval.common.enums.DatasetStatus;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,10 +37,44 @@ public class RawInternalLedger extends FinancialDataset {
 
     @Override
     public boolean validate() {
-        return false;
+        // A basic check to ensure the dataset has the required metadata
+        return this.accountingSystem != null && !this.accountingSystem.trim().isEmpty()
+                && this.fiscalPeriod != null && !this.fiscalPeriod.trim().isEmpty();
     }
 
     public char detectDelimiter() {
-        return ',';
+        String path = this.getFilePath(); // Inherited from FinancialDataset
+        if (path == null || path.trim().isEmpty()) {
+            return ','; // Fallback default
+        }
+
+        char bestDelimiter = ',';
+        int maxCount = 0;
+        char[] possibleDelimiters = {',', ';', '\t', '|'};
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String firstLine = reader.readLine();
+
+            if (firstLine != null && !firstLine.trim().isEmpty()) {
+                for (char delimiter : possibleDelimiters) {
+                    int count = 0;
+                    for (int i = 0; i < firstLine.length(); i++) {
+                        if (firstLine.charAt(i) == delimiter) {
+                            count++;
+                        }
+                    }
+                    // The character that appears most frequently in the header is our winner
+                    if (count > maxCount) {
+                        maxCount = count;
+                        bestDelimiter = delimiter;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            // If file reading fails, safely default back to standard CSV comma
+            return ',';
+        }
+
+        return bestDelimiter;
     }
 }

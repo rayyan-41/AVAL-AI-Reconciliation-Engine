@@ -29,15 +29,37 @@ public class RawTransaction {
         this.sourceDataset = sourceDataset;
     }
 
+    // 1. Combine fields for the AI to read
     public String toEmbeddingInputText() {
-        return "";
+        String safeDate = (this.rawDate != null) ? this.rawDate.trim() : "";
+        String safeNarrative = (this.narrative != null) ? this.narrative.trim() : "";
+        String safeAmount = (this.rawAmount != null) ? this.rawAmount.trim() : "";
+
+        return String.format("%s | %s | %s", safeDate, safeNarrative, safeAmount);
     }
 
+    // 2. Check if the string can safely become a number
     public boolean hasValidAmount() {
-        return false;
+        if (this.rawAmount == null || this.rawAmount.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            // Test parsing after cleaning commas and common symbols
+            String cleaned = this.rawAmount.replaceAll("[^\\d.-]", "");
+            new BigDecimal(cleaned);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
+    // 3. Convert the messy string into precise financial math
     public BigDecimal getParsedAmount() {
-        return BigDecimal.ZERO;
+        if (!hasValidAmount()) {
+            return BigDecimal.ZERO;
+        }
+        // Remove everything except numbers, decimals, and negative signs
+        String cleaned = this.rawAmount.replaceAll("[^\\d.-]", "");
+        return new BigDecimal(cleaned);
     }
 }

@@ -36,10 +36,21 @@ public class RawBankStatement extends FinancialDataset {
 
     @Override
     public boolean validate() {
-        return false;
+        // Ensure core banking metadata is present and dates make chronological sense
+        return this.bankName != null && !this.bankName.trim().isEmpty()
+                && this.accountNumber != null && !this.accountNumber.trim().isEmpty()
+                && this.statementPeriodStart != null
+                && this.statementPeriodEnd != null
+                && !this.statementPeriodStart.isAfter(this.statementPeriodEnd);
     }
 
+    // Provides the bounding box coordinates [RegionName, X, Y, Width, Height]
+    // for the PDF parser to know where to look for transaction data.
     public List<String[]> extractTableRegion() {
-        return new ArrayList<>();
+        List<String[]> regions = new ArrayList<>();
+        // Standard heuristic coordinates for a typical Pakistani bank statement
+        regions.add(new String[]{"HEADER_BOUNDS", "50", "700", "500", "25"});
+        regions.add(new String[]{"DATA_BOUNDS", "50", "100", "500", "600"});
+        return regions;
     }
 }
