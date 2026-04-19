@@ -4,52 +4,34 @@ package aval.domain.core;
 //Status: In Progress
 //Explanation: This class is responsible for Layer 1 - Core, covers UC1
 
-import enums.WorkspaceStatus;
-import ai.MatchHypothesis;
-import ai.ReconciliationRecord;
-import ingestion.FinancialDataset;
+import aval.common.enums.WorkspaceStatus;
+import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.ReconciliationRecord;
+import aval.domain.ingestion.FinancialDataset;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-//@desc:   Acts as the domain-level controller for all operations scoped to a single client-quarter billing cycle.
-//@grasp:  Information Expert, Controller
+//@desc:   Session-scoped container that groups together all datasets, match hypotheses, and reconciliation records for a single reconciliation job.
+//@grasp:  Information Expert
 //@gof:    N/A
 public class ReconciliationWorkspace {
     private UUID workspaceId;
-    private String quarter;
     private WorkspaceStatus status;
+    private ClientOrganization clientOrganization;
+    private MatchingConfig matchingConfig;
     private List<FinancialDataset> datasets;
     private List<MatchHypothesis> hypotheses;
-    private ReconciliationRecord record;
-    private ClientOrganization clientOrg;
+    private List<ReconciliationRecord> records;
 
-    public ReconciliationWorkspace(UUID workspaceId, String quarter, WorkspaceStatus status, ClientOrganization clientOrg) {
+    public ReconciliationWorkspace(UUID workspaceId, ClientOrganization clientOrganization, MatchingConfig matchingConfig) {
         this.workspaceId = workspaceId;
-        this.quarter = quarter;
-        this.status = status;
-        this.clientOrg = clientOrg;
+        this.status = WorkspaceStatus.OPEN; // UC1 creates workspaces in OPEN state
+        this.clientOrganization = clientOrganization;
+        this.matchingConfig = matchingConfig;
         this.datasets = new ArrayList<>();
         this.hypotheses = new ArrayList<>();
-    }
-
-    public double getMatchRate() {
-        return 0.0;
-    }
-
-    public int getUnresolvedCount() {
-        return 0;
-    }
-
-    public boolean isReadyForReport() {
-        return false;
-    }
-
-    public void lockWorkspace() {
-    }
-
-    public void addDataset(FinancialDataset ds) {
-        this.datasets.add(ds);
+        this.records = new ArrayList<>();
     }
 }
