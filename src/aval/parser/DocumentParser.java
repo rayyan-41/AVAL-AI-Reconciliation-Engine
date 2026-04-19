@@ -6,8 +6,8 @@ package aval.parser;
 
 import java.util.List;
 
-//@desc:   Interchangeable contract for parsing different financial document formats.
-//@grasp:  Polymorphism, Protected Variations
+//@desc:   Generic interface defining the Template Method algorithm skeleton for all file-parsing operations.
+//@grasp:  Polymorphism
 //@gof:    Template Method
 public interface DocumentParser<T> {
     T parse(String filePath);

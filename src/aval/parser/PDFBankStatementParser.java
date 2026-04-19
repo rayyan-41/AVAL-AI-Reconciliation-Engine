@@ -4,9 +4,14 @@ package aval.parser;
 //Status: In Progress
 //Explanation: This class is responsible for Parser Impl, covers UC3
 
-//@desc:   Implementation for parsing and extracting table data from PDF bank statements.
-//@grasp:  Information Expert
-//@gof:    Strategy
+import aval.domain.ingestion.RawBankStatement;
+
+import java.util.ArrayList;
+import java.util.List;
+
+//@desc:   Concrete implementation reading scanned or digital bank statement PDFs from Pakistani banks.
+//@grasp:  Polymorphism
+//@gof:    Template Method
 public class PDFBankStatementParser implements DocumentParser<RawBankStatement> {
     private String pageParsingStrategy;
     private List<String> tableDetectionHeuristics;

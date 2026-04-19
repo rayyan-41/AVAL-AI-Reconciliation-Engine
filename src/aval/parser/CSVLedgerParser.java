@@ -4,16 +4,16 @@ package aval.parser;
 //Status: In Progress
 //Explanation: This class is responsible for Parser Impl, covers UC2
 
-import ingestion.RawInternalLedger;
-import ingestion.RawTransaction;
+import aval.domain.ingestion.RawInternalLedger;
+import aval.domain.ingestion.RawTransaction;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-//@desc:   Implementation for parsing client internal ledgers from CSV files.
-//@grasp:  Information Expert
-//@gof:    Strategy
+//@desc:   Concrete implementation handling comma-separated value files produced by accounting software.
+//@grasp:  Polymorphism
+//@gof:    Template Method
 public class CSVLedgerParser implements DocumentParser<RawInternalLedger> {
     private char delimiter;
     private List<String> expectedHeaders;
@@ -51,4 +51,3 @@ public class CSVLedgerParser implements DocumentParser<RawInternalLedger> {
         return "UTF-8";
     }
 }
-
