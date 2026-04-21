@@ -1,8 +1,10 @@
 package aval.common.enums;
 
-//Responsibility: Rayyan
-//Status: In Progress
-//Explanation: This class is responsible for Enums, covers UC6-UC9
+//@desc:   Represents the current lifecycle state of a suggested MatchHypothesis.
+//@grasp:  Information Expert
+//@gof:    N/A
 public enum HypothesisStatus {
+    PENDING,
+    APPROVED,
+    REJECTED,
 }
-
