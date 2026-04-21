@@ -1,0 +1,38 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: aval-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: aval_db
+      POSTGRES_USER: aval_user
+      POSTGRES_PASSWORD: aval_password
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aval_user -d aval_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aval-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  # Sidecar to pull the model automatically
+  ollama-pull-model:
+    image: curlimages/curl:latest
+    container_name: aval-ollama-pull
+    depends_on:
+      - ollama
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        'sleep 5 && curl -X POST http://ollama:11434/api/pull -d ''{"name": "nomic-embed-text"}''',
+      ]
