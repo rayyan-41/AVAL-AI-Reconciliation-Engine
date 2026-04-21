@@ -1,8 +1,10 @@
 package aval.common.enums;
 
-//Responsibility: Aryan
-//Status: In Progress
-//Explanation: This class is responsible for Enums, covers All (auth)
+//@desc:   Defines access levels and permissions for the reconciliation engine.
+//@grasp:  Information Expert
+//@gof:    N/A
 public enum UserRole {
+    ADMIN,
+    ACCOUNTANT,
+    AUDITOR,
 }
-
