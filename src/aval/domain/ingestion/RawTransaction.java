@@ -1,9 +1,4 @@
 package aval.domain.ingestion;
-
-//Responsibility: Safwan
-//Status: In Progress
-//Explanation: This class is responsible for Layer 2 - Ingestion, covers UC2, UC3
-
 import aval.common.enums.TransactionType;
 
 import java.math.BigDecimal;
