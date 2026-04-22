@@ -7,7 +7,6 @@ package aval.domain.ingestion;
 import aval.common.enums.DataSourceType;
 import aval.common.enums.DatasetStatus;
 import aval.domain.ai.StandardizedTransaction;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,7 @@ import java.util.UUID;
 //@grasp:  Information Expert, Polymorphism
 //@gof:    N/A
 public abstract class FinancialDataset {
+
     private UUID datasetId;
     private LocalDate importDate;
     private String filePath;
@@ -24,7 +24,12 @@ public abstract class FinancialDataset {
     private List<RawTransaction> rawTransactions;
     private List<StandardizedTransaction> standardizedTransactions;
 
-    public FinancialDataset(UUID datasetId, LocalDate importDate, String filePath, DatasetStatus status) {
+    public FinancialDataset(
+        UUID datasetId,
+        LocalDate importDate,
+        String filePath,
+        DatasetStatus status
+    ) {
         this.datasetId = datasetId;
         this.importDate = importDate;
         this.filePath = filePath;
@@ -43,6 +48,10 @@ public abstract class FinancialDataset {
 
     public List<StandardizedTransaction> getStandardizedTransactions() {
         return this.standardizedTransactions;
+    }
+
+    public String getFilePath() {
+        return this.filePath;
     }
 
     public void markAsStandardized() {
