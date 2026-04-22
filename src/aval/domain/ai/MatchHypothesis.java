@@ -1,3 +1,5 @@
+//Dev: Rayyan
+//Use Cases: UC6-UC9
 package aval.domain.ai;
 
 import aval.common.enums.HypothesisStatus;

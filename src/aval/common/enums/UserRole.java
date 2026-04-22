@@ -1,3 +1,5 @@
+//Dev: Aryan
+//Use Cases: All (auth)
 package aval.common.enums;
 
 //@desc:   Defines access levels and permissions for the reconciliation engine.

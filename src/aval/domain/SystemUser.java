@@ -1,3 +1,5 @@
+//Dev: Aryan
+//Use Cases: All (auth)
 package aval.domain;
 
 import aval.common.enums.UserRole;

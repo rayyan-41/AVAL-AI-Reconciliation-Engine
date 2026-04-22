@@ -1,3 +1,5 @@
+//Dev: Rayyan
+//Use Cases: UC6, UC8
 package aval.common.enums;
 
 //@desc:   Specifies the mechanism used to link two or more financial transactions.

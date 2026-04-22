@@ -1,8 +1,6 @@
+//Dev: Safwan
+//Use Cases: UC2, UC3
 package aval.domain.ingestion;
-
-//Responsibility: Safwan
-//Status: In Progress
-//Explanation: This class is responsible for Layer 2 - Ingestion, covers UC2, UC3
 
 import aval.common.enums.DataSourceType;
 import aval.common.enums.DatasetStatus;

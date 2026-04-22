@@ -1,3 +1,5 @@
+//Dev: Aryan
+//Use Cases: All navigation
 package aval.ui.controller;
 
 import aval.common.enums.DataSourceType;
@@ -28,10 +30,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
-//Responsibility: Aryan
-//Status: Complete
-//Explanation: This class is responsible for Layer 5 - UI, covers All navigation
 public class AppController {
 
     private BorderPane root;

@@ -1,3 +1,5 @@
+//Dev: Safwan
+//Use Cases: UC2, UC3
 package aval.domain.ingestion;
 
 import aval.common.enums.TransactionType;

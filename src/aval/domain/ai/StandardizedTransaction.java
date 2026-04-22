@@ -1,3 +1,5 @@
+//Dev: Rayyan
+//Use Cases: UC4, UC5
 package aval.domain.ai;
 
 import aval.common.enums.TransactionType;

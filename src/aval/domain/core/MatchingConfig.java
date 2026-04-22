@@ -1,3 +1,5 @@
+//Dev: Safwan
+//Use Cases: UC6
 package aval.domain.core;
 
 //@desc:   Configuration value-object that holds the threshold constants governing the AI matching pipeline.

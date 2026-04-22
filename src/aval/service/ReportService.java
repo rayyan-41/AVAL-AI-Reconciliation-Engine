@@ -1,3 +1,5 @@
+//Dev: Aryan
+//Use Cases: UC11, UC12
 package aval.service;
 
 import aval.domain.ai.ReconciliationRecord;
@@ -10,10 +12,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-
-//Responsibility: Aryan
-//Status: In Progress
-//Explanation: This class is responsible for Layer 4 - Services, covers UC11, UC12
 public class ReportService {
 
     private static final DateTimeFormatter DATE_FORMAT =

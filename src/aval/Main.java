@@ -1,13 +1,11 @@
+//Dev: Rayyan
+//Use Cases: App Bootstrap & Integration Wiring
 package aval;
 
 import aval.ui.controller.AppController;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-//Responsibility: Rayyan
-//Status: Complete
-//Explanation: This class is responsible for app bootstrap and final integration wiring
 
 /**
  * Boilerplate Main Class for AVAL AI Reconciliation Engine
