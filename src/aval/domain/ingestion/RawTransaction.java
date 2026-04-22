@@ -1,6 +1,6 @@
 package aval.domain.ingestion;
-import aval.common.enums.TransactionType;
 
+import aval.common.enums.TransactionType;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -8,6 +8,7 @@ import java.util.UUID;
 //@grasp:  Information Expert
 //@gof:    N/A
 public class RawTransaction {
+
     private UUID transactionId;
     private String rawDate;
     private String rawAmount;
@@ -15,7 +16,14 @@ public class RawTransaction {
     private TransactionType transactionType;
     private FinancialDataset sourceDataset;
 
-    public RawTransaction(UUID transactionId, String rawDate, String rawAmount, String narrative, TransactionType transactionType, FinancialDataset sourceDataset) {
+    public RawTransaction(
+        UUID transactionId,
+        String rawDate,
+        String rawAmount,
+        String narrative,
+        TransactionType transactionType,
+        FinancialDataset sourceDataset
+    ) {
         this.transactionId = transactionId;
         this.rawDate = rawDate;
         this.rawAmount = rawAmount;
@@ -27,10 +35,19 @@ public class RawTransaction {
     // 1. Combine fields for the AI to read
     public String toEmbeddingInputText() {
         String safeDate = (this.rawDate != null) ? this.rawDate.trim() : "";
-        String safeNarrative = (this.narrative != null) ? this.narrative.trim() : "";
-        String safeAmount = (this.rawAmount != null) ? this.rawAmount.trim() : "";
+        String safeNarrative = (this.narrative != null)
+            ? this.narrative.trim()
+            : "";
+        String safeAmount = (this.rawAmount != null)
+            ? this.rawAmount.trim()
+            : "";
 
-        return String.format("%s | %s | %s", safeDate, safeNarrative, safeAmount);
+        return String.format(
+            "%s | %s | %s",
+            safeDate,
+            safeNarrative,
+            safeAmount
+        );
     }
 
     // 2. Check if the string can safely become a number
@@ -56,5 +73,29 @@ public class RawTransaction {
         // Remove everything except numbers, decimals, and negative signs
         String cleaned = this.rawAmount.replaceAll("[^\\d.-]", "");
         return new BigDecimal(cleaned);
+    }
+
+    public UUID getTransactionId() {
+        return transactionId;
+    }
+
+    public String getRawDate() {
+        return rawDate;
+    }
+
+    public String getRawAmount() {
+        return rawAmount;
+    }
+
+    public String getNarrative() {
+        return narrative;
+    }
+
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public FinancialDataset getSourceDataset() {
+        return sourceDataset;
     }
 }

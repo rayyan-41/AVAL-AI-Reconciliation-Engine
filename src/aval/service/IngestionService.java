@@ -39,9 +39,60 @@ public class IngestionService {
 
     public List<StandardizedTransaction> standardize(FinancialDataset dataset) {
         List<StandardizedTransaction> standardizedList = new ArrayList<>();
-        // standardisation logic here
+
+        for (aval.domain.ingestion.RawTransaction raw : dataset.getRawTransactions()) {
+            if (!raw.hasValidAmount()) {
+                continue; // Skip invalid or empty amounts
+            }
+
+            java.time.LocalDate parsedDate = parseDate(raw.getRawDate());
+            if (parsedDate == null) {
+                // Fallback if date is completely unparseable
+                parsedDate = java.time.LocalDate.now();
+            }
+
+            StandardizedTransaction std = new StandardizedTransaction(
+                raw.getTransactionId(),
+                parsedDate,
+                raw.getParsedAmount(),
+                raw.getNarrative() != null ? raw.getNarrative().trim() : "",
+                raw.getTransactionType(),
+                dataset.getDatasetId()
+            );
+            standardizedList.add(std);
+        }
+
+        dataset.getStandardizedTransactions().addAll(standardizedList);
+        dataset.markAsStandardized();
         this.dataStore.saveStandardizedTransactions(standardizedList);
         return standardizedList;
+    }
+
+    private java.time.LocalDate parseDate(String rawDate) {
+        if (rawDate == null || rawDate.trim().isEmpty()) return null;
+        String cleanDate = rawDate.trim();
+
+        String[] patterns = {
+            "MM/dd/yyyy",
+            "M/d/yyyy",
+            "yyyy-MM-dd",
+            "dd-MM-yyyy",
+            "dd/MM/yyyy",
+            "M/d/yy",
+            "MM/dd/yy",
+        };
+
+        for (String pattern : patterns) {
+            try {
+                return java.time.LocalDate.parse(
+                    cleanDate,
+                    java.time.format.DateTimeFormatter.ofPattern(pattern)
+                );
+            } catch (Exception e) {
+                // ignore and try next
+            }
+        }
+        return null;
     }
 
     private DocumentParser<? extends FinancialDataset> createParser(

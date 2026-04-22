@@ -54,6 +54,10 @@ public abstract class FinancialDataset {
         return this.filePath;
     }
 
+    public UUID getDatasetId() {
+        return this.datasetId;
+    }
+
     public void markAsStandardized() {
         this.status = DatasetStatus.STANDARDIZED;
     }
