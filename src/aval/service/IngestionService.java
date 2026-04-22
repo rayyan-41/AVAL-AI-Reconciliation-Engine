@@ -1,17 +1,12 @@
 package aval.service;
 
-//Responsibility: Safwan
-//Status: In Progress
-//Explanation: This class is responsible for Layer 4 - Services, covers UC2, UC3, UC4
-
 import aval.common.enums.DataSourceType;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.ingestion.FinancialDataset;
-import aval.parser.CSVLedgerParser;
 import aval.parser.DocumentParser;
+import aval.parser.ExcelLedgerParser;
 import aval.parser.PDFBankStatementParser;
 import aval.persistence.DataStore;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,14 +14,20 @@ import java.util.List;
 //@grasp:  Creator, Controller
 //@gof:    Factory Method
 public class IngestionService {
+
     private DataStore dataStore;
 
     public IngestionService(DataStore dataStore) {
         this.dataStore = dataStore;
     }
 
-    public FinancialDataset ingestFile(String filePath, DataSourceType sourceType) {
-        DocumentParser<? extends FinancialDataset> parser = createParser(sourceType);
+    public FinancialDataset ingestFile(
+        String filePath,
+        DataSourceType sourceType
+    ) {
+        DocumentParser<? extends FinancialDataset> parser = createParser(
+            sourceType
+        );
 
         if (parser.validate(filePath)) {
             FinancialDataset dataset = parser.parse(filePath);
@@ -43,12 +44,19 @@ public class IngestionService {
         return standardizedList;
     }
 
-    private DocumentParser<? extends FinancialDataset> createParser(DataSourceType sourceType) {
+    private DocumentParser<? extends FinancialDataset> createParser(
+        DataSourceType sourceType
+    ) {
         if (sourceType == DataSourceType.INTERNAL_CSV) {
-            return new CSVLedgerParser(',', new ArrayList<>());
+            return new ExcelLedgerParser(',', new ArrayList<>());
         } else if (sourceType == DataSourceType.EXTERNAL_PDF) {
-            return new PDFBankStatementParser("DEFAULT_STRATEGY", new ArrayList<>());
+            return new PDFBankStatementParser(
+                "DEFAULT_STRATEGY",
+                new ArrayList<>()
+            );
         }
-        throw new IllegalArgumentException("Unsupported data source type: " + sourceType);
+        throw new IllegalArgumentException(
+            "Unsupported data source type: " + sourceType
+        );
     }
 }
