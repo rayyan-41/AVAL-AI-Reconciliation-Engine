@@ -38,15 +38,18 @@ public class PDFBankStatementParser
 
     @Override
     public RawBankStatement parse(String filePath) {
+        String fileName = new File(filePath).getName();
+        String bankName = fileName.replace(".pdf", "").replace("_", " ");
+
         RawBankStatement statement = new RawBankStatement(
             UUID.randomUUID(),
             LocalDate.now(),
             filePath,
             aval.common.enums.DatasetStatus.PARSED,
-            "Pacific Trust Bank",
-            "1234-5678",
-            LocalDate.of(2025, 1, 1),
-            LocalDate.of(2025, 12, 31)
+            bankName,
+            "Unknown Account",
+            LocalDate.now().minusMonths(1),
+            LocalDate.now()
         );
 
         try (PDDocument document = Loader.loadPDF(new File(filePath))) {

@@ -30,6 +30,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
 public class AppController {
 
     private BorderPane root;
@@ -60,13 +61,14 @@ public class AppController {
                 "aval_password"
             );
             dataStore = new DataStore(conn);
-            ingestionService = new IngestionService(dataStore);
 
             LangChain4jVectorizationEngine vectorEngine =
                 new LangChain4jVectorizationEngine(
                     "http://localhost:11434",
                     "nomic-embed-text"
                 );
+            ingestionService = new IngestionService(dataStore, vectorEngine);
+
             // For MVP UI we'll orchestrate the engines. We could use RuleBased or Semantic. We'll use Semantic for demonstration.
             SemanticMatchingEngine matchingEngine = new SemanticMatchingEngine(
                 vectorEngine,
@@ -225,7 +227,7 @@ public class AppController {
                 log("1. Ingesting Internal Ledger (Excel)...");
                 FinancialDataset ledgerDataset = ingestionService.ingestFile(
                     ledgerPath,
-                    DataSourceType.INTERNAL_CSV
+                    DataSourceType.INTERNAL_EXCEL
                 );
                 log(
                     "   -> Extracted " +

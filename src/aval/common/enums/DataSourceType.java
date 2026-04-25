@@ -6,6 +6,6 @@ package aval.common.enums;
 //@grasp:  Information Expert
 //@gof:    N/A
 public enum DataSourceType {
-    INTERNAL_CSV,
+    INTERNAL_EXCEL,
     EXTERNAL_PDF,
 }

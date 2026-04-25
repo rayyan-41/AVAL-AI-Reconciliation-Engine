@@ -18,9 +18,14 @@ import java.util.List;
 public class IngestionService {
 
     private DataStore dataStore;
+    private aval.engine.VectorizationEngine vectorizationEngine;
 
-    public IngestionService(DataStore dataStore) {
+    public IngestionService(
+        DataStore dataStore,
+        aval.engine.VectorizationEngine vectorizationEngine
+    ) {
         this.dataStore = dataStore;
+        this.vectorizationEngine = vectorizationEngine;
     }
 
     public FinancialDataset ingestFile(
@@ -62,6 +67,31 @@ public class IngestionService {
                 dataset.getDatasetId()
             );
             standardizedList.add(std);
+
+            try {
+                aval.domain.ai.SemanticEmbedding embedding =
+                    vectorizationEngine.vectorize(std);
+                if (dataset.getSourceType() == DataSourceType.INTERNAL_EXCEL) {
+                    this.dataStore.saveStandardizedLedgerTransaction(
+                        std,
+                        embedding
+                    );
+                } else if (
+                    dataset.getSourceType() == DataSourceType.EXTERNAL_PDF
+                ) {
+                    this.dataStore.saveStandardizedBankTransaction(
+                        std,
+                        embedding
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println(
+                    "Failed to vectorize/save transaction " +
+                        std.getTransactionId() +
+                        ": " +
+                        e.getMessage()
+                );
+            }
         }
 
         dataset.getStandardizedTransactions().addAll(standardizedList);
@@ -100,7 +130,7 @@ public class IngestionService {
     private DocumentParser<? extends FinancialDataset> createParser(
         DataSourceType sourceType
     ) {
-        if (sourceType == DataSourceType.INTERNAL_CSV) {
+        if (sourceType == DataSourceType.INTERNAL_EXCEL) {
             return new ExcelLedgerParser(',', new ArrayList<>());
         } else if (sourceType == DataSourceType.EXTERNAL_PDF) {
             return new PDFBankStatementParser(

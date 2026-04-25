@@ -156,9 +156,73 @@ public class DataStore {
         List<StandardizedTransaction> standardizedTransactions
     ) {}
 
-    public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {}
+    public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {
+        String sql =
+            "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for (MatchHypothesis h : hypotheses) {
+                pstmt.setObject(1, h.getHypothesisId());
+                pstmt.setObject(
+                    2,
+                    h.getLedgerTransaction() != null
+                        ? h.getLedgerTransaction().getTransactionId()
+                        : null
+                );
+                pstmt.setObject(
+                    3,
+                    h.getBankTransaction() != null
+                        ? h.getBankTransaction().getTransactionId()
+                        : null
+                );
+                pstmt.setDouble(4, h.getConfidenceScore());
+                pstmt.setString(
+                    5,
+                    h.getMatchType() != null ? h.getMatchType().name() : null
+                );
+                pstmt.setString(
+                    6,
+                    h.getStatus() != null ? h.getStatus().name() : null
+                );
+                pstmt.setString(7, h.getJustification());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-    public void saveReconciliationRecords(List<ReconciliationRecord> records) {}
+    public void saveReconciliationRecords(List<ReconciliationRecord> records) {
+        String sql =
+            "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for (ReconciliationRecord r : records) {
+                pstmt.setObject(1, r.getRecordId());
+                pstmt.setObject(
+                    2,
+                    r.getHypothesis() != null
+                        ? r.getHypothesis().getHypothesisId()
+                        : null
+                );
+                pstmt.setObject(
+                    3,
+                    r.getConfirmingUser() != null
+                        ? r.getConfirmingUser().getUserId()
+                        : null
+                );
+                pstmt.setTimestamp(
+                    4,
+                    r.getReconciledAt() != null
+                        ? java.sql.Timestamp.valueOf(r.getReconciledAt())
+                        : null
+                );
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public SystemUser findSystemUserById(UUID id) {
         return null;

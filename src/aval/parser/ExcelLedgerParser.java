@@ -43,33 +43,86 @@ public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
             Sheet sheet = workbook.getSheetAt(0);
             boolean isHeader = true;
 
+            int dateIdx = -1,
+                categoryIdx = -1,
+                vendorIdx = -1,
+                refIdx = -1,
+                typeIdx = -1,
+                debitIdx = -1,
+                creditIdx = -1,
+                amountIdx = -1;
+
             for (Row row : sheet) {
                 if (isHeader) {
+                    for (int i = 0; i < row.getLastCellNum(); i++) {
+                        String header = getCellValue(
+                            row.getCell(i)
+                        ).toLowerCase();
+                        if (header.contains("date")) dateIdx = i;
+                        else if (header.contains("category")) categoryIdx = i;
+                        else if (
+                            header.contains("vendor") ||
+                            header.contains("merchant") ||
+                            header.contains("description")
+                        ) vendorIdx = i;
+                        else if (header.contains("ref")) refIdx = i;
+                        else if (header.contains("type")) typeIdx = i;
+                        else if (header.contains("debit")) debitIdx = i;
+                        else if (header.contains("credit")) creditIdx = i;
+                        else if (header.contains("amount")) amountIdx = i;
+                    }
                     isHeader = false;
                     continue; // Skip header row
                 }
 
-                if (row.getCell(1) == null) continue; // Skip empty rows
+                if (dateIdx == -1 || row.getCell(dateIdx) == null) continue; // Skip empty rows
 
-                String rawDate = getCellValue(row.getCell(1));
-                String category = getCellValue(row.getCell(2));
-                String vendor = getCellValue(row.getCell(4));
-                String referenceNo = getCellValue(row.getCell(5));
-                String typeStr = getCellValue(row.getCell(6));
+                String rawDate = getCellValue(row.getCell(dateIdx));
+                if (rawDate.isEmpty()) continue;
+
+                String category =
+                    categoryIdx != -1
+                        ? getCellValue(row.getCell(categoryIdx))
+                        : "";
+                String vendor =
+                    vendorIdx != -1 ? getCellValue(row.getCell(vendorIdx)) : "";
+                String referenceNo =
+                    refIdx != -1 ? getCellValue(row.getCell(refIdx)) : "";
+                String typeStr =
+                    typeIdx != -1 ? getCellValue(row.getCell(typeIdx)) : "";
 
                 String rawAmount = "";
                 TransactionType type = TransactionType.DEBIT;
 
-                if ("CREDIT".equalsIgnoreCase(typeStr)) {
-                    rawAmount = getCellValue(row.getCell(8));
-                    type = TransactionType.CREDIT;
-                } else {
-                    rawAmount = getCellValue(row.getCell(7));
-                    type = TransactionType.DEBIT;
+                if (debitIdx != -1 && creditIdx != -1) {
+                    String creditVal = getCellValue(row.getCell(creditIdx));
+                    String debitVal = getCellValue(row.getCell(debitIdx));
+                    if (
+                        !creditVal.isEmpty() &&
+                        (typeStr.isEmpty() ||
+                            "CREDIT".equalsIgnoreCase(typeStr))
+                    ) {
+                        rawAmount = creditVal;
+                        type = TransactionType.CREDIT;
+                    } else if (!debitVal.isEmpty()) {
+                        rawAmount = debitVal;
+                        type = TransactionType.DEBIT;
+                    }
+                } else if (amountIdx != -1) {
+                    rawAmount = getCellValue(row.getCell(amountIdx));
+                    if ("CREDIT".equalsIgnoreCase(typeStr)) {
+                        type = TransactionType.CREDIT;
+                    }
                 }
 
+                if (rawAmount.isEmpty()) continue;
+
                 String narrative =
-                    category + " | " + vendor + " | " + referenceNo;
+                    category +
+                    (category.isEmpty() || vendor.isEmpty() ? "" : " | ") +
+                    vendor +
+                    (vendor.isEmpty() || referenceNo.isEmpty() ? "" : " | ") +
+                    referenceNo;
 
                 RawTransaction tx = new RawTransaction(
                     UUID.randomUUID(),
