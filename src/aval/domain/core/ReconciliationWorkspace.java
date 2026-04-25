@@ -37,7 +37,35 @@ public class ReconciliationWorkspace {
         this.records = new ArrayList<>();
     }
 
-    public UUID getWorkspaceId() { return workspaceId; }
-    public WorkspaceStatus getStatus() { return status; }
-    public ClientOrganization getClientOrganization() { return clientOrganization; }
+    public UUID getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public WorkspaceStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WorkspaceStatus status) {
+        this.status = status;
+    }
+
+    public ClientOrganization getClientOrganization() {
+        return clientOrganization;
+    }
+
+    public MatchingConfig getMatchingConfig() {
+        return matchingConfig;
+    }
+
+    public List<FinancialDataset> getDatasets() {
+        return datasets;
+    }
+
+    public List<MatchHypothesis> getHypotheses() {
+        return hypotheses;
+    }
+
+    public List<ReconciliationRecord> getRecords() {
+        return records;
+    }
 }

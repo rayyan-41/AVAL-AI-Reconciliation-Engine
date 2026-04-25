@@ -23,7 +23,23 @@ public class ClientOrganization {
         this.workspaces = new ArrayList<>();
     }
 
-    public UUID getOrgId() { return orgId; }
-    public String getName() { return name; }
-    public String getContactMetadata() { return contactMetadata; }
+    public UUID getOrgId() {
+        return orgId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getContactMetadata() {
+        return contactMetadata;
+    }
+
+    public List<ReconciliationWorkspace> getWorkspaces() {
+        return workspaces;
+    }
+
+    public void addWorkspace(ReconciliationWorkspace workspace) {
+        this.workspaces.add(workspace);
+    }
 }
