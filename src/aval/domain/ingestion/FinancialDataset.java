@@ -56,6 +56,14 @@ public abstract class FinancialDataset {
         return this.datasetId;
     }
 
+    public LocalDate getImportDate() {
+        return this.importDate;
+    }
+
+    public DatasetStatus getStatus() {
+        return this.status;
+    }
+
     public void markAsStandardized() {
         this.status = DatasetStatus.STANDARDIZED;
     }

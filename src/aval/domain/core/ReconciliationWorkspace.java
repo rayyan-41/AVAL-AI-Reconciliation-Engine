@@ -32,4 +32,8 @@ public class ReconciliationWorkspace {
         this.hypotheses = new ArrayList<>();
         this.records = new ArrayList<>();
     }
+
+    public UUID getWorkspaceId() { return workspaceId; }
+    public WorkspaceStatus getStatus() { return status; }
+    public ClientOrganization getClientOrganization() { return clientOrganization; }
 }
