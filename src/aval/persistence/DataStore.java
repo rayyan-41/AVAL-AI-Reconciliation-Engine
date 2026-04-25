@@ -80,36 +80,37 @@ public class DataStore {
 
     /**
      * Performs a pgvector Cosine Distance (<=>) nearest-neighbor search.
-     * Finds the closest bank transactions to a given ledger transaction's semantic embedding.
+     * Returns a list of transactions paired with their distance score.
      */
-    public List<StandardizedTransaction> findSimilarBankTransactions(
+    public List<Object[]> findSimilarBankTransactions(
         SemanticEmbedding ledgerEmbedding,
         int limit
     ) throws SQLException {
         String sql =
-            "SELECT transaction_id, value_date, amount, narrative, transaction_type, source_dataset_id " +
+            "SELECT transaction_id, value_date, amount, narrative, transaction_type, source_dataset_id, " +
+            "(embedding <=> ?::vector) as distance " +
             "FROM standardized_bank " +
-            "ORDER BY embedding <=> ?::vector " +
+            "ORDER BY distance " +
             "LIMIT ?";
 
-        List<StandardizedTransaction> results = new ArrayList<>();
+        List<Object[]> results = new ArrayList<>();
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, formatVector(ledgerEmbedding.getVector()));
             pstmt.setInt(2, limit);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    results.add(
-                        new StandardizedTransaction(
-                            (UUID) rs.getObject("transaction_id"),
-                            rs.getDate("value_date").toLocalDate(),
-                            rs.getBigDecimal("amount"),
-                            rs.getString("narrative"),
-                            TransactionType.valueOf(
-                                rs.getString("transaction_type")
-                            ),
-                            (UUID) rs.getObject("source_dataset_id")
-                        )
+                    StandardizedTransaction tx = new StandardizedTransaction(
+                        (UUID) rs.getObject("transaction_id"),
+                        rs.getDate("value_date").toLocalDate(),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("narrative"),
+                        TransactionType.valueOf(
+                            rs.getString("transaction_type")
+                        ),
+                        (UUID) rs.getObject("source_dataset_id")
                     );
+                    double distance = rs.getDouble("distance");
+                    results.add(new Object[] { tx, distance });
                 }
             }
         }

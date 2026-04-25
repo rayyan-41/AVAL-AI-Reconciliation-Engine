@@ -43,22 +43,23 @@ public class SemanticMatchingEngine implements MatchingEngine {
                 SemanticEmbedding ledgerEmbedding =
                     vectorizationEngine.vectorize(ledgerTx);
 
-                // 2. Query pgvector for closest semantic matches
-                // Note: We rely on the DataStore because pgvector handles the heavy lifting
-                // of cosine similarity search across the entire bank transaction dataset.
-                List<StandardizedTransaction> similarBankTxs =
+                // 2. Query pgvector for closest semantic matches with distances
+                List<Object[]> candidates =
                     dataStore.findSimilarBankTransactions(
                         ledgerEmbedding,
                         MAX_CANDIDATES
                     );
 
-                // 3. Generate hypotheses for the top candidates
-                for (int i = 0; i < similarBankTxs.size(); i++) {
-                    StandardizedTransaction bankTx = similarBankTxs.get(i);
+                // 3. Generate hypotheses using real distance-based confidence
+                for (Object[] candidate : candidates) {
+                    StandardizedTransaction bankTx =
+                        (StandardizedTransaction) candidate[0];
+                    double distance = (double) candidate[1];
 
-                    // We generate a descending confidence score based on rank for the prototype
-                    // (e.g. 0.85, 0.80, 0.75) since DataStore doesn't return the exact cosine distance yet.
-                    double confidence = BASE_CONFIDENCE - (i * 0.05);
+                    // Convert cosine distance (0 to 2) to a confidence score (0 to 1)
+                    // Cosine Distance = 1 - Cosine Similarity.
+                    // A distance of 0.0 is a perfect match (100% confidence).
+                    double confidence = Math.max(0, 1.0 - distance);
 
                     MatchHypothesis hypothesis = new MatchHypothesis(
                         ledgerTx,
@@ -69,8 +70,8 @@ public class SemanticMatchingEngine implements MatchingEngine {
 
                     hypothesis.setJustification(
                         String.format(
-                            "AI detected high semantic similarity in narrative and metadata. Rank: %d",
-                            i + 1
+                            "AI detected semantic similarity (Cosine Distance: %.4f)",
+                            distance
                         )
                     );
 
