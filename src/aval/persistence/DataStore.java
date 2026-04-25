@@ -134,21 +134,73 @@ public class DataStore {
 
     // --- Original Stubs Below ---
 
-    public void saveClientOrganization(ClientOrganization org) {}
+    public void saveClientOrganization(ClientOrganization org) {
+        String sql = "INSERT INTO client_organization (org_id, name) VALUES (?, ?) ON CONFLICT (org_id) DO UPDATE SET name = EXCLUDED.name";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, org.getOrgId());
+            pstmt.setString(2, org.getName());
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 
     public ClientOrganization findClientOrganizationById(UUID id) {
+        String sql = "SELECT org_id, name FROM client_organization WHERE org_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new ClientOrganization(
+                        (UUID) rs.getObject("org_id"),
+                        rs.getString("name"),
+                        null
+                    );
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
-    public void saveReconciliationWorkspace(
-        ReconciliationWorkspace workspace
-    ) {}
+    public void saveReconciliationWorkspace(ReconciliationWorkspace workspace) {
+        String sql = "INSERT INTO reconciliation_workspace (workspace_id, org_id, status) VALUES (?, ?, ?) ON CONFLICT (workspace_id) DO UPDATE SET status = EXCLUDED.status";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, workspace.getWorkspaceId());
+            pstmt.setObject(2, workspace.getClientOrganization() != null ? workspace.getClientOrganization().getOrgId() : null);
+            pstmt.setString(3, workspace.getStatus().name());
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 
     public ReconciliationWorkspace findReconciliationWorkspaceById(UUID id) {
+        String sql = "SELECT workspace_id, org_id, status FROM reconciliation_workspace WHERE workspace_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    UUID orgId = (UUID) rs.getObject("org_id");
+                    ClientOrganization org = findClientOrganizationById(orgId);
+                    return new ReconciliationWorkspace(
+                        (UUID) rs.getObject("workspace_id"),
+                        org,
+                        null
+                    );
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
-    public void saveFinancialDataset(FinancialDataset dataset) {}
+    public void saveFinancialDataset(FinancialDataset dataset) {
+        String sql = "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, dataset.getDatasetId());
+            pstmt.setObject(2, null);
+            pstmt.setString(3, dataset.getFilePath());
+            pstmt.setString(4, dataset.getSourceType().name());
+            pstmt.setString(5, dataset.getStatus().name());
+            pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
+            pstmt.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 
     public void saveRawTransactions(List<RawTransaction> rawTransactions) {}
 
@@ -225,6 +277,19 @@ public class DataStore {
     }
 
     public SystemUser findSystemUserById(UUID id) {
+        String sql = "SELECT user_id, username, role FROM system_user WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new SystemUser(
+                        (UUID) rs.getObject("user_id"),
+                        rs.getString("username"),
+                        aval.common.enums.UserRole.valueOf(rs.getString("role"))
+                    );
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 }

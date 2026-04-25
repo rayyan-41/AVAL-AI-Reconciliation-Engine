@@ -21,4 +21,8 @@ public class ClientOrganization {
         this.contactMetadata = contactMetadata;
         this.workspaces = new ArrayList<>();
     }
+
+    public UUID getOrgId() { return orgId; }
+    public String getName() { return name; }
+    public String getContactMetadata() { return contactMetadata; }
 }
