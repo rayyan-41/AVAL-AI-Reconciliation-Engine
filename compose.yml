@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: aval_password
     volumes:
       - ./db-init:/docker-entrypoint-initdb.d
+      - aval_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aval_user -d aval_db"]
       interval: 5s
@@ -36,3 +37,6 @@ services:
         "-c",
         'sleep 5 && curl -X POST http://ollama:11434/api/pull -d ''{"name": "nomic-embed-text"}''',
       ]
+
+volumes:
+  aval_db_data:
