@@ -245,12 +245,8 @@ public class DataStore {
     public void saveStandardizedTransactions(
         List<StandardizedTransaction> standardizedTransactions
     ) {
-        // Standardized transactions are typically saved within the ingestion service
-        // along with their embeddings. This batch method ensures full coverage.
-        for (StandardizedTransaction tx : standardizedTransactions) {
-            // Logic handled by specialized saveStandardizedLedgerTransaction/saveStandardizedBankTransaction
-            // to ensure vector embeddings are preserved.
-        }
+        // Note: Individual transactions are saved via saveStandardizedLedgerTransaction
+        // and saveStandardizedBankTransaction to handle specific pgvector requirements.
     }
 
     public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {

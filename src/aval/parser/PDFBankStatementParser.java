@@ -23,17 +23,11 @@ public class PDFBankStatementParser
     implements DocumentParser<RawBankStatement>
 {
 
-    private String pageParsingStrategy;
-    private List<String> tableDetectionHeuristics;
-
     public PDFBankStatementParser(
         String pageParsingStrategy,
         List<String> tableDetectionHeuristics
     ) {
-        this.pageParsingStrategy = pageParsingStrategy;
-        this.tableDetectionHeuristics = new ArrayList<>(
-            tableDetectionHeuristics
-        );
+        // Parameters kept for constructor compatibility but unused in dynamic PDFBox logic
     }
 
     @Override

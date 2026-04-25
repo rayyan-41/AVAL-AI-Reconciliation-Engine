@@ -20,7 +20,6 @@ public class SemanticMatchingEngine implements MatchingEngine {
 
     // Configurable thresholds
     private static final int MAX_CANDIDATES = 3;
-    private static final double BASE_CONFIDENCE = 0.85;
 
     public SemanticMatchingEngine(
         VectorizationEngine vectorizationEngine,

@@ -8,8 +8,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 //@desc:   Represents an unparsed, raw internal client ledger file uploaded in CSV format.
@@ -19,7 +17,6 @@ public class RawInternalLedger extends FinancialDataset {
 
     private String accountingSystem;
     private String fiscalPeriod;
-    private Map<String, Integer> columnMappings;
 
     public RawInternalLedger(
         UUID datasetId,
@@ -32,7 +29,6 @@ public class RawInternalLedger extends FinancialDataset {
         super(datasetId, importDate, filePath, status);
         this.accountingSystem = accountingSystem;
         this.fiscalPeriod = fiscalPeriod;
-        this.columnMappings = new HashMap<>();
     }
 
     @Override

@@ -7,6 +7,8 @@ import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.core.ClientOrganization;
+import aval.domain.core.ReconciliationWorkspace;
 import aval.domain.ingestion.FinancialDataset;
 import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;

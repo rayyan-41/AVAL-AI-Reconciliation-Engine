@@ -17,12 +17,8 @@ import org.apache.poi.ss.usermodel.*;
 //@gof:    Template Method
 public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
 
-    private char delimiter;
-    private List<String> expectedHeaders;
-
     public ExcelLedgerParser(char delimiter, List<String> expectedHeaders) {
-        this.delimiter = delimiter;
-        this.expectedHeaders = new ArrayList<>(expectedHeaders);
+        // Parameters kept for constructor compatibility but unused in dynamic POI logic
     }
 
     @Override
