@@ -10,6 +10,7 @@ import java.util.UUID;
 //@grasp:  Information Expert, Pure Fabrication
 //@gof:    N/A
 public class ClientOrganization {
+
     private UUID orgId;
     private String name;
     private String contactMetadata;

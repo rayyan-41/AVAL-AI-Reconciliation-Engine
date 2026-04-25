@@ -73,3 +73,13 @@ CREATE TABLE financial_dataset (
     status VARCHAR(20) NOT NULL,
     import_date DATE DEFAULT CURRENT_DATE
 );
+
+-- 9. Raw Transactions (NEW)
+CREATE TABLE raw_transactions (
+    transaction_id UUID PRIMARY KEY,
+    raw_date VARCHAR(50),
+    raw_amount VARCHAR(50),
+    narrative TEXT,
+    transaction_type VARCHAR(20),
+    source_dataset_id UUID REFERENCES financial_dataset(dataset_id)
+);

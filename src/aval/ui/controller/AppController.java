@@ -8,6 +8,7 @@ import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.ingestion.FinancialDataset;
+import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.RuleBasedMatchingEngine;
 import aval.engine.SemanticMatchingEngine;
@@ -21,22 +22,20 @@ import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
-import aval.engine.AnomalyDetectionEngine;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.cell.PropertyValueFactory;
-import java.util.stream.Collectors;
 
 public class AppController {
 
@@ -44,10 +43,13 @@ public class AppController {
     private TextArea logArea;
     private Button runReconciliationBtn;
     private TableView<MatchHypothesis> hypothesisTable;
-    private ObservableList<MatchHypothesis> hypothesisData = FXCollections.observableArrayList();
+    private ObservableList<MatchHypothesis> hypothesisData =
+        FXCollections.observableArrayList();
 
-    private ListView<StandardizedTransaction> unmatchedLedgerList = new ListView<>();
-    private ListView<StandardizedTransaction> unmatchedBankList = new ListView<>();
+    private ListView<StandardizedTransaction> unmatchedLedgerList =
+        new ListView<>();
+    private ListView<StandardizedTransaction> unmatchedBankList =
+        new ListView<>();
 
     // Backend Services
     private DataStore dataStore;
@@ -68,7 +70,11 @@ public class AppController {
 
     private void initializeBackend() {
         try {
-            currentUser = new SystemUser(UUID.randomUUID(), "Aryan-Dev", aval.common.enums.UserRole.ADMIN);
+            currentUser = new SystemUser(
+                UUID.randomUUID(),
+                "Aryan-Dev",
+                aval.common.enums.UserRole.ADMIN
+            );
             Connection conn = DriverManager.getConnection(
                 "jdbc:postgresql://localhost:5432/aval_db",
                 "aval_user",
@@ -102,6 +108,7 @@ public class AppController {
             e.printStackTrace();
         }
     }
+
     private void createView() {
         root = new BorderPane();
         root.setPadding(new Insets(20));
@@ -132,7 +139,9 @@ public class AppController {
                 checkReadyToRun();
             }
         });
-        ledgerBox.getChildren().addAll(ledgerLabel, ledgerPathField, browseLedgerBtn);
+        ledgerBox
+            .getChildren()
+            .addAll(ledgerLabel, ledgerPathField, browseLedgerBtn);
 
         // Bank Statement Selection
         HBox bankBox = new HBox(10);
@@ -156,7 +165,9 @@ public class AppController {
         // Action Buttons
         runReconciliationBtn = new Button("Run AI Reconciliation");
         runReconciliationBtn.setDisable(true);
-        runReconciliationBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
+        runReconciliationBtn.setStyle(
+            "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;"
+        );
         runReconciliationBtn.setOnAction(e -> executePipeline());
 
         // Hypothesis Table
@@ -171,58 +182,124 @@ public class AppController {
         logArea.setWrapText(true);
         logArea.setPrefHeight(100);
 
-        centerBox.getChildren().addAll(
-            ledgerBox, bankBox, runReconciliationBtn,
-            new Label("AI Suggested Matches:"), hypothesisTable,
-            setupApprovalButtons(),
-            new Label("Manual Reconciliation:"), manualSection,
-            new Label("Execution Logs:"), logArea
-        );
+        centerBox
+            .getChildren()
+            .addAll(
+                ledgerBox,
+                bankBox,
+                runReconciliationBtn,
+                new Label("AI Suggested Matches:"),
+                hypothesisTable,
+                setupApprovalButtons(),
+                new Label("Manual Reconciliation:"),
+                manualSection,
+                new Label("Execution Logs:"),
+                logArea
+            );
         root.setCenter(new ScrollPane(centerBox));
     }
+
     private void setupHypothesisTable() {
         hypothesisTable = new TableView<>(hypothesisData);
         hypothesisTable.setPrefHeight(200);
 
-        TableColumn<MatchHypothesis, String> lDateCol = new TableColumn<>("Ledger Date");
-        lDateCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getLedgerTransaction().getValueDate().toString()));
+        TableColumn<MatchHypothesis, String> lDateCol = new TableColumn<>(
+            "Ledger Date"
+        );
+        lDateCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(
+                cellData
+                    .getValue()
+                    .getLedgerTransaction()
+                    .getValueDate()
+                    .toString()
+            )
+        );
 
-        TableColumn<MatchHypothesis, String> lAmtCol = new TableColumn<>("Ledger Amount");
-        lAmtCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getLedgerTransaction().getAmount().toString()));
+        TableColumn<MatchHypothesis, String> lAmtCol = new TableColumn<>(
+            "Ledger Amount"
+        );
+        lAmtCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(
+                cellData
+                    .getValue()
+                    .getLedgerTransaction()
+                    .getAmount()
+                    .toString()
+            )
+        );
 
-        TableColumn<MatchHypothesis, String> bDateCol = new TableColumn<>("Bank Date");
-        bDateCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getBankTransaction().getValueDate().toString()));
+        TableColumn<MatchHypothesis, String> bDateCol = new TableColumn<>(
+            "Bank Date"
+        );
+        bDateCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(
+                cellData
+                    .getValue()
+                    .getBankTransaction()
+                    .getValueDate()
+                    .toString()
+            )
+        );
 
-        TableColumn<MatchHypothesis, String> bAmtCol = new TableColumn<>("Bank Amount");
-        bAmtCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getBankTransaction().getAmount().toString()));
+        TableColumn<MatchHypothesis, String> bAmtCol = new TableColumn<>(
+            "Bank Amount"
+        );
+        bAmtCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(
+                cellData.getValue().getBankTransaction().getAmount().toString()
+            )
+        );
 
-        TableColumn<MatchHypothesis, String> typeCol = new TableColumn<>("Match Type");
-        typeCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMatchType().name()));
+        TableColumn<MatchHypothesis, String> typeCol = new TableColumn<>(
+            "Match Type"
+        );
+        typeCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(cellData.getValue().getMatchType().name())
+        );
 
-        TableColumn<MatchHypothesis, String> confCol = new TableColumn<>("Confidence");
-        confCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.format("%.2f", cellData.getValue().getConfidenceScore())));
+        TableColumn<MatchHypothesis, String> confCol = new TableColumn<>(
+            "Confidence"
+        );
+        confCol.setCellValueFactory(cellData ->
+            new SimpleStringProperty(
+                String.format("%.2f", cellData.getValue().getConfidenceScore())
+            )
+        );
 
-        hypothesisTable.getColumns().addAll(lDateCol, lAmtCol, bDateCol, bAmtCol, typeCol, confCol);
+        hypothesisTable
+            .getColumns()
+            .addAll(lDateCol, lAmtCol, bDateCol, bAmtCol, typeCol, confCol);
     }
 
     private HBox setupApprovalButtons() {
         Button approveBtn = new Button("Approve Selected");
         approveBtn.setOnAction(e -> {
-            MatchHypothesis selected = hypothesisTable.getSelectionModel().getSelectedItem();
+            MatchHypothesis selected = hypothesisTable
+                .getSelectionModel()
+                .getSelectedItem();
             if (selected != null) {
                 reconciliationService.confirmHypothesis(selected, currentUser);
                 hypothesisData.remove(selected);
-                log("Approved match: " + selected.getLedgerTransaction().getNarrative());
+                log(
+                    "Approved match: " +
+                        selected.getLedgerTransaction().getNarrative()
+                );
             }
         });
 
         Button rejectBtn = new Button("Reject Selected");
         rejectBtn.setOnAction(e -> {
-            MatchHypothesis selected = hypothesisTable.getSelectionModel().getSelectedItem();
+            MatchHypothesis selected = hypothesisTable
+                .getSelectionModel()
+                .getSelectedItem();
             if (selected != null) {
                 reconciliationService.rejectHypothesis(selected, currentUser);
                 hypothesisData.remove(selected);
-                log("Rejected match: " + selected.getLedgerTransaction().getNarrative());
+                log(
+                    "Rejected match: " +
+                        selected.getLedgerTransaction().getNarrative()
+                );
             }
         });
 
@@ -233,18 +310,35 @@ public class AppController {
 
     private VBox setupManualOverrideSection() {
         HBox listsBox = new HBox(10);
-        VBox ledgerBox = new VBox(5, new Label("Unmatched Ledger"), unmatchedLedgerList);
-        VBox bankBox = new VBox(5, new Label("Unmatched Bank"), unmatchedBankList);
+        VBox ledgerBox = new VBox(
+            5,
+            new Label("Unmatched Ledger"),
+            unmatchedLedgerList
+        );
+        VBox bankBox = new VBox(
+            5,
+            new Label("Unmatched Bank"),
+            unmatchedBankList
+        );
         listsBox.getChildren().addAll(ledgerBox, bankBox);
         HBox.setHgrow(ledgerBox, Priority.ALWAYS);
         HBox.setHgrow(bankBox, Priority.ALWAYS);
 
         Button forceMatchBtn = new Button("Force Manual Match");
         forceMatchBtn.setOnAction(e -> {
-            StandardizedTransaction lTx = unmatchedLedgerList.getSelectionModel().getSelectedItem();
-            StandardizedTransaction bTx = unmatchedBankList.getSelectionModel().getSelectedItem();
+            StandardizedTransaction lTx = unmatchedLedgerList
+                .getSelectionModel()
+                .getSelectedItem();
+            StandardizedTransaction bTx = unmatchedBankList
+                .getSelectionModel()
+                .getSelectedItem();
             if (lTx != null && bTx != null) {
-                reconciliationService.forceReconcile(lTx, bTx, currentUser, "Manual override by user");
+                reconciliationService.forceReconcile(
+                    lTx,
+                    bTx,
+                    currentUser,
+                    "Manual override by user"
+                );
                 unmatchedLedgerList.getItems().remove(lTx);
                 unmatchedBankList.getItems().remove(bTx);
                 log("Manually matched transactions.");
@@ -267,29 +361,61 @@ public class AppController {
         Thread pipelineThread = new Thread(() -> {
             try {
                 log("1. Ingesting Data...");
-                FinancialDataset ledgerDataset = ingestionService.ingestFile(ledgerPath, DataSourceType.INTERNAL_EXCEL);
-                FinancialDataset bankDataset = ingestionService.ingestFile(bankPath, DataSourceType.EXTERNAL_PDF);
+                FinancialDataset ledgerDataset = ingestionService.ingestFile(
+                    ledgerPath,
+                    DataSourceType.INTERNAL_EXCEL
+                );
+                FinancialDataset bankDataset = ingestionService.ingestFile(
+                    bankPath,
+                    DataSourceType.EXTERNAL_PDF
+                );
 
                 log("2. Standardizing Schema...");
-                List<StandardizedTransaction> stdLedger = ingestionService.standardize(ledgerDataset);
-                List<StandardizedTransaction> stdBank = ingestionService.standardize(bankDataset);
+                List<StandardizedTransaction> stdLedger =
+                    ingestionService.standardize(ledgerDataset);
+                List<StandardizedTransaction> stdBank =
+                    ingestionService.standardize(bankDataset);
 
                 log("3. Running AI Matching...");
-                List<MatchHypothesis> hypotheses = reconciliationService.runMatching(null, stdLedger, stdBank);
+                List<MatchHypothesis> hypotheses =
+                    reconciliationService.runMatching(null, stdLedger, stdBank);
 
                 Platform.runLater(() -> {
                     hypothesisData.addAll(hypotheses);
 
                     // Identify unmatched for manual override
-                    List<StandardizedTransaction> matchedLedger = hypotheses.stream().map(MatchHypothesis::getLedgerTransaction).collect(Collectors.toList());
-                    List<StandardizedTransaction> matchedBank = hypotheses.stream().map(MatchHypothesis::getBankTransaction).collect(Collectors.toList());
+                    List<StandardizedTransaction> matchedLedger = hypotheses
+                        .stream()
+                        .map(MatchHypothesis::getLedgerTransaction)
+                        .collect(Collectors.toList());
+                    List<StandardizedTransaction> matchedBank = hypotheses
+                        .stream()
+                        .map(MatchHypothesis::getBankTransaction)
+                        .collect(Collectors.toList());
 
-                    unmatchedLedgerList.getItems().addAll(stdLedger.stream().filter(t -> !matchedLedger.contains(t)).collect(Collectors.toList()));
-                    unmatchedBankList.getItems().addAll(stdBank.stream().filter(t -> !matchedBank.contains(t)).collect(Collectors.toList()));
+                    unmatchedLedgerList
+                        .getItems()
+                        .addAll(
+                            stdLedger
+                                .stream()
+                                .filter(t -> !matchedLedger.contains(t))
+                                .collect(Collectors.toList())
+                        );
+                    unmatchedBankList
+                        .getItems()
+                        .addAll(
+                            stdBank
+                                .stream()
+                                .filter(t -> !matchedBank.contains(t))
+                                .collect(Collectors.toList())
+                        );
 
                     // UC10 Anomaly Detection
                     log("4. Identifying Anomalies...");
-                    List<String> anomalies = anomalyEngine.identifyAnomalies(unmatchedLedgerList.getItems(), unmatchedBankList.getItems());
+                    List<String> anomalies = anomalyEngine.identifyAnomalies(
+                        unmatchedLedgerList.getItems(),
+                        unmatchedBankList.getItems()
+                    );
                     anomalies.forEach(this::log);
                 });
 
@@ -310,7 +436,12 @@ public class AppController {
     }
 
     private void checkReadyToRun() {
-        if (ledgerPath != null && bankPath != null && !ledgerPath.isEmpty() && !bankPath.isEmpty()) {
+        if (
+            ledgerPath != null &&
+            bankPath != null &&
+            !ledgerPath.isEmpty() &&
+            !bankPath.isEmpty()
+        ) {
             runReconciliationBtn.setDisable(false);
         }
     }
@@ -318,7 +449,9 @@ public class AppController {
     private File openFileChooser(String title, String extension) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Supported Files", extension));
+        fileChooser
+            .getExtensionFilters()
+            .add(new FileChooser.ExtensionFilter("Supported Files", extension));
         File initialDir = new File("data/scenario_01_retail_ecommerce");
         if (initialDir.exists()) fileChooser.setInitialDirectory(initialDir);
         return fileChooser.showOpenDialog(root.getScene().getWindow());

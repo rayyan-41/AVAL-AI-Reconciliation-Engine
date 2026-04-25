@@ -1,9 +1,9 @@
 //Dev: Safwan
 //Use Cases: UC2
 package aval.domain.ingestion;
+
 import aval.common.enums.DataSourceType;
 import aval.common.enums.DatasetStatus;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,11 +16,19 @@ import java.util.UUID;
 //@grasp:  Information Expert
 //@gof:    N/A
 public class RawInternalLedger extends FinancialDataset {
+
     private String accountingSystem;
     private String fiscalPeriod;
     private Map<String, Integer> columnMappings;
 
-    public RawInternalLedger(UUID datasetId, LocalDate importDate, String filePath, DatasetStatus status, String accountingSystem, String fiscalPeriod) {
+    public RawInternalLedger(
+        UUID datasetId,
+        LocalDate importDate,
+        String filePath,
+        DatasetStatus status,
+        String accountingSystem,
+        String fiscalPeriod
+    ) {
         super(datasetId, importDate, filePath, status);
         this.accountingSystem = accountingSystem;
         this.fiscalPeriod = fiscalPeriod;
@@ -35,8 +43,12 @@ public class RawInternalLedger extends FinancialDataset {
     @Override
     public boolean validate() {
         // A basic check to ensure the dataset has the required metadata
-        return this.accountingSystem != null && !this.accountingSystem.trim().isEmpty()
-                && this.fiscalPeriod != null && !this.fiscalPeriod.trim().isEmpty();
+        return (
+            this.accountingSystem != null &&
+            !this.accountingSystem.trim().isEmpty() &&
+            this.fiscalPeriod != null &&
+            !this.fiscalPeriod.trim().isEmpty()
+        );
     }
 
     public char detectDelimiter() {
@@ -47,7 +59,7 @@ public class RawInternalLedger extends FinancialDataset {
 
         char bestDelimiter = ',';
         int maxCount = 0;
-        char[] possibleDelimiters = {',', ';', '\t', '|'};
+        char[] possibleDelimiters = { ',', ';', '\t', '|' };
 
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             String firstLine = reader.readLine();

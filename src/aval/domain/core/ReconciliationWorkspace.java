@@ -6,7 +6,6 @@ import aval.common.enums.WorkspaceStatus;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ingestion.FinancialDataset;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +14,7 @@ import java.util.UUID;
 //@grasp:  Information Expert
 //@gof:    N/A
 public class ReconciliationWorkspace {
+
     private UUID workspaceId;
     private WorkspaceStatus status;
     private ClientOrganization clientOrganization;
@@ -23,7 +23,11 @@ public class ReconciliationWorkspace {
     private List<MatchHypothesis> hypotheses;
     private List<ReconciliationRecord> records;
 
-    public ReconciliationWorkspace(UUID workspaceId, ClientOrganization clientOrganization, MatchingConfig matchingConfig) {
+    public ReconciliationWorkspace(
+        UUID workspaceId,
+        ClientOrganization clientOrganization,
+        MatchingConfig matchingConfig
+    ) {
         this.workspaceId = workspaceId;
         this.status = WorkspaceStatus.OPEN; // UC1 creates workspaces in OPEN state
         this.clientOrganization = clientOrganization;
