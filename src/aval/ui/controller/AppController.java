@@ -351,6 +351,8 @@ public class AppController {
     }
 
     private void executePipeline() {
+        if (!validateInputs()) return;
+
         runReconciliationBtn.setDisable(true);
         logArea.clear();
         hypothesisData.clear();
@@ -360,6 +362,23 @@ public class AppController {
 
         Thread pipelineThread = new Thread(() -> {
             try {
+                // 0. UC1 - Create Client Profile and Workspace
+                log("0. Initializing Workspace (UC1)...");
+                ClientOrganization client = new ClientOrganization(
+                    UUID.randomUUID(),
+                    "BrightLine Retail",
+                    "Contact: info@brightline.com"
+                );
+                dataStore.saveClientOrganization(client);
+
+                ReconciliationWorkspace workspace = new ReconciliationWorkspace(
+                    UUID.randomUUID(),
+                    client,
+                    null
+                );
+                dataStore.saveReconciliationWorkspace(workspace);
+                log("   -> Created profile for: " + client.getName());
+
                 log("1. Ingesting Data...");
                 FinancialDataset ledgerDataset = ingestionService.ingestFile(
                     ledgerPath,
@@ -369,6 +388,10 @@ public class AppController {
                     bankPath,
                     DataSourceType.EXTERNAL_PDF
                 );
+
+                // Associate datasets with workspace
+                dataStore.saveFinancialDataset(ledgerDataset);
+                dataStore.saveFinancialDataset(bankDataset);
 
                 log("2. Standardizing Schema...");
                 List<StandardizedTransaction> stdLedger =
@@ -459,5 +482,40 @@ public class AppController {
 
     private void log(String message) {
         Platform.runLater(() -> logArea.appendText(message + "\n"));
+    }
+
+    private boolean validateInputs() {
+        if (ledgerPath == null || ledgerPath.isEmpty()) {
+            showValidationError(
+                "Input Error",
+                "Internal Ledger file must be selected."
+            );
+            return false;
+        }
+        if (bankPath == null || bankPath.isEmpty()) {
+            showValidationError(
+                "Input Error",
+                "Bank Statement file must be selected."
+            );
+            return false;
+        }
+        File lFile = new File(ledgerPath);
+        File bFile = new File(bankPath);
+        if (!lFile.exists() || !bFile.exists()) {
+            showValidationError(
+                "File Error",
+                "One or more selected files do not exist on disk."
+            );
+            return false;
+        }
+        return true;
+    }
+
+    private void showValidationError(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }

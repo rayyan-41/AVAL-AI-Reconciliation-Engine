@@ -95,8 +95,9 @@ public class ReconciliationService {
             "Rejected by " + rejectingUser.getUsername()
         );
 
-        // Typically, we would update the hypothesis in DataStore here
-        // For this prototype, we assume hypothesis state is tracked in the session/DB.
+        List<MatchHypothesis> hypotheses = new ArrayList<>();
+        hypotheses.add(hypothesis);
+        dataStore.saveMatchHypotheses(hypotheses);
     }
 
     /**
@@ -142,8 +143,13 @@ public class ReconciliationService {
         List<List<StandardizedTransaction>> multipleDatasets
     ) {
         List<MatchHypothesis> consolidated = new ArrayList<>();
-        // In a real implementation, we would iterate through pairs of datasets
-        // and run cross-matching for consolidation.
+        if (multipleDatasets.size() < 2) return consolidated;
+
+        List<StandardizedTransaction> primary = multipleDatasets.get(0);
+        for (int i = 1; i < multipleDatasets.size(); i++) {
+            List<StandardizedTransaction> secondary = multipleDatasets.get(i);
+            consolidated.addAll(runMatching(workspace, primary, secondary));
+        }
         return consolidated;
     }
 }

@@ -37,7 +37,7 @@ public class RawInternalLedger extends FinancialDataset {
 
     @Override
     public DataSourceType getSourceType() {
-        return DataSourceType.INTERNAL_CSV;
+        return DataSourceType.INTERNAL_EXCEL;
     }
 
     @Override
