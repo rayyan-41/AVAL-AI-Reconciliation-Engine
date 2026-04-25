@@ -41,4 +41,14 @@ public class ReconciliationRecord {
     public LocalDateTime getReconciledAt() {
         return reconciledAt;
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "Record[%s]: %s | ConfirmedBy: %s",
+            recordId.toString().substring(0, 8),
+            hypothesis != null ? hypothesis.toString() : "NULL_HYPOTHESIS",
+            confirmingUser != null ? confirmingUser.getUsername() : "SYSTEM"
+        );
+    }
 }

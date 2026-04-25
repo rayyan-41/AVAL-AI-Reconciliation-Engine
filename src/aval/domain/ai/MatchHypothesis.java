@@ -68,4 +68,16 @@ public class MatchHypothesis {
     public void setJustification(String justification) {
         this.justification = justification;
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "Hypothesis[%s]: Ledger(%s) <-> Bank(%s) | Score: %.2f | Type: %s",
+            hypothesisId.toString().substring(0, 8),
+            ledgerTransaction != null ? ledgerTransaction.getAmount() : "N/A",
+            bankTransaction != null ? bankTransaction.getAmount() : "N/A",
+            confidenceScore,
+            matchType
+        );
+    }
 }
