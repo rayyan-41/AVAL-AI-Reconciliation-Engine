@@ -7,5 +7,6 @@ package aval.common.enums;
 //@gof:    N/A
 public enum DataSourceType {
     INTERNAL_EXCEL,
+    INTERNAL_CSV,
     EXTERNAL_PDF,
 }

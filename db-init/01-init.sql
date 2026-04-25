@@ -42,3 +42,34 @@ CREATE TABLE reconciliation_records (
     confirming_user_id UUID,
     reconciled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 5. System Users
+CREATE TABLE system_user (
+    user_id UUID PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    role VARCHAR(20) NOT NULL
+);
+
+-- 6. Client Organizations
+CREATE TABLE client_organization (
+    org_id UUID PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+-- 7. Reconciliation Workspaces
+CREATE TABLE reconciliation_workspace (
+    workspace_id UUID PRIMARY KEY,
+    org_id UUID REFERENCES client_organization(org_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL
+);
+
+-- 8. Financial Datasets
+CREATE TABLE financial_dataset (
+    dataset_id UUID PRIMARY KEY,
+    workspace_id UUID REFERENCES reconciliation_workspace(workspace_id),
+    file_path TEXT NOT NULL,
+    source_type VARCHAR(30) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    import_date DATE DEFAULT CURRENT_DATE
+);
