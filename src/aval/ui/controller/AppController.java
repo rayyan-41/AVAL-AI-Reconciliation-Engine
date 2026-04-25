@@ -270,6 +270,23 @@ public class AppController {
         hypothesisTable
             .getColumns()
             .addAll(lDateCol, lAmtCol, bDateCol, bAmtCol, typeCol, confCol);
+
+        // ISSUE-15: Highlight rows exceeding the auto-confirm threshold (0.95)
+        hypothesisTable.setRowFactory(tv ->
+            new TableRow<MatchHypothesis>() {
+                @Override
+                protected void updateItem(MatchHypothesis item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setStyle("");
+                    } else if (item.getConfidenceScore() >= 0.95) {
+                        setStyle("-fx-background-color: #d1e7dd;"); // Light green
+                    } else {
+                        setStyle("");
+                    }
+                }
+            }
+        );
     }
 
     private HBox setupApprovalButtons() {
