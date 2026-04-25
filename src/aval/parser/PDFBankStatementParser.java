@@ -126,7 +126,20 @@ public class PDFBankStatementParser
 
     @Override
     public List<String[]> extractRawRows(String filePath) {
-        return new ArrayList<>();
+        List<String[]> rawRows = new ArrayList<>();
+        try (PDDocument document = Loader.loadPDF(new File(filePath))) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            String text = stripper.getText(document);
+            String[] lines = text.split("\\r?\\n");
+            for (String line : lines) {
+                if (!line.trim().isEmpty()) {
+                    rawRows.add(new String[] { line.trim() });
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rawRows;
     }
 
     public List<String[]> extractTableRows(String filePath) {

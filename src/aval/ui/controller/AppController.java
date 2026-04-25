@@ -102,9 +102,16 @@ public class AppController {
             );
             reportService = new ReportService();
         } catch (Exception e) {
-            System.err.println(
-                "Failed to initialize database connection. Ensure Docker is running."
-            );
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Database Connection Error");
+                alert.setHeaderText("Could not connect to PostgreSQL");
+                alert.setContentText(
+                    "Ensure the Docker containers are running and the database is accessible.\n\n" +
+                        e.getMessage()
+                );
+                alert.showAndWait();
+            });
             e.printStackTrace();
         }
     }
