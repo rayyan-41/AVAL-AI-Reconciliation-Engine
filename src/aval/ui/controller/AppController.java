@@ -446,7 +446,11 @@ public class AppController {
 
                 log("3. Running AI Matching...");
                 List<MatchHypothesis> hypotheses =
-                    reconciliationService.runMatching(null, stdLedger, stdBank);
+                    reconciliationService.runMatching(
+                        workspace,
+                        stdLedger,
+                        stdBank
+                    );
 
                 Platform.runLater(() -> {
                     hypothesisData.addAll(hypotheses);
