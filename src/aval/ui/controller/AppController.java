@@ -179,6 +179,25 @@ public class AppController {
         );
         runReconciliationBtn.setOnAction(e -> executePipeline());
 
+        Button generateReportBtn = new Button("Generate Report (UC11)");
+        generateReportBtn.setOnAction(e -> {
+            try {
+                reportService.generateReconciliationReport(
+                    new ArrayList<>(),
+                    new ArrayList<>(unmatchedLedgerList.getItems()),
+                    new ArrayList<>(unmatchedBankList.getItems()),
+                    "data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
+                );
+                log(
+                    "Report generated to data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
+                );
+            } catch (Exception ex) {
+                log("Report error: " + ex.getMessage());
+            }
+        });
+
+        HBox actionBox = new HBox(10, runReconciliationBtn, generateReportBtn);
+
         // Hypothesis Table
         setupHypothesisTable();
 
@@ -196,7 +215,7 @@ public class AppController {
             .addAll(
                 ledgerBox,
                 bankBox,
-                runReconciliationBtn,
+                actionBox,
                 new Label("AI Suggested Matches:"),
                 hypothesisTable,
                 setupApprovalButtons(),
