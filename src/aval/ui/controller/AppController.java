@@ -435,8 +435,14 @@ public class AppController {
                 );
 
                 // Associate datasets with workspace
-                dataStore.saveFinancialDataset(ledgerDataset);
-                dataStore.saveFinancialDataset(bankDataset);
+                dataStore.saveFinancialDataset(
+                    ledgerDataset,
+                    workspace.getWorkspaceId()
+                );
+                dataStore.saveFinancialDataset(
+                    bankDataset,
+                    workspace.getWorkspaceId()
+                );
 
                 log("2. Standardizing Schema...");
                 List<StandardizedTransaction> stdLedger =

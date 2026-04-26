@@ -208,11 +208,20 @@ public class DataStore {
     }
 
     public void saveFinancialDataset(FinancialDataset dataset) {
+        saveFinancialDataset(dataset, null);
+    }
+
+    public void saveFinancialDataset(
+        FinancialDataset dataset,
+        UUID workspaceId
+    ) {
         String sql =
-            "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) " +
+            "VALUES (?, ?, ?, ?, ?, ?) " +
+            "ON CONFLICT (dataset_id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setObject(1, dataset.getDatasetId());
-            pstmt.setObject(2, null);
+            pstmt.setObject(2, workspaceId);
             pstmt.setString(3, dataset.getFilePath());
             pstmt.setString(4, dataset.getSourceType().name());
             pstmt.setString(5, dataset.getStatus().name());
