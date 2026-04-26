@@ -12,7 +12,6 @@ import aval.domain.core.ReconciliationWorkspace;
 import aval.domain.ingestion.FinancialDataset;
 import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
-import aval.engine.RuleBasedMatchingEngine;
 import aval.engine.SemanticMatchingEngine;
 import aval.persistence.DataStore;
 import aval.service.IngestionService;
@@ -32,12 +31,10 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 
 public class AppController {
 
