@@ -143,7 +143,9 @@ public class ReconciliationService {
         List<List<StandardizedTransaction>> multipleDatasets
     ) {
         List<MatchHypothesis> consolidated = new ArrayList<>();
-        if (multipleDatasets.size() < 2) return consolidated;
+        if (
+            multipleDatasets == null || multipleDatasets.size() < 2
+        ) return consolidated;
 
         List<StandardizedTransaction> primary = multipleDatasets.get(0);
         for (int i = 1; i < multipleDatasets.size(); i++) {
