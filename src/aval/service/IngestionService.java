@@ -39,6 +39,7 @@ public class IngestionService {
         if (parser.validate(filePath)) {
             FinancialDataset dataset = parser.parse(filePath);
             this.dataStore.saveFinancialDataset(dataset);
+            this.dataStore.saveRawTransactions(dataset.getRawTransactions());
             return dataset;
         }
         return null;
