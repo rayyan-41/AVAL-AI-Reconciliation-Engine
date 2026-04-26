@@ -196,7 +196,24 @@ public class AppController {
             }
         });
 
-        HBox actionBox = new HBox(10, runReconciliationBtn, generateReportBtn);
+        Button viewHistoryBtn = new Button("View History (UC12)");
+        viewHistoryBtn.setOnAction(e -> {
+            List<String> history = dataStore.getReconciliationHistory();
+            if (history.isEmpty()) {
+                log("No reconciliation history found.");
+            } else {
+                log("--- Reconciliation History ---");
+                history.forEach(this::log);
+                log("------------------------------");
+            }
+        });
+
+        HBox actionBox = new HBox(
+            10,
+            runReconciliationBtn,
+            generateReportBtn,
+            viewHistoryBtn
+        );
 
         // Hypothesis Table
         setupHypothesisTable();

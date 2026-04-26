@@ -326,6 +326,32 @@ public class DataStore {
         }
     }
 
+    public List<String> getReconciliationHistory() {
+        List<String> results = new ArrayList<>();
+        String sql =
+            "SELECT rr.record_id, rr.reconciled_at, mh.confidence_score, mh.match_type " +
+            "FROM reconciliation_records rr JOIN match_hypotheses mh ON rr.hypothesis_id = mh.hypothesis_id " +
+            "ORDER BY rr.reconciled_at DESC LIMIT 50";
+        try (
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                results.add(
+                    String.format(
+                        "[%s] Type: %s | Confidence: %.2f",
+                        rs.getTimestamp("reconciled_at"),
+                        rs.getString("match_type"),
+                        rs.getDouble("confidence_score")
+                    )
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
+
     public SystemUser findSystemUserById(UUID id) {
         String sql =
             "SELECT user_id, username, role FROM system_user WHERE user_id = ?";
