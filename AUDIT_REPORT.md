@@ -1,493 +1,272 @@
-# AVAL AI Reconciliation Engine — Audit Report (v2)
-**Date:** 2026-04-25 (updated after latest pull)  
+# AVAL AI Reconciliation Engine — Audit Report (v3)
+**Date:** 2026-04-26 (updated after 9-commit pull)  
 **Evaluator:** Nia (via Claude AI audit)  
-**Purpose:** Pre-submission code audit against project rubric. Reflects state after latest git pull.
+**Purpose:** Pre-submission code audit. Reflects state after latest batch of commits.
 
 ---
 
-## WHAT CHANGED IN THIS PULL ✅
+## ✅ EVERYTHING FIXED IN THIS PULL
 
-| Old Issue | Status | Notes |
+Every critical and high issue from v2 has been resolved. The project now compiles.
+
+| Issue | Commit | Status |
 |---|---|---|
-| ISSUE-01 Missing UI source files | ✅ PARTIALLY FIXED | AppController now has a hypothesis TableView, approve/reject buttons, manual override section with ListViews. Much richer UI. The 3 orphaned `.class` files remain without source, but the single AppController now covers most of their scope. |
-| ISSUE-02 UC10 zero implementation | ✅ PARTIALLY FIXED | `AnomalyDetectionEngine.java` created with real logic (duplicate detection, outlier detection, weekend flags). **However, it is never called in the pipeline — see NEW-02.** |
-| ISSUE-05 DataStore null stubs | ✅ PARTIALLY FIXED | `saveClientOrganization`, `findClientOrganizationById`, `saveReconciliationWorkspace`, `findReconciliationWorkspaceById` now have real SQL. **However, DataStore.java is truncated mid-file — see NEW-01.** |
+| NEW-01 DataStore.java truncated | `refactor: resolve compilation errors` | ✅ Fixed — complete, all methods present |
+| NEW-02 AppController.java truncated | `refactor: resolve compilation errors` | ✅ Fixed — complete, all methods present |
+| NEW-03 Missing getters (compile error) | `fix: add missing domain entity getters` | ✅ Fixed — ClientOrganization, ReconciliationWorkspace, FinancialDataset all have getters |
+| NEW-04 AnomalyDetectionEngine not wired | `refactor: resolve compilation errors` | ✅ Fixed — called in executePipeline() as UC10 |
+| NEW-05 Missing DB tables | `feat: implement raw transaction persistence` | ✅ Fixed — 9 tables now in schema (added system_user, client_organization, reconciliation_workspace, financial_dataset, raw_transactions) |
+| ISSUE-03 UC9 stub | `refactor: resolve compilation errors` | ✅ Fixed — real cross-pair matching loop implemented |
+| ISSUE-07 Wrong DataSourceType | `refactor: resolve compilation errors` | ✅ Fixed — INTERNAL_EXCEL returned correctly |
+| ISSUE-08 UC1 not wired | `refactor: resolve compilation errors` | ✅ Fixed — ClientOrganization + Workspace created at pipeline start |
+| ISSUE-09 Rejection not persisted | `refactor: resolve compilation errors` | ✅ Fixed — calls `dataStore.saveMatchHypotheses()` with REJECTED status |
+| ISSUE-10 Silent DB failure | `feat: add UI input validation and error alerts` | ✅ Fixed — Alert dialog shown on connection error |
+| ISSUE-11 No input validation | `feat: add UI input validation and error alerts` | ✅ Fixed — validateInputs() runs before pipeline |
+| ISSUE-12 Fake confidence scores | `feat: implement distance-based AI confidence scores` | ✅ Fixed — real cosine distance from pgvector used |
+| ISSUE-13 extractRawRows() empty | `refactor: resolve compilation errors` | ✅ Fixed — parses PDF lines into rows |
+| ISSUE-15 MatchingConfig unused | `feat: highlight high-confidence matches in UI` | ✅ Fixed — 0.95 threshold used for green row highlighting |
+| ISSUE-16 Missing toString() | `fix: implement toString methods` | ✅ Fixed — MatchHypothesis and ReconciliationRecord both have toString() |
+| ISSUE-18 No DB volume | `fix: add persistent storage volume for PostgreSQL` | ✅ Fixed — `aval_db_data` named volume in compose.yml |
 
 ---
 
-## 🚨 NEW CRITICAL ISSUES (introduced in this pull)
+## REMAINING ISSUES
+
+The project is in good shape. What's left is medium and low severity.
 
 ---
 
-### NEW-01 — `DataStore.java` is TRUNCATED — Will Not Compile
-**Severity:** CRITICAL  
-**File:** `src/aval/persistence/DataStore.java` (200 lines, cut off mid-statement)
-
-**Problem:**  
-The file ends abruptly inside `saveFinancialDataset()` with no closing brace for the method, the try-catch block, or the class. The last line is:
-```java
-            pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
-         
-```
-There is no `pstmt.executeUpdate()`, no `} catch`, no closing `}` for the method, and no closing `}` for the class. Additionally, `saveRawTransactions`, `saveStandardizedTransactions`, `saveMatchHypotheses`, `saveReconciliationRecords`, and `findSystemUserById` are entirely missing from the file — they existed in the previous version and have been lost.
-
-**Fix:**  
-Complete the `saveFinancialDataset` method, close the class, and restore the missing methods. Minimum required to close the file:
-```java
-            pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
-            pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public void saveRawTransactions(List<RawTransaction> rawTransactions) { /* stub OK for now */ }
-
-    public void saveStandardizedTransactions(List<StandardizedTransaction> standardizedTransactions) { /* stub OK */ }
-
-    public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {
-        String sql = "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for (MatchHypothesis h : hypotheses) {
-                pstmt.setObject(1, h.getHypothesisId());
-                pstmt.setObject(2, h.getLedgerTransaction() != null ? h.getLedgerTransaction().getTransactionId() : null);
-                pstmt.setObject(3, h.getBankTransaction() != null ? h.getBankTransaction().getTransactionId() : null);
-                pstmt.setDouble(4, h.getConfidenceScore());
-                pstmt.setString(5, h.getMatchType() != null ? h.getMatchType().name() : null);
-                pstmt.setString(6, h.getStatus() != null ? h.getStatus().name() : null);
-                pstmt.setString(7, h.getJustification());
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public void saveReconciliationRecords(List<ReconciliationRecord> records) {
-        String sql = "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for (ReconciliationRecord r : records) {
-                pstmt.setObject(1, r.getRecordId());
-                pstmt.setObject(2, r.getHypothesis() != null ? r.getHypothesis().getHypothesisId() : null);
-                pstmt.setObject(3, r.getConfirmingUser() != null ? r.getConfirmingUser().getUserId() : null);
-                pstmt.setTimestamp(4, r.getReconciledAt() != null ? java.sql.Timestamp.valueOf(r.getReconciledAt()) : null);
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
-
-    public SystemUser findSystemUserById(UUID id) { return null; }
-}
-```
-
----
-
-### NEW-02 — `AppController.java` is TRUNCATED — Will Not Compile
-**Severity:** CRITICAL  
-**File:** `src/aval/ui/controller/AppController.java` (287 lines, cut off mid-lambda)
-
-**Problem:**  
-The file ends inside a `Platform.runLater()` lambda inside `executePipeline()`, mid-expression:
-```java
-                    unmatchedBankList.getItems().addAll(stdBank.stream().filter(t -> !matchedBank.contains
-```
-This is syntactically invalid Java. There are no closing parentheses for the stream, no closing `});` for `Platform.runLater`, no `} catch`, no `} finally`, no closing `}` for `executePipeline()`, and no closing `}` for the class. The `log()` helper method and `getView()` method are also gone.
-
-**Fix:**  
-Complete the truncated lambda and close all open blocks. The minimum to make it compile:
-```java
-                    unmatchedBankList.getItems().addAll(stdBank.stream()
-                        .filter(t -> !matchedBank.contains(t))
-                        .collect(Collectors.toList()));
-
-                    // UC10 — Run Anomaly Detection
-                    List<String> anomalies = anomalyEngine.identifyAnomalies(
-                        new ArrayList<>(unmatchedLedgerList.getItems()),
-                        new ArrayList<>(unmatchedBankList.getItems())
-                    );
-                    if (!anomalies.isEmpty()) {
-                        log("\n--- ANOMALIES DETECTED ---");
-                        anomalies.forEach(a -> log("  " + a));
-                    }
-                });
-
-                // Generate Report
-                log("4. Generating Report...");
-                List<ReconciliationRecord> approvedRecords = new ArrayList<>();
-                reportService.generateReconciliationReport(
-                    approvedRecords,
-                    new ArrayList<>(unmatchedLedgerList.getItems()),
-                    new ArrayList<>(unmatchedBankList.getItems()),
-                    "data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
-                );
-                log("Pipeline complete.");
-
-            } catch (Exception e) {
-                log("ERROR: " + e.getMessage());
-                e.printStackTrace();
-            } finally {
-                Platform.runLater(() -> runReconciliationBtn.setDisable(false));
-            }
-        });
-
-        pipelineThread.setDaemon(true);
-        pipelineThread.start();
-    }
-
-    private void log(String message) {
-        Platform.runLater(() -> logArea.appendText(message + "\n"));
-    }
-
-    private File openFileChooser(String title, String extension) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(title);
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Supported Files", extension));
-        File initialDir = new File("data/scenario_01_retail_ecommerce");
-        if (initialDir.exists()) fileChooser.setInitialDirectory(initialDir);
-        return fileChooser.showOpenDialog(root.getScene().getWindow());
-    }
-
-    private void checkReadyToRun() {
-        if (ledgerPath != null && bankPath != null &&
-            !ledgerPath.isEmpty() && !bankPath.isEmpty()) {
-            runReconciliationBtn.setDisable(false);
-        }
-    }
-
-    public Region getView() {
-        return root;
-    }
-}
-```
-
----
-
-### NEW-03 — COMPILE ERROR: `DataStore` Calls Getters That Don't Exist
-**Severity:** CRITICAL  
-**Files:** `src/aval/persistence/DataStore.java` + `src/aval/domain/core/ClientOrganization.java` + `src/aval/domain/core/ReconciliationWorkspace.java`
-
-**Problem:**  
-The new DataStore SQL methods call getters on `ClientOrganization` and `ReconciliationWorkspace` that have never been added to those classes:
-
-```java
-// DataStore calls these — none of them exist:
-org.getOrgId()                         // ClientOrganization has no getOrgId()
-org.getName()                          // ClientOrganization has no getName()
-workspace.getWorkspaceId()             // ReconciliationWorkspace has no getWorkspaceId()
-workspace.getStatus()                  // ReconciliationWorkspace has no getStatus()
-workspace.getClientOrganization()      // ReconciliationWorkspace has no getClientOrganization()
-dataset.getStatus()                    // FinancialDataset has no getStatus()
-dataset.getImportDate()                // FinancialDataset has no getImportDate()
-```
-
-The project will not compile until these are added.
-
-**Fix — `ClientOrganization.java`:** Add at the end of the class body (before closing `}`):
-```java
-public UUID getOrgId() { return orgId; }
-public String getName() { return name; }
-public String getContactMetadata() { return contactMetadata; }
-public List<ReconciliationWorkspace> getWorkspaces() { return workspaces; }
-public void addWorkspace(ReconciliationWorkspace workspace) { this.workspaces.add(workspace); }
-```
-
-**Fix — `ReconciliationWorkspace.java`:** Add at the end of the class body (before closing `}`):
-```java
-public UUID getWorkspaceId() { return workspaceId; }
-public WorkspaceStatus getStatus() { return status; }
-public void setStatus(WorkspaceStatus status) { this.status = status; }
-public ClientOrganization getClientOrganization() { return clientOrganization; }
-public MatchingConfig getMatchingConfig() { return matchingConfig; }
-public List<FinancialDataset> getDatasets() { return datasets; }
-public List<MatchHypothesis> getHypotheses() { return hypotheses; }
-public List<ReconciliationRecord> getRecords() { return records; }
-```
-
-**Fix — `FinancialDataset.java`:** Add these getters to the abstract base class:
-```java
-public DatasetStatus getStatus() { return status; }
-public LocalDate getImportDate() { return importDate; }
-```
-
----
-
-### NEW-04 — `AnomalyDetectionEngine` Instantiated But Never Called
-**Severity:** HIGH  
+### ISSUE-A — UC11 (Generate Report) Is Never Triggered
+**Severity:** MEDIUM  
+**Rubric Impact:** Use Cases, Completeness  
 **File:** `src/aval/ui/controller/AppController.java`
 
 **Problem:**  
-`anomalyEngine` is declared as a field and instantiated in `initializeBackend()`, but is never called anywhere in `executePipeline()` or anywhere else. UC10 is therefore still non-functional at runtime despite the engine existing.
+`ReportService` is instantiated in `initializeBackend()` but `generateReconciliationReport()` is never called anywhere in the pipeline or the UI. The pipeline ends with `"PIPELINE PROCESSING COMPLETE. Pending Human Review."` — there is no "Generate Report" button and no auto-generation step. UC11's sequence diagram exists and the `ReportService` logic is fully written, but it is unreachable from the running application.
 
 **Fix:**  
-Wire it into the completion of the truncated `executePipeline()` (see NEW-02 fix above — the fix includes the `anomalyEngine.identifyAnomalies()` call).
+Add a "Generate Report" button to the UI, or call the report at the end of `executePipeline()` after the anomaly detection block. Minimum fix — add this inside the `Platform.runLater()` block after the anomaly detection:
+
+```java
+// UC11 — Generate Report
+log("5. Generating Reconciliation Report (UC11)...");
+try {
+    List<ReconciliationRecord> approvedRecords = new ArrayList<>(); // Records approved in this session
+    reportService.generateReconciliationReport(
+        approvedRecords,
+        new ArrayList<>(unmatchedLedgerList.getItems()),
+        new ArrayList<>(unmatchedBankList.getItems()),
+        "data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
+    );
+    log("   -> Report saved to: data/scenario_01_retail_ecommerce/reconciliation_report_output.csv");
+} catch (Exception ex) {
+    log("   -> Report generation failed: " + ex.getMessage());
+}
+```
+
+Or, for a better UX, add a standalone button that generates the report after the user finishes reviewing matches:
+```java
+Button generateReportBtn = new Button("Generate Report (UC11)");
+generateReportBtn.setOnAction(e -> {
+    try {
+        reportService.generateReconciliationReport(
+            new ArrayList<>(),
+            unmatchedLedgerList.getItems(),
+            unmatchedBankList.getItems(),
+            "data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
+        );
+        log("Report generated.");
+    } catch (Exception ex) { log("Report error: " + ex.getMessage()); }
+});
+```
 
 ---
 
-### NEW-05 — DataStore References Tables That Don't Exist in the Schema
-**Severity:** CRITICAL  
-**Files:** `src/aval/persistence/DataStore.java` + `db-init/01-init.sql`
+### ISSUE-B — Workspace Passed as `null` to `runMatching()`
+**Severity:** MEDIUM  
+**Rubric Impact:** Business Logic, Design–Code Consistency  
+**File:** `src/aval/ui/controller/AppController.java` — `executePipeline()`
 
 **Problem:**  
-The new DataStore methods issue SQL against three tables that are not defined in `db-init/01-init.sql`:
-- `client_organization` (DataStore uses this name; schema has no such table)
-- `reconciliation_workspace` (same — doesn't exist in SQL)
-- `financial_dataset` (same — doesn't exist in SQL)
-
-Every call to `saveClientOrganization()`, `saveReconciliationWorkspace()`, and `saveFinancialDataset()` will throw a `SQLException: relation does not exist` at runtime.
-
-**Fix — Append to `db-init/01-init.sql`:**
-```sql
--- 5. Client Organizations
-CREATE TABLE IF NOT EXISTS client_organization (
-    org_id UUID PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    contact_metadata TEXT
-);
-
--- 6. Reconciliation Workspaces
-CREATE TABLE IF NOT EXISTS reconciliation_workspace (
-    workspace_id UUID PRIMARY KEY,
-    org_id UUID REFERENCES client_organization(org_id),
-    status VARCHAR(30) DEFAULT 'OPEN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 7. Financial Datasets (tracks uploaded files)
-CREATE TABLE IF NOT EXISTS financial_dataset (
-    dataset_id UUID PRIMARY KEY,
-    workspace_id UUID REFERENCES reconciliation_workspace(workspace_id),
-    file_path TEXT,
-    source_type VARCHAR(30),
-    status VARCHAR(30),
-    import_date DATE
-);
-```
-**Note:** After adding these tables, you must recreate the Docker container for the init script to re-run:
-```bash
-docker compose down -v
-docker compose up -d
-```
-
----
-
-## PERSISTING ISSUES (unchanged from v1)
-
----
-
-### ISSUE-03 — UC9 `consolidateMultiSource()` Still a Stub
-**Severity:** HIGH  
-**File:** `src/aval/service/ReconciliationService.java`
-
-The method body is identical to v1 — returns an empty list with a comment. No change was made.
-
-**Fix:** (same as v1 — iterate dataset pairs through `matchingEngine.generateHypotheses()`)
+UC1 now correctly creates and persists a `ReconciliationWorkspace` object, but it is a local variable and never passed downstream. `runMatching()` is called with `null`:
 ```java
-public List<MatchHypothesis> consolidateMultiSource(
-    ReconciliationWorkspace workspace,
-    List<List<StandardizedTransaction>> multipleDatasets
-) {
-    List<MatchHypothesis> consolidated = new ArrayList<>();
-    if (multipleDatasets == null || multipleDatasets.size() < 2) return consolidated;
-    for (int i = 0; i < multipleDatasets.size() - 1; i++) {
-        for (int j = i + 1; j < multipleDatasets.size(); j++) {
-            consolidated.addAll(matchingEngine.generateHypotheses(
-                multipleDatasets.get(i), multipleDatasets.get(j)));
-        }
+List<MatchHypothesis> hypotheses = reconciliationService.runMatching(null, stdLedger, stdBank);
+//                                                                    ^^^^ should be `workspace`
+```
+The `ReconciliationService.runMatching()` signature accepts a workspace parameter specifically for this purpose, but it currently receives nothing useful.
+
+**Fix:**  
+Declare `workspace` before the thread so it's in scope, then pass it in:
+```java
+// Before the thread starts (or make it effectively final):
+final ReconciliationWorkspace workspace = new ReconciliationWorkspace(UUID.randomUUID(), client, new aval.domain.core.MatchingConfig());
+dataStore.saveReconciliationWorkspace(workspace);
+
+// Then inside the thread:
+List<MatchHypothesis> hypotheses = reconciliationService.runMatching(workspace, stdLedger, stdBank);
+```
+
+---
+
+### ISSUE-C — `saveRawTransactions()` Has Real SQL But Is Never Called
+**Severity:** MEDIUM  
+**Rubric Impact:** Database (CRUD completeness — raw transactions are never persisted)  
+**Files:** `src/aval/persistence/DataStore.java`, `src/aval/service/IngestionService.java`
+
+**Problem:**  
+`DataStore.saveRawTransactions()` was implemented this pull with a real SQL batch INSERT into the `raw_transactions` table. However, `IngestionService.ingestFile()` never calls it. The raw transactions are parsed into memory and the `FinancialDataset` is saved, but the individual raw transaction rows never reach the database.
+
+**Fix:**  
+In `IngestionService.ingestFile()`, after parsing, add:
+```java
+public FinancialDataset ingestFile(String filePath, DataSourceType sourceType) {
+    DocumentParser<? extends FinancialDataset> parser = createParser(sourceType);
+    if (parser.validate(filePath)) {
+        FinancialDataset dataset = parser.parse(filePath);
+        this.dataStore.saveFinancialDataset(dataset);
+        this.dataStore.saveRawTransactions(dataset.getRawTransactions()); // Add this line
+        return dataset;
     }
-    dataStore.saveMatchHypotheses(consolidated);
-    return consolidated;
+    return null;
 }
 ```
 
 ---
 
-### ISSUE-07 — `RawInternalLedger.getSourceType()` Returns Wrong Enum Value
-**Severity:** HIGH (silent pipeline bug)  
-**File:** `src/aval/domain/ingestion/RawInternalLedger.java` line 32
+### ISSUE-D — `saveFinancialDataset()` Always Sets `workspace_id` to `null`
+**Severity:** LOW-MEDIUM  
+**Rubric Impact:** Database integrity  
+**File:** `src/aval/persistence/DataStore.java` — `saveFinancialDataset()`
 
-Still returns `DataSourceType.INTERNAL_CSV`. `INTERNAL_CSV` does not exist in the `DataSourceType` enum (`INTERNAL_EXCEL` and `EXTERNAL_PDF` are the only values). This is a compile error waiting to happen, and it already silently breaks the standardization branch in `IngestionService` which checks `== DataSourceType.INTERNAL_EXCEL`.
+**Problem:**  
+```java
+pstmt.setObject(2, null);  // workspace_id is always null
+```
+The `financial_dataset` table has `workspace_id UUID REFERENCES reconciliation_workspace(workspace_id)`, but it is always inserted as `null`. Datasets are never linked to their workspace in the database, breaking the relational integrity the schema was designed for.
+
+**Fix:**  
+Pass the workspace ID into the save call. Either add it as a parameter, or overload the method:
+```java
+public void saveFinancialDataset(FinancialDataset dataset, UUID workspaceId) {
+    String sql = "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) VALUES (?, ?, ?, ?, ?, ?)";
+    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        pstmt.setObject(1, dataset.getDatasetId());
+        pstmt.setObject(2, workspaceId);  // Pass actual workspace ID
+        // ... rest unchanged
+    }
+}
+```
+Then in `AppController.executePipeline()`:
+```java
+dataStore.saveFinancialDataset(ledgerDataset, workspace.getWorkspaceId());
+dataStore.saveFinancialDataset(bankDataset, workspace.getWorkspaceId());
+```
+
+---
+
+### ISSUE-E — UC12 (Transaction History) Has No UI View
+**Severity:** LOW  
+**Rubric Impact:** Use Cases, Completeness  
+**Files:** `src/aval/ui/controller/AppController.java`
+
+**Problem:**  
+UC12 (Create and Maintain Verified Transaction History) has a sequence diagram in the documentation. Records are saved to `reconciliation_records` in the DB when approved, which is the "maintain" side. However, there is no way for the user to *view* the history — no table, no screen, no query. The "Create" side is done; the "View/Maintain" side is absent.
+
+**Fix:**  
+Add a "View History" button that queries the DB and displays past reconciliation records. Minimum viable version — add a button to the UI that calls a new DataStore method:
+```java
+// In DataStore.java
+public List<String> getReconciliationHistory() {
+    List<String> results = new ArrayList<>();
+    String sql = "SELECT rr.record_id, rr.reconciled_at, mh.confidence_score, mh.match_type " +
+                 "FROM reconciliation_records rr JOIN match_hypotheses mh ON rr.hypothesis_id = mh.hypothesis_id " +
+                 "ORDER BY rr.reconciled_at DESC LIMIT 50";
+    try (PreparedStatement pstmt = connection.prepareStatement(sql);
+         ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+            results.add(String.format("[%s] Type: %s | Confidence: %.2f",
+                rs.getTimestamp("reconciled_at"), rs.getString("match_type"), rs.getDouble("confidence_score")));
+        }
+    } catch (SQLException e) { e.printStackTrace(); }
+    return results;
+}
+```
+
+---
+
+### ISSUE-F — Three Unused Imports in AppController
+**Severity:** LOW  
+**Rubric Impact:** Code quality  
+**File:** `src/aval/ui/controller/AppController.java`
+
+**Problem:**  
+Three imports are declared but never used, which generates compiler warnings:
+```java
+import aval.engine.RuleBasedMatchingEngine;              // Never instantiated
+import javafx.scene.control.cell.PropertyValueFactory;   // Not used (lambda factories used instead)
+import javafx.stage.Stage;                               // Not used
+```
+
+**Fix:**  
+Remove those three import lines.
+
+---
+
+### ISSUE-G — `consolidateMultiSource()` Missing Null Check
+**Severity:** LOW  
+**Rubric Impact:** Business Logic robustness  
+**File:** `src/aval/service/ReconciliationService.java`
+
+**Problem:**  
+The UC9 implementation checks `multipleDatasets.size() < 2` but will throw a `NullPointerException` if `null` is passed in:
+```java
+if (multipleDatasets.size() < 2) return consolidated;  // NPE if multipleDatasets is null
+```
 
 **Fix (1 line):**
 ```java
-// Change:
-return DataSourceType.INTERNAL_CSV;
-// To:
-return DataSourceType.INTERNAL_EXCEL;
+if (multipleDatasets == null || multipleDatasets.size() < 2) return consolidated;
 ```
 
 ---
 
-### ISSUE-08 — UC1 Not Wired Into Pipeline
-**Severity:** MEDIUM  
-**File:** `src/aval/ui/controller/AppController.java`
+## FINAL CHECKLIST
 
-`executePipeline()` still goes straight to ingestion with no `ClientOrganization` or `ReconciliationWorkspace` being created or persisted. The `reconciliationService.runMatching()` call still passes `null` as the workspace parameter.
-
-**Fix:** Add at the top of `executePipeline()` before ingestion:
-```java
-log("0. Initializing Workspace (UC1)...");
-aval.domain.core.ClientOrganization client = new aval.domain.core.ClientOrganization(
-    UUID.randomUUID(), "Brightline Retail", "scenario_01@brightline.com");
-dataStore.saveClientOrganization(client);
-aval.domain.core.MatchingConfig config = new aval.domain.core.MatchingConfig();
-aval.domain.core.ReconciliationWorkspace workspace = new aval.domain.core.ReconciliationWorkspace(
-    UUID.randomUUID(), client, config);
-dataStore.saveReconciliationWorkspace(workspace);
-log("   -> Workspace ready.");
 ```
-Then pass `workspace` instead of `null` into `reconciliationService.runMatching(workspace, stdLedger, stdBank)`.
-
----
-
-### ISSUE-09 — `rejectHypothesis()` Does Not Persist Rejection to DB
-**Severity:** MEDIUM  
-**File:** `src/aval/service/ReconciliationService.java`
-
-Identical to v1. Status is updated in memory only, with the comment still present:  
-`// For this prototype, we assume hypothesis state is tracked in the session/DB.`
-
-**Fix:** Add `updateHypothesisStatus()` to DataStore and call it:
-```java
-// In DataStore.java
-public void updateHypothesisStatus(MatchHypothesis hypothesis) {
-    String sql = "UPDATE match_hypotheses SET status = ?, justification = ? WHERE hypothesis_id = ?";
-    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-        pstmt.setString(1, hypothesis.getStatus().name());
-        pstmt.setString(2, hypothesis.getJustification());
-        pstmt.setObject(3, hypothesis.getHypothesisId());
-        pstmt.executeUpdate();
-    } catch (SQLException e) { e.printStackTrace(); }
-}
-
-// In ReconciliationService.java — rejectHypothesis():
-dataStore.updateHypothesisStatus(hypothesis);  // Add this line
+[ ] ISSUE-A  Add "Generate Report" button or auto-call reportService.generateReconciliationReport() in pipeline (UC11)
+[ ] ISSUE-B  Pass `workspace` object instead of `null` into reconciliationService.runMatching()
+[ ] ISSUE-C  Call dataStore.saveRawTransactions() in IngestionService.ingestFile() after parsing
+[ ] ISSUE-D  Pass workspace_id into saveFinancialDataset() instead of null
+[ ] ISSUE-E  Add a "View History" button / query to show reconciliation_records (UC12)
+[ ] ISSUE-F  Remove 3 unused imports in AppController (RuleBasedMatchingEngine, PropertyValueFactory, Stage)
+[ ] ISSUE-G  Add null check to consolidateMultiSource() before .size() call
 ```
 
 ---
 
-### ISSUE-10 — Silent Failure When Docker/DB is Unavailable
-**Severity:** MEDIUM  
-**File:** `src/aval/ui/controller/AppController.java` — `initializeBackend()`
+## UPDATED SCORE ESTIMATE
 
-Unchanged. Services remain `null` on DB failure and the user gets no feedback. Clicking "Run" will throw a `NullPointerException`.
+| Rubric Category | v1 | v2 | v3 | Notes |
+|---|---|---|---|---|
+| User Interface | 4–7 | 7 | **7–10** | Full multi-section UI, hypothesis table, approve/reject, manual override, validation, error alerts |
+| Business Logic | 11 | 4–11* | **11–15** | Compiles, pipeline runs end-to-end; UC11 not auto-triggered drops it from 15 |
+| OOP Principles | 11–15 | 3–15* | **15** | All interfaces, inheritance, polymorphism, encapsulation now correct |
+| Database | 7 | 4–7* | **7–10** | 9 tables, real CRUD; workspace_id null and raw_tx not saved prevent full 10 |
+| Architecture & Integration | 7–10 | 7–10 | **10** | Clean 3-layer separation, all integrated and functioning |
+| Use Cases | 7 | 7 | **7–10** | UC1–UC10 implemented; UC11 not triggered, UC12 no history view |
+| Design–Code Consistency | 7 | 7 | **7–10** | Near-complete mapping; UC11/UC12 gaps remain |
+| Design Patterns | 7–10 | 7–10 | **10** | All GRASP + GoF patterns correctly applied |
+| Documentation | 7–10 | 7–10 | **7–10** | Unchanged, still comprehensive |
+| **TOTAL** | ~68–83 | ~40–83* | **~81–90** | |
 
-**Fix:** Show an error `Alert` in the catch block and disable the run button (see v1 fix code).
-
----
-
-### ISSUE-11 — No Input Validation in the UI
-**Severity:** MEDIUM  
-**File:** `src/aval/ui/controller/AppController.java`
-
-Unchanged. No file validation before running the pipeline.
-
-**Fix:** Add `validateInputs()` method and call it at the top of `executePipeline()` (see v1 fix code).
-
----
-
-### ISSUE-12 — `SemanticMatchingEngine` Uses Fake Rank-Based Confidence Scores
-**Severity:** MEDIUM  
-**File:** `src/aval/engine/SemanticMatchingEngine.java`
-
-Unchanged. Confidence is `0.85 - (rank * 0.05)`, not actual cosine similarity from pgvector.
-
-**Fix:** Modify `DataStore.findSimilarBankTransactions()` to return the cosine similarity score alongside each result and use it as the confidence value (see v1 for full SQL change).
+*v2 range was wide due to compile-blocking issues. Those are now resolved.*
 
 ---
 
-### ISSUE-13 — `PDFBankStatementParser.extractRawRows()` Returns Empty List
-**Severity:** LOW  
-**File:** `src/aval/parser/PDFBankStatementParser.java`
+## BOTTOM LINE
 
-Unchanged. Violates the `DocumentParser<T>` interface contract.
-
-**Fix:** (see v1 fix code — reuse the PDF text parsing logic)
+The project is in **submittable condition**. It compiles, the pipeline runs, all major use cases have business logic, the database schema is complete, and OOP patterns are well applied throughout. The 7 remaining issues are all medium-to-low severity polish items. Fixing ISSUE-A (UC11 report button) and ISSUE-B (passing workspace) should be the priority — those have the most direct rubric impact. The rest are correctness details that won't swing the grade significantly but are worth a quick fix.
 
 ---
 
-### ISSUE-15 — `MatchingConfig` Thresholds Are Dead Code
-**Severity:** LOW  
-**File:** `src/aval/ui/controller/AppController.java`
-
-Unchanged. The hard-coded `0.8` threshold is still used instead of `config.getAutoConfirmThreshold()`. Note: with the AppController truncation, the auto-approve loop from v1 is missing entirely. The new UI instead uses manual approve/reject buttons, which actually makes this less critical — but `MatchingConfig` is still never referenced.
-
----
-
-### ISSUE-16 — Missing `toString()` on `MatchHypothesis` and `ReconciliationRecord`
-**Severity:** LOW  
-**Files:** `src/aval/domain/ai/MatchHypothesis.java`, `src/aval/domain/ai/ReconciliationRecord.java`
-
-Unchanged. This matters more now that hypotheses are displayed in a `ListView` and `TableView` — any list cell not using a custom factory will fall back to the object's `toString()`.
-
----
-
-### ISSUE-18 — No Named Volume for PostgreSQL Data in `compose.yml`
-**Severity:** LOW  
-**File:** `compose.yml`
-
-Unchanged.
-
----
-
-## ORDERED FIX CHECKLIST (updated)
-
-Work strictly top to bottom — the compile errors (NEW-01, NEW-02, NEW-03) must be fixed before anything else will run.
-
-```
-[ ] NEW-01   Complete truncated DataStore.java — close saveFinancialDataset(), restore missing methods (saveRawTransactions, saveStandardizedTransactions, saveMatchHypotheses, saveReconciliationRecords, findSystemUserById)
-[ ] NEW-02   Complete truncated AppController.java — close the lambda, add anomaly call, add report call, add catch/finally, restore log() and getView() methods
-[ ] NEW-03   Add getters to ClientOrganization, ReconciliationWorkspace, and FinancialDataset (getStatus, getImportDate)
-[ ] NEW-05   Add 3 missing tables to db-init/01-init.sql, then docker compose down -v && up -d
-[ ] ISSUE-07 Fix RawInternalLedger.getSourceType() → INTERNAL_EXCEL (1 line)
-[ ] NEW-04   Confirm anomalyEngine.identifyAnomalies() is wired into executePipeline() (handled by NEW-02 fix)
-[ ] ISSUE-03 Implement consolidateMultiSource() in ReconciliationService
-[ ] ISSUE-08 Wire UC1 (ClientOrganization + Workspace creation) into executePipeline()
-[ ] ISSUE-09 Persist hypothesis rejection: add updateHypothesisStatus() to DataStore, call it in rejectHypothesis()
-[ ] ISSUE-10 Show error Alert on DB connection failure in initializeBackend()
-[ ] ISSUE-11 Add input validation before running pipeline
-[ ] ISSUE-13 Implement extractRawRows() in PDFBankStatementParser
-[ ] ISSUE-12 Return actual cosine similarity from DataStore and use in SemanticMatchingEngine
-[ ] ISSUE-16 Add toString() to MatchHypothesis and ReconciliationRecord
-[ ] ISSUE-18 Add named volume to compose.yml
-```
-
----
-
-## FILES REQUIRING CHANGES (updated)
-
-| File | Issues | Priority |
-|---|---|---|
-| `src/aval/persistence/DataStore.java` | NEW-01, NEW-03, ISSUE-09, ISSUE-12 | 🔴 CRITICAL |
-| `src/aval/ui/controller/AppController.java` | NEW-02, NEW-04, ISSUE-08, ISSUE-10, ISSUE-11 | 🔴 CRITICAL |
-| `src/aval/domain/core/ClientOrganization.java` | NEW-03 | 🔴 CRITICAL |
-| `src/aval/domain/core/ReconciliationWorkspace.java` | NEW-03 | 🔴 CRITICAL |
-| `src/aval/domain/ingestion/FinancialDataset.java` | NEW-03 | 🔴 CRITICAL |
-| `db-init/01-init.sql` | NEW-05 | 🔴 CRITICAL |
-| `src/aval/domain/ingestion/RawInternalLedger.java` | ISSUE-07 | 🟠 HIGH |
-| `src/aval/service/ReconciliationService.java` | ISSUE-03, ISSUE-09 | 🟠 HIGH |
-| `src/aval/engine/SemanticMatchingEngine.java` | ISSUE-12 | 🟡 MEDIUM |
-| `src/aval/parser/PDFBankStatementParser.java` | ISSUE-13 | 🟡 MEDIUM |
-| `src/aval/domain/ai/MatchHypothesis.java` | ISSUE-16 | 🟢 LOW |
-| `src/aval/domain/ai/ReconciliationRecord.java` | ISSUE-16 | 🟢 LOW |
-| `compose.yml` | ISSUE-18 | 🟢 LOW |
-
----
-
-## SCORE IMPACT SUMMARY
-
-| Rubric Category | v1 Estimate | v2 Estimate | Change |
-|---|---|---|---|
-| User Interface | 4–7 | 7 | ↑ AppController now has multi-section UI with hypothesis table and manual override |
-| Business Logic | 11 | 4–11* | ↓ Will not compile in current state; if fixed, back to ~11 |
-| OOP Principles | 11–15 | 3–15* | ↓ Missing getters are a compile-breaking encapsulation failure |
-| Database | 7 | 4–7* | ↓ New tables referenced but not defined; truncated DataStore |
-| Architecture & Integration | 7–10 | 7–10 | → Unchanged |
-| Use Cases | 7 | 7 | → UC10 engine exists but not wired; UC9 still stub |
-| Design–Code Consistency | 7 | 7 | → Unchanged |
-| Design Patterns | 7–10 | 7–10 | → Unchanged |
-| Documentation | 7–10 | 7–10 | → Unchanged |
-
-*\* These scores collapse to the low end if the truncation and compile errors are not fixed before submission. A program that does not compile scores 3/15 on Business Logic and 3/15 on OOP by the rubric's "Poor" tier.*
-
----
-
-*End of Audit Report v2. Total open issues: 15 (5 Critical, 3 High, 4 Medium, 3 Low). The truncated files are the most urgent — fix those first or nothing runs.*
+*End of Audit Report v3. Open issues: 7 (0 Critical, 0 High, 3 Medium, 4 Low).*
