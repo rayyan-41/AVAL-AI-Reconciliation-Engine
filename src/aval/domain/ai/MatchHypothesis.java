@@ -30,7 +30,7 @@ public class MatchHypothesis {
         this.bankTransaction = bankTransaction;
         this.confidenceScore = confidenceScore;
         this.matchType = matchType;
-        this.status = HypothesisStatus.PENDING;
+        this.status = HypothesisStatus.PENDING_REVIEW;
     }
 
     public UUID getHypothesisId() {

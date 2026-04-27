@@ -16,6 +16,9 @@ import javafx.util.Duration;
 /**
  * Main entry point for the AVAL AI Reconciliation Engine.
  */
+//@desc:   Main entry point that bootstraps the JavaFX application and manages the splash screen.
+//@grasp:  Controller
+//@gof:    N/A
 public class Main extends Application {
 
     private PauseTransition transitionDelay;

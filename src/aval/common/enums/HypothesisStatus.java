@@ -6,7 +6,8 @@ package aval.common.enums;
 //@grasp:  Information Expert
 //@gof:    N/A
 public enum HypothesisStatus {
-    PENDING,
+    AUTO_RECONCILED,
+    PENDING_REVIEW,
     APPROVED,
     REJECTED,
 }

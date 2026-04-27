@@ -179,20 +179,27 @@ public class AppController {
         Button generateReportBtn = new Button("Generate Report (UC11)");
         generateReportBtn.setOnAction(e -> {
             try {
+                List<String> currentAnomalies = anomalyEngine.identifyAnomalies(
+                    unmatchedLedgerList.getItems(),
+                    unmatchedBankList.getItems()
+                );
                 reportService.generateReconciliationReport(
                     new ArrayList<>(),
                     new ArrayList<>(unmatchedLedgerList.getItems()),
                     new ArrayList<>(unmatchedBankList.getItems()),
+                    new ArrayList<>(hypothesisData),
+                    currentAnomalies,
                     "data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
                 );
                 log(
                     "Report generated to data/scenario_01_retail_ecommerce/reconciliation_report_output.csv"
                 );
+            } catch (aval.service.ReportService.UnresolvedItemsException ex) {
+                showValidationError("Blocking Error", ex.getMessage());
             } catch (Exception ex) {
                 log("Report error: " + ex.getMessage());
             }
         });
-
         Button viewHistoryBtn = new Button("View History (UC12)");
         viewHistoryBtn.setOnAction(e -> {
             List<String> history = dataStore.getReconciliationHistory();
@@ -440,10 +447,12 @@ public class AppController {
 
                 log("1. Ingesting Data...");
                 FinancialDataset ledgerDataset = ingestionService.ingestFile(
+                    workspace.getWorkspaceId(),
                     ledgerPath,
                     DataSourceType.INTERNAL_EXCEL
                 );
                 FinancialDataset bankDataset = ingestionService.ingestFile(
+                    workspace.getWorkspaceId(),
                     bankPath,
                     DataSourceType.EXTERNAL_PDF
                 );
@@ -473,7 +482,15 @@ public class AppController {
                     );
 
                 Platform.runLater(() -> {
-                    hypothesisData.addAll(hypotheses);
+                    List<MatchHypothesis> reviewQueue = hypotheses
+                        .stream()
+                        .filter(
+                            h ->
+                                h.getStatus() ==
+                                aval.common.enums.HypothesisStatus.PENDING_REVIEW
+                        )
+                        .collect(Collectors.toList());
+                    hypothesisData.addAll(reviewQueue);
 
                     // Identify unmatched for manual override
                     List<StandardizedTransaction> matchedLedger = hypotheses
