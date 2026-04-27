@@ -39,7 +39,7 @@ public class IngestionService {
 
         if (parser.validate(filePath)) {
             FinancialDataset dataset = parser.parse(filePath);
-            this.dataStore.saveFinancialDataset(workspaceId, dataset);
+            this.dataStore.saveFinancialDataset(dataset, workspaceId);
             this.dataStore.saveRawTransactions(dataset.getRawTransactions());
             return dataset;
         }

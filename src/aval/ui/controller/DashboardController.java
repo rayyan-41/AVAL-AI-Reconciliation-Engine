@@ -31,7 +31,8 @@ public class DashboardController {
 
     @FXML
     private void showIngestion() {
-        contentArea.getChildren().setAll(ingestionPortal);
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(ingestionPortal);
         System.out.println("Navigating to Ingestion...");
     }
 
