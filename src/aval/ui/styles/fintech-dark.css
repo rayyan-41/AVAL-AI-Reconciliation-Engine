@@ -70,3 +70,28 @@
     -fx-background-color: -fx-accent-red;
     -fx-background-insets: 0;
 }
+
+/* Authentication Gate Styles */
+.login-card {
+    -fx-background-color: -fx-secondary-bg;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 20, 0, 0, 10);
+    -fx-background-radius: 8px;
+    -fx-padding: 40px;
+}
+
+.underlined-field {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border-color;
+    -fx-border-width: 0 0 1 0;
+    -fx-text-fill: -fx-text-base;
+    -fx-prompt-text-fill: -fx-text-muted;
+}
+
+.underlined-field:focused {
+    -fx-border-color: -fx-accent-red;
+    -fx-effect: dropshadow(three-pass-box, -fx-accent-red, 4, 0, 0, 1);
+}
+
+.wide-button {
+    -fx-padding: 10 20 10 20;
+}
