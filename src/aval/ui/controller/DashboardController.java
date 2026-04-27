@@ -9,10 +9,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class DashboardController {
@@ -24,12 +24,14 @@ public class DashboardController {
     private StackPane contentArea;
 
     @FXML
+    private FlowPane clientCardsArea;
+
+    @FXML
     private VBox ingestionPortal; // We need to wrap existing content in an ID
 
     @FXML
     private void showIngestion() {
-        // Since Ingestion is the default, we could just reload or toggle visibility
-        // For simplicity in this shell, we'll just reload the content
+        contentArea.getChildren().setAll(ingestionPortal);
         System.out.println("Navigating to Ingestion...");
     }
 
@@ -92,7 +94,7 @@ public class DashboardController {
             Label nameLabel = new Label(client.getName());
             nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-            Label statusLabel = new Label(client.getContactInfo());
+            Label statusLabel = new Label(client.getContactMetadata());
             statusLabel.getStyleClass().add("text-muted");
             statusLabel.setStyle("-fx-font-size: 11px;");
 
