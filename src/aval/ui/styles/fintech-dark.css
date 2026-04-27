@@ -187,3 +187,27 @@
     -fx-background-radius: 20px;
     -fx-font-weight: bold;
 }
+
+/* Audit & Insights Vault */
+.kpi-card {
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 20px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.export-button {
+    -fx-background-color: -fx-accent-red;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20 10 20;
+}
+
+.anomaly-row {
+    -fx-background-color: #3a1010;
+}
+
+.anomaly-row:odd {
+    -fx-background-color: #4a1515;
+}

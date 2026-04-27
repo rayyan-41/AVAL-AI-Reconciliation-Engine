@@ -59,6 +59,19 @@ public class DashboardController {
         }
     }
 
+    @FXML
+    private void showAudit() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/AuditVault.fxml")
+            );
+            Parent auditView = loader.load();
+            contentArea.getChildren().setAll(auditView);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void initialize() {
         loadClientCards();
 

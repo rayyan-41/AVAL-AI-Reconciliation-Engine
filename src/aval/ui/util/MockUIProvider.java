@@ -106,4 +106,33 @@ public class MockUIProvider {
         }
         return hypotheses;
     }
+
+    public static List<MatchHypothesis> getMockAnomalies(int count) {
+        List<MatchHypothesis> anomalies = new ArrayList<>();
+        List<StandardizedTransaction> ledgerBatch = getMockTransactions(count);
+        List<StandardizedTransaction> bankBatch = getMockTransactions(count);
+
+        for (int i = 0; i < count; i++) {
+            double confidence = 0.3 + (0.4 * random.nextDouble());
+            MatchHypothesis hypothesis = new MatchHypothesis(
+                ledgerBatch.get(i),
+                bankBatch.get(i),
+                confidence,
+                MatchType.AI_PROBABILISTIC
+            );
+
+            if (i % 3 == 0) {
+                hypothesis.setJustification(
+                    "CRITICAL: Amount Mismatch detected (> $500 variance)"
+                );
+            } else {
+                hypothesis.setJustification(
+                    "Fuzzy match: Timing variance > 48 hours."
+                );
+            }
+
+            anomalies.add(hypothesis);
+        }
+        return anomalies;
+    }
 }

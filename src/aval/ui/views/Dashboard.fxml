@@ -23,7 +23,7 @@
             <Button maxWidth="Infinity" onAction="#showIngestion" styleClass="sidebar-button" text="Ingestion" />
             <Button maxWidth="Infinity" onAction="#showAILab" styleClass="sidebar-button" text="AI Lab" />
             <Button maxWidth="Infinity" onAction="#showReconciliation" styleClass="sidebar-button" text="Reconciliation" />
-            <Button maxWidth="Infinity" styleClass="sidebar-button" text="Audit" />
+            <Button maxWidth="Infinity" onAction="#showAudit" styleClass="sidebar-button" text="Audit" />
         </VBox>
     </left>
 
