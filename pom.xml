@@ -74,16 +74,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src</sourceDirectory>
-        <resources>
-            <resource>
-                <directory>src</directory>
-                <includes>
-                    <include>**/*.fxml</include>
-                    <include>**/*.css</include>
-                </includes>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.openjfx</groupId>
