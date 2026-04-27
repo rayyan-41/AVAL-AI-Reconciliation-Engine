@@ -12,7 +12,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+
+//@desc:   Service responsible for generating final verified reconciliation reports (UC11).
+//@grasp:  Pure Fabrication, Controller
+//@gof:    N/A
 public class ReportService {
+
+    public static class UnresolvedItemsException extends Exception {
+
+        public UnresolvedItemsException(String message) {
+            super(message);
+        }
+    }
 
     private static final DateTimeFormatter DATE_FORMAT =
         DateTimeFormatter.ISO_LOCAL_DATE;
@@ -28,8 +39,19 @@ public class ReportService {
         List<ReconciliationRecord> reconciledRecords,
         List<StandardizedTransaction> unmatchedLedger,
         List<StandardizedTransaction> unmatchedBank,
+        List<aval.domain.ai.MatchHypothesis> pendingHypotheses,
+        List<String> unresolvedAnomalies,
         String outputFilePath
-    ) throws IOException {
+    ) throws IOException, UnresolvedItemsException {
+        if (
+            (pendingHypotheses != null && !pendingHypotheses.isEmpty()) ||
+            (unresolvedAnomalies != null && !unresolvedAnomalies.isEmpty())
+        ) {
+            throw new UnresolvedItemsException(
+                "Cannot Generate: Unresolved Items exist. Please resolve all pending hypotheses and anomalies before generating the report."
+            );
+        }
+
         // Ensure the parent directories exist
         Files.createDirectories(Paths.get(outputFilePath).getParent());
 

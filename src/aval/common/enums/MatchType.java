@@ -8,5 +8,5 @@ package aval.common.enums;
 public enum MatchType {
     EXACT_RULE,
     AI_PROBABILISTIC,
-    MANUAL_OVERRIDE,
+    FORCE_OVERRIDE,
 }

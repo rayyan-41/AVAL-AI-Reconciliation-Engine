@@ -42,6 +42,14 @@ public class ReconciliationRecord {
         return reconciledAt;
     }
 
+    public boolean isManualOverride() {
+        return (
+            hypothesis != null &&
+            hypothesis.getMatchType() ==
+            aval.common.enums.MatchType.FORCE_OVERRIDE
+        );
+    }
+
     @Override
     public String toString() {
         return String.format(

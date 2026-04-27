@@ -49,8 +49,38 @@ public class ReconciliationService {
             bankTransactions
         );
 
+        double threshold = workspace
+            .getMatchingConfig()
+            .getAutoConfirmThreshold();
+        List<MatchHypothesis> reviewQueue = new ArrayList<>();
+        List<ReconciliationRecord> autoRecords = new ArrayList<>();
+        SystemUser systemUser = new SystemUser(
+            java.util.UUID.randomUUID(),
+            "System (Auto-Reconcile)",
+            aval.common.enums.UserRole.ADMIN
+        );
+
+        for (MatchHypothesis hypothesis : candidates) {
+            if (hypothesis.getConfidenceScore() >= threshold) {
+                hypothesis.setStatus(HypothesisStatus.AUTO_RECONCILED);
+                hypothesis.setJustification(
+                    "Auto-reconciled: Score exceeds " + threshold
+                );
+                autoRecords.add(
+                    new ReconciliationRecord(hypothesis, systemUser)
+                );
+            } else {
+                hypothesis.setStatus(HypothesisStatus.PENDING_REVIEW);
+                reviewQueue.add(hypothesis);
+            }
+        }
+
         // 2. Persist suggested matches for human review
         dataStore.saveMatchHypotheses(candidates);
+
+        if (!autoRecords.isEmpty()) {
+            dataStore.saveReconciliationRecords(autoRecords);
+        }
 
         return candidates;
     }
@@ -115,7 +145,7 @@ public class ReconciliationService {
             ledgerTx,
             bankTx,
             1.0,
-            MatchType.MANUAL_OVERRIDE
+            MatchType.FORCE_OVERRIDE
         );
         manualHypothesis.setStatus(HypothesisStatus.APPROVED);
         manualHypothesis.setJustification("Manual override: " + justification);
