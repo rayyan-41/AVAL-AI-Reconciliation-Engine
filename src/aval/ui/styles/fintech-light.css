@@ -97,3 +97,52 @@
 .wide-button {
     -fx-padding: 10 20 10 20;
 }
+
+/* Dashboard Shell */
+.sidebar {
+    -fx-background-color: -fx-secondary-bg;
+    -fx-border-color: transparent -fx-border-color transparent transparent;
+}
+
+.sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-base;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 15 10 15;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: #e9ecef;
+}
+
+.top-bar {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent -fx-border-color transparent;
+}
+
+/* Ingestion Portal */
+.drop-zone {
+    -fx-border-color: #adb5bd;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.drop-zone:hover {
+    -fx-border-color: -fx-accent-red;
+}
+
+.client-card {
+    -fx-background-color: white;
+    -fx-border-color: -fx-border-color;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
+}
+
+.client-card:hover {
+    -fx-border-color: -fx-accent-red;
+}
