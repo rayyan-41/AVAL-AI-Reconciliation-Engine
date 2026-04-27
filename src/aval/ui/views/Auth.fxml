@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0"
+           styleClass="root"
+           xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="aval.ui.controller.AuthController">
+
+    <VBox alignment="CENTER" maxWidth="400.0" spacing="20.0" styleClass="login-card" StackPane.alignment="CENTER">
+        <Label style="-fx-font-size: 24px; -fx-font-weight: bold;" text="Secure Access" />
+        <Label style="-fx-text-fill: -fx-text-muted;" text="Enter your workspace credentials to continue." />
+
+        <VBox spacing="10.0">
+            <Label text="Workspace ID" />
+            <TextField fx:id="workspaceIdField" promptText="WS-XXXX-XXXX" styleClass="underlined-field" />
+        </VBox>
+
+        <VBox spacing="10.0">
+            <Label text="Passkey" />
+            <PasswordField fx:id="passkeyField" promptText="••••••••" styleClass="underlined-field" />
+        </VBox>
+
+        <Button fx:id="authButton" maxWidth="Infinity" onAction="#handleAuthenticate" prefHeight="45.0" styleClass="wide-button" text="Authenticate" />
+    </VBox>
+</StackPane>
