@@ -1,5 +1,7 @@
 package aval.ui.util;
 
+import aval.common.enums.MatchType;
+import aval.common.enums.TransactionType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;

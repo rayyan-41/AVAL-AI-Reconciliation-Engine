@@ -3,14 +3,17 @@ package aval.ui.controller;
 import aval.domain.core.ClientOrganization;
 import aval.ui.MainUIContext;
 import aval.ui.util.MockUIProvider;
+import java.io.IOException;
+import java.util.List;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
-
-import java.util.List;
 
 public class DashboardController {
 
@@ -18,10 +21,30 @@ public class DashboardController {
     private ToggleButton themeToggle;
 
     @FXML
-    private FlowPane clientCardsArea;
+    private StackPane contentArea;
 
     @FXML
-    private VBox dropZone;
+    private VBox ingestionPortal; // We need to wrap existing content in an ID
+
+    @FXML
+    private void showIngestion() {
+        // Since Ingestion is the default, we could just reload or toggle visibility
+        // For simplicity in this shell, we'll just reload the content
+        System.out.println("Navigating to Ingestion...");
+    }
+
+    @FXML
+    private void showAILab() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/AILab.fxml")
+            );
+            Parent aiLabView = loader.load();
+            contentArea.getChildren().setAll(aiLabView);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void initialize() {
         loadClientCards();
@@ -58,6 +81,8 @@ public class DashboardController {
         context.setDarkModeActive(themeToggle.isSelected());
         context.applyTheme(themeToggle.getScene());
 
-        themeToggle.setText(context.isDarkModeActive() ? "Light Mode" : "Dark Mode");
+        themeToggle.setText(
+            context.isDarkModeActive() ? "Light Mode" : "Dark Mode"
+        );
     }
 }

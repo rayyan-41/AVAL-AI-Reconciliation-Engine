@@ -146,3 +146,16 @@
 .client-card:hover {
     -fx-border-color: -fx-accent-red;
 }
+
+/* AI Processing Lab */
+.ai-list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border-color;
+    -fx-background-insets: 0;
+}
+
+.ai-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #f1f3f5 transparent;
+    -fx-padding: 12 15 12 15;
+}
