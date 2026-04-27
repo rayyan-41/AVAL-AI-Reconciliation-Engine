@@ -29,6 +29,7 @@ public class IngestionService {
     }
 
     public FinancialDataset ingestFile(
+        java.util.UUID workspaceId,
         String filePath,
         DataSourceType sourceType
     ) {
@@ -38,7 +39,7 @@ public class IngestionService {
 
         if (parser.validate(filePath)) {
             FinancialDataset dataset = parser.parse(filePath);
-            this.dataStore.saveFinancialDataset(dataset);
+            this.dataStore.saveFinancialDataset(workspaceId, dataset);
             this.dataStore.saveRawTransactions(dataset.getRawTransactions());
             return dataset;
         }

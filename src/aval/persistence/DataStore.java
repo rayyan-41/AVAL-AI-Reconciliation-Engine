@@ -143,7 +143,7 @@ public class DataStore {
             pstmt.setString(2, org.getName());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save client organization '" + org.getName() + "': " + e.getMessage(), e);
         }
     }
 
@@ -181,7 +181,7 @@ public class DataStore {
             pstmt.setString(3, workspace.getStatus().name());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save reconciliation workspace: " + e.getMessage(), e);
         }
     }
 
@@ -228,7 +228,7 @@ public class DataStore {
             pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save financial dataset '" + dataset.getFilePath() + "': " + e.getMessage(), e);
         }
     }
 
@@ -247,7 +247,7 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save raw transactions: " + e.getMessage(), e);
         }
     }
 
@@ -290,7 +290,7 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save match hypotheses: " + e.getMessage(), e);
         }
     }
 
@@ -322,9 +322,83 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save reconciliation records: " + e.getMessage(), e);
         }
     }
+
+    // ── UPDATE ───────────────────────────────────────────────────────────────
+
+    /**
+     * UC7 / UC8 — Updates the status and justification of an existing match hypothesis.
+     * Called after a user approves, rejects, or force-reconciles a hypothesis.
+     */
+    public void updateHypothesisStatus(UUID hypothesisId,
+                                       aval.common.enums.HypothesisStatus status,
+                                       String justification) throws SQLException {
+        String sql = "UPDATE match_hypotheses SET status = ?, justification = ? WHERE hypothesis_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setString(2, justification);
+            pstmt.setObject(3, hypothesisId);
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("updateHypothesisStatus: no row found for hypothesis_id = " + hypothesisId);
+            }
+        }
+    }
+
+    /**
+     * UC1 — Updates the status of a reconciliation workspace (e.g. OPEN → COMPLETED).
+     */
+    public void updateWorkspaceStatus(UUID workspaceId,
+                                      aval.common.enums.WorkspaceStatus status) throws SQLException {
+        String sql = "UPDATE reconciliation_workspace SET status = ? WHERE workspace_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setObject(2, workspaceId);
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("updateWorkspaceStatus: no row found for workspace_id = " + workspaceId);
+            }
+        }
+    }
+
+    // ── DELETE ───────────────────────────────────────────────────────────────
+
+    /**
+     * Deletes all financial datasets belonging to a workspace, then deletes the workspace itself.
+     * Child datasets are removed first to respect foreign-key constraints.
+     */
+    public void deleteReconciliationWorkspace(UUID workspaceId) throws SQLException {
+        String deleteDatasets  = "DELETE FROM financial_dataset WHERE workspace_id = ?";
+        String deleteWorkspace = "DELETE FROM reconciliation_workspace WHERE workspace_id = ?";
+        try (PreparedStatement ds = connection.prepareStatement(deleteDatasets);
+             PreparedStatement ws = connection.prepareStatement(deleteWorkspace)) {
+            ds.setObject(1, workspaceId);
+            ds.executeUpdate();
+            ws.setObject(1, workspaceId);
+            int rows = ws.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("deleteReconciliationWorkspace: no workspace found for id = " + workspaceId);
+            }
+        }
+    }
+
+    /**
+     * Deletes a single financial dataset record by its ID.
+     */
+    public void deleteFinancialDataset(UUID datasetId) throws SQLException {
+        String sql = "DELETE FROM financial_dataset WHERE dataset_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setObject(1, datasetId);
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                throw new SQLException("deleteFinancialDataset: no dataset found for id = " + datasetId);
+            }
+        }
+    }
+
+    // ── HISTORY ──────────────────────────────────────────────────────────────
 
     public List<String> getReconciliationHistory() {
         List<String> results = new ArrayList<>();
