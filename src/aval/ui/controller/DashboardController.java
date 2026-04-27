@@ -46,6 +46,19 @@ public class DashboardController {
         }
     }
 
+    @FXML
+    private void showReconciliation() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/ReconciliationHub.fxml")
+            );
+            Parent reconView = loader.load();
+            contentArea.getChildren().setAll(reconView);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void initialize() {
         loadClientCards();
 

@@ -159,3 +159,34 @@
     -fx-border-color: transparent transparent #f1f3f5 transparent;
     -fx-padding: 12 15 12 15;
 }
+
+/* Reconciliation Workspace */
+.reconciliation-split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 10 0 0 0;
+}
+
+.floating-action-bar {
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 50px;
+    -fx-background-radius: 50px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 20, 0, 0, 10);
+}
+
+.approve-button {
+    -fx-background-color: #28a745;
+    -fx-text-fill: white;
+    -fx-background-radius: 20px;
+}
+
+.approve-button:hover {
+    -fx-background-color: #218838;
+}
+
+.reject-button {
+    -fx-background-color: -fx-accent-red;
+    -fx-text-fill: white;
+    -fx-background-radius: 20px;
+    -fx-font-weight: bold;
+}
