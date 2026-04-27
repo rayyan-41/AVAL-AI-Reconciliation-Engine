@@ -1,22 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<?xml version="1.0" encoding="UTF-8" ?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.geometry.Insets?>
-
-<VBox spacing="20.0" xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="aval.ui.controller.AILabController"
-      styleClass="root">
+<VBox
+    spacing="20.0"
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.AILabController"
+    styleClass="root"
+>
 
     <padding>
-        <Insets all="30.0" />
+        <Insets top="30.0" right="30.0" bottom="30.0" left="30.0" />
     </padding>
 
-    <Label style="-fx-font-size: 24px; -fx-font-weight: bold;" text="Semantic Vectorization Engine" />
-    <Label styleClass="text-muted" text="Real-time embedding generation and probabilistic index scanning." />
+    <Label
+        style="-fx-font-size: 24px; -fx-font-weight: bold;"
+        text="Semantic Vectorization Engine"
+    />
+    <Label
+        styleClass="text-muted"
+        text="Real-time embedding generation and probabilistic index scanning."
+    />
 
-    <ListView fx:id="vectorizationList" VBox.vgrow="ALWAYS" styleClass="ai-list-view" />
+    <ListView
+        fx:id="vectorizationList"
+        VBox.vgrow="ALWAYS"
+        styleClass="ai-list-view"
+    />
 
 </VBox>

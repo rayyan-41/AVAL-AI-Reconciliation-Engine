@@ -11,7 +11,7 @@
     -fx-accent-navy: #002366;
 
     /* Functional Colors */
-    -fx-border-color: #e0e0e0;
+    -fx-theme-border-color: #e0e0e0;
     -fx-control-inner-background: #ffffff;
 }
 
@@ -34,13 +34,14 @@
 
 .table-view {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-width: 1px;
 }
 
 .table-view .column-header {
     -fx-background-color: -fx-secondary-bg;
-    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-color: transparent transparent -fx-theme-border-color
+        transparent;
 }
 
 .table-view .cell {
@@ -83,7 +84,7 @@
 
 .underlined-field {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-width: 0 0 1 0;
     -fx-text-fill: -fx-text-base;
     -fx-prompt-text-fill: -fx-text-muted;
@@ -101,7 +102,8 @@
 /* Dashboard Shell */
 .sidebar {
     -fx-background-color: -fx-secondary-bg;
-    -fx-border-color: transparent -fx-border-color transparent transparent;
+    -fx-border-color: transparent -fx-theme-border-color transparent
+        transparent;
 }
 
 .sidebar-button {
@@ -117,7 +119,8 @@
 
 .top-bar {
     -fx-background-color: white;
-    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-color: transparent transparent -fx-theme-border-color
+        transparent;
 }
 
 /* Ingestion Portal */
@@ -137,7 +140,7 @@
 
 .client-card {
     -fx-background-color: white;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
@@ -150,7 +153,7 @@
 /* AI Processing Lab */
 .ai-list-view {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-background-insets: 0;
 }
 
@@ -195,7 +198,7 @@
 .kpi-card {
     -fx-background-color: white;
     -fx-padding: 20px;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 5);

@@ -27,7 +27,7 @@ public class DashboardController {
     private FlowPane clientCardsArea;
 
     @FXML
-    private VBox ingestionPortal; // We need to wrap existing content in an ID
+    private VBox ingestionPortal;
 
     @FXML
     private void showIngestion() {
@@ -37,39 +37,29 @@ public class DashboardController {
 
     @FXML
     private void showAILab() {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/aval/ui/views/AILab.fxml")
-            );
-            Parent aiLabView = loader.load();
-            contentArea.getChildren().setAll(aiLabView);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        loadView("/aval/ui/views/AILab.fxml");
     }
 
     @FXML
     private void showReconciliation() {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/aval/ui/views/ReconciliationHub.fxml")
-            );
-            Parent reconView = loader.load();
-            contentArea.getChildren().setAll(reconView);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        loadView("/aval/ui/views/ReconciliationHub.fxml");
     }
 
     @FXML
     private void showAudit() {
+        loadView("/aval/ui/views/AuditVault.fxml");
+    }
+
+    private void loadView(String fxmlPath) {
         try {
+            System.out.println("[DASHBOARD] Loading view: " + fxmlPath);
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/aval/ui/views/AuditVault.fxml")
+                getClass().getResource(fxmlPath)
             );
-            Parent auditView = loader.load();
-            contentArea.getChildren().setAll(auditView);
+            Parent view = loader.load();
+            contentArea.getChildren().setAll(view);
         } catch (IOException e) {
+            System.err.println("[DASHBOARD] Failed to load view: " + fxmlPath);
             e.printStackTrace();
         }
     }
@@ -120,7 +110,6 @@ public class DashboardController {
         MainUIContext context = MainUIContext.getInstance();
         context.setDarkModeActive(themeToggle.isSelected());
         context.applyTheme(themeToggle.getScene());
-
         themeToggle.setText(
             context.isDarkModeActive() ? "Light Mode" : "Dark Mode"
         );

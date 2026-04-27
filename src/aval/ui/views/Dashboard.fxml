@@ -73,7 +73,7 @@
     <center>
         <StackPane fx:id="contentArea">
             <padding>
-                <Insets all="40.0" />
+                <Insets top="40.0" right="40.0" bottom="40.0" left="40.0" />
             </padding>
             <VBox fx:id="ingestionPortal" spacing="30.0">
                 <Label

@@ -11,7 +11,7 @@
     -fx-accent-navy: #1a237e;
 
     /* Functional Colors */
-    -fx-border-color: #333333;
+    -fx-theme-border-color: #333333;
     -fx-control-inner-background: #1e1e1e;
 }
 
@@ -34,13 +34,14 @@
 
 .table-view {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-width: 1px;
 }
 
 .table-view .column-header {
     -fx-background-color: -fx-secondary-bg;
-    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-color: transparent transparent -fx-theme-border-color
+        transparent;
 }
 
 .table-view .cell {
@@ -81,7 +82,7 @@
 
 .underlined-field {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border-color;
+    -fx-border-color: -fx-theme-border-color;
     -fx-border-width: 0 0 1 0;
     -fx-text-fill: -fx-text-base;
     -fx-prompt-text-fill: -fx-text-muted;
@@ -99,7 +100,8 @@
 /* Dashboard Shell */
 .sidebar {
     -fx-background-color: #0a0a0a;
-    -fx-border-color: transparent -fx-border-color transparent transparent;
+    -fx-border-color: transparent -fx-theme-border-color transparent
+        transparent;
 }
 
 .sidebar-button {
@@ -115,7 +117,8 @@
 
 .top-bar {
     -fx-background-color: -fx-background;
-    -fx-border-color: transparent transparent -fx-border-color transparent;
+    -fx-border-color: transparent transparent -fx-theme-border-color
+        transparent;
 }
 
 /* Ingestion Portal */

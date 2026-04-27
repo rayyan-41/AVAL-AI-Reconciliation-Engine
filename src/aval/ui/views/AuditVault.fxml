@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<?xml version="1.0" encoding="UTF-8" ?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
@@ -8,18 +7,29 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.geometry.Insets?>
+<AnchorPane
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.AuditController"
+    styleClass="root"
+>
 
-<AnchorPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="aval.ui.controller.AuditController"
-            styleClass="root">
-
-    <VBox AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" spacing="30.0">
+    <VBox
+        AnchorPane.topAnchor="0.0"
+        AnchorPane.bottomAnchor="0.0"
+        AnchorPane.leftAnchor="0.0"
+        AnchorPane.rightAnchor="0.0"
+        spacing="30.0"
+    >
         <padding>
-            <Insets all="30.0" />
+            <Insets top="30.0" right="30.0" bottom="30.0" left="30.0" />
         </padding>
 
         <HBox alignment="CENTER_LEFT">
-            <Label style="-fx-font-size: 28px; -fx-font-weight: bold;" text="Audit &amp; Insights Vault" />
+            <Label
+                style="-fx-font-size: 28px; -fx-font-weight: bold;"
+                text="Audit &amp; Insights Vault"
+            />
             <HBox HBox.hgrow="ALWAYS" />
             <Button styleClass="export-button" text="Export Verified Report" />
         </HBox>
@@ -27,26 +37,50 @@
         <HBox spacing="20.0" alignment="CENTER">
             <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
                 <Label text="Total Reconciled" styleClass="text-muted" />
-                <Label text="$4.2M" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+                <Label
+                    text="\$4.2M"
+                    style="-fx-font-size: 24px; -fx-font-weight: bold;"
+                />
             </VBox>
             <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
                 <Label text="Pending Anomalies" styleClass="text-muted" />
-                <Label text="14" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -fx-accent-red;" />
+                <Label
+                    text="14"
+                    style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -fx-accent-red;"
+                />
             </VBox>
             <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
                 <Label text="AI Match Rate" styleClass="text-muted" />
-                <Label text="98.2%" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+                <Label
+                    text="98.2%"
+                    style="-fx-font-size: 24px; -fx-font-weight: bold;"
+                />
             </VBox>
         </HBox>
 
         <VBox spacing="10.0" VBox.vgrow="ALWAYS">
-            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Detected Anomalies" />
+            <Label
+                style="-fx-font-size: 18px; -fx-font-weight: bold;"
+                text="Detected Anomalies"
+            />
             <TableView fx:id="anomaliesTable" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="dateCol" text="Date" prefWidth="100"/>
-                    <TableColumn fx:id="typeCol" text="Engine Flag" prefWidth="150"/>
-                    <TableColumn fx:id="justificationCol" text="AI Justification" prefWidth="400"/>
-                    <TableColumn fx:id="confidenceCol" text="Confidence" prefWidth="100"/>
+                    <TableColumn fx:id="dateCol" text="Date" prefWidth="100" />
+                    <TableColumn
+                        fx:id="typeCol"
+                        text="Engine Flag"
+                        prefWidth="150"
+                    />
+                    <TableColumn
+                        fx:id="justificationCol"
+                        text="AI Justification"
+                        prefWidth="400"
+                    />
+                    <TableColumn
+                        fx:id="confidenceCol"
+                        text="Confidence"
+                        prefWidth="100"
+                    />
                 </columns>
             </TableView>
         </VBox>

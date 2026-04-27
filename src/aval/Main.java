@@ -15,11 +15,9 @@ import javafx.util.Duration;
 
 /**
  * Main entry point for the AVAL AI Reconciliation Engine.
- * Handles the boot sequence, splash screen, and transition to the Dashboard.
  */
 public class Main extends Application {
 
-    // Store transition as a field to prevent Garbage Collection
     private PauseTransition transitionDelay;
 
     @Override
@@ -29,72 +27,76 @@ public class Main extends Application {
                 "[BOOT] Starting AVAL AI Reconciliation Engine..."
             );
 
-            // Ensure the application doesn't exit when the splash screen is hidden
+            // 1. Keep the JavaFX runtime alive even when windows are closed
             Platform.setImplicitExit(false);
 
-            // Load Splash Screen
-            System.out.println("[BOOT] Loading Splash.fxml...");
+            // 2. Setup and show Splash Screen
+            System.out.println("[BOOT] Displaying Splash Screen...");
             FXMLLoader splashLoader = new FXMLLoader(
                 getClass().getResource("/aval/ui/views/Splash.fxml")
             );
             Parent splashRoot = splashLoader.load();
             Scene splashScene = new Scene(splashRoot);
-
             primaryStage.initStyle(StageStyle.UNDECORATED);
             primaryStage.setScene(splashScene);
             primaryStage.show();
-            System.out.println("[BOOT] Splash screen displayed.");
 
-            // Transition logic - using a field to ensure it stays alive
+            // 3. Initiate background loading of the Dashboard
             transitionDelay = new PauseTransition(Duration.seconds(3.5));
             transitionDelay.setOnFinished(event -> {
-                System.out.println("[TRANSITION] Initiating Dashboard load...");
+                System.out.println("[TRANSITION] Switching to Dashboard...");
 
-                try {
-                    // Locate Dashboard resource
-                    var dashboardURL = getClass().getResource(
-                        "/aval/ui/views/Dashboard.fxml"
-                    );
-                    if (dashboardURL == null) {
-                        System.err.println("[ERROR] Dashboard.fxml NOT FOUND!");
-                        Platform.exit();
-                        return;
+                Platform.runLater(() -> {
+                    try {
+                        // Load Dashboard
+                        System.out.println(
+                            "[TRANSITION] Loading Dashboard.fxml..."
+                        );
+                        FXMLLoader mainLoader = new FXMLLoader(
+                            getClass().getResource(
+                                "/aval/ui/views/Dashboard.fxml"
+                            )
+                        );
+                        Parent dashboardRoot = mainLoader.load();
+
+                        Stage mainStage = new Stage();
+                        Scene mainScene = new Scene(dashboardRoot, 1200, 800);
+
+                        // Apply Theme
+                        System.out.println(
+                            "[TRANSITION] Applying global theme..."
+                        );
+                        MainUIContext.getInstance().applyTheme(mainScene);
+
+                        mainStage.setTitle("AVAL AI Reconciliation Engine");
+                        mainStage.setScene(mainScene);
+
+                        // 4. Critical Handover: Show new first, then hide old
+                        System.out.println(
+                            "[TRANSITION] Launching Main Stage..."
+                        );
+                        mainStage.show();
+
+                        // Hide splash
+                        primaryStage.hide();
+
+                        // 5. Allow app to exit naturally now that main window is up
+                        Platform.setImplicitExit(true);
+                        System.out.println("[SUCCESS] Boot sequence finished.");
+                    } catch (Exception e) {
+                        System.err.println(
+                            "[FATAL ERROR] Failed to switch to Dashboard:"
+                        );
+                        e.printStackTrace();
+                        Platform.exit(); // Exit if we can't load the main UI
                     }
-
-                    // Load Dashboard
-                    FXMLLoader mainLoader = new FXMLLoader(dashboardURL);
-                    Parent dashboardRoot = mainLoader.load();
-
-                    // Prepare Stage
-                    Stage mainStage = new Stage();
-                    Scene mainScene = new Scene(dashboardRoot, 1200, 800);
-
-                    // Apply Global Theme
-                    MainUIContext.getInstance().applyTheme(mainScene);
-
-                    mainStage.setTitle("AVAL AI Reconciliation Engine");
-                    mainStage.setScene(mainScene);
-
-                    // Show Dashboard FIRST
-                    mainStage.show();
-
-                    // Then cleanup Splash
-                    primaryStage.hide();
-                    Platform.setImplicitExit(true);
-                    System.out.println(
-                        "[SUCCESS] Application bootup complete."
-                    );
-                } catch (Exception e) {
-                    System.err.println("[FATAL] Dashboard transition failed:");
-                    e.printStackTrace();
-                    Platform.exit();
-                }
+                });
             });
 
             transitionDelay.play();
-            System.out.println("[BOOT] Transition timer started.");
+            System.out.println("[BOOT] Transition timer running.");
         } catch (Exception e) {
-            System.err.println("[FATAL] Boot sequence failed:");
+            System.err.println("[FATAL ERROR] Boot failed:");
             e.printStackTrace();
             Platform.exit();
         }
