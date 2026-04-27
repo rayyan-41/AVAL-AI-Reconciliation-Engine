@@ -1,18 +1,18 @@
 .root {
     /* Primary Palette */
-    -fx-background: #FFFFFF;
-    -fx-secondary-bg: #F8F9FA;
-    -fx-text-base: #1A1A1A;
-    -fx-text-muted: #6C757D;
+    -fx-background: #ffffff;
+    -fx-secondary-bg: #f8f9fa;
+    -fx-text-base: #1a1a1a;
+    -fx-text-muted: #6c757d;
 
     /* Accent - Old Money Bordeaux */
     -fx-accent-red: #800020;
-    -fx-accent-red-hover: #A52A2A;
+    -fx-accent-red-hover: #a52a2a;
     -fx-accent-navy: #002366;
 
     /* Functional Colors */
-    -fx-border-color: #E0E0E0;
-    -fx-control-inner-background: #FFFFFF;
+    -fx-border-color: #e0e0e0;
+    -fx-control-inner-background: #ffffff;
 }
 
 .label {
@@ -49,10 +49,26 @@
 }
 
 .table-row-cell:odd {
-    -fx-background-color: #FAFAFA;
+    -fx-background-color: #fafafa;
 }
 
 .table-row-cell:selected {
     -fx-background-color: -fx-accent-navy;
     -fx-text-fill: white;
+}
+
+/* Splash Screen Specifics */
+.splash-progress {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.splash-progress .track {
+    -fx-background-color: transparent;
+}
+
+.splash-progress .bar {
+    -fx-background-color: -fx-accent-red;
+    -fx-background-insets: 0;
 }
