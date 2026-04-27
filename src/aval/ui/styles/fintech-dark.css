@@ -1,18 +1,18 @@
 .root {
     /* Primary Palette */
     -fx-background: #121212;
-    -fx-secondary-bg: #1E1E1E;
-    -fx-text-base: #E0E0E0;
-    -fx-text-muted: #A0A0A0;
+    -fx-secondary-bg: #1e1e1e;
+    -fx-text-base: #e0e0e0;
+    -fx-text-muted: #a0a0a0;
 
     /* Accent - Deep Crimson */
     -fx-accent-red: #990000;
-    -fx-accent-red-hover: #CC0000;
-    -fx-accent-navy: #1A237E;
+    -fx-accent-red-hover: #cc0000;
+    -fx-accent-navy: #1a237e;
 
     /* Functional Colors */
     -fx-border-color: #333333;
-    -fx-control-inner-background: #1E1E1E;
+    -fx-control-inner-background: #1e1e1e;
 }
 
 .label {
@@ -53,4 +53,20 @@
 
 .table-row-cell:selected {
     -fx-background-color: -fx-accent-navy;
+}
+
+/* Splash Screen Specifics */
+.splash-progress {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.splash-progress .track {
+    -fx-background-color: transparent;
+}
+
+.splash-progress .bar {
+    -fx-background-color: -fx-accent-red;
+    -fx-background-insets: 0;
 }
