@@ -10,7 +10,9 @@ import javafx.scene.Scene;
 public class MainUIContext {
 
     private static MainUIContext instance;
-    private final BooleanProperty darkModeActive = new SimpleBooleanProperty(false);
+    private final BooleanProperty darkModeActive = new SimpleBooleanProperty(
+        false
+    );
 
     private MainUIContext() {
         // Private constructor for Singleton
@@ -41,10 +43,14 @@ public class MainUIContext {
      */
     public void applyTheme(Scene scene) {
         scene.getStylesheets().clear();
-        if (isDarkModeActive()) {
-            scene.getStylesheets().add(getClass().getResource("styles/fintech-dark.css").toExternalForm());
+        String path = isDarkModeActive()
+            ? "/aval/ui/styles/fintech-dark.css"
+            : "/aval/ui/styles/fintech-light.css";
+        var resource = getClass().getResource(path);
+        if (resource != null) {
+            scene.getStylesheets().add(resource.toExternalForm());
         } else {
-            scene.getStylesheets().add(getClass().getResource("styles/fintech-light.css").toExternalForm());
+            System.err.println("Theme resource not found: " + path);
         }
     }
 }

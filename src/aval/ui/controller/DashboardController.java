@@ -75,13 +75,24 @@ public class DashboardController {
     }
 
     public void initialize() {
-        loadClientCards();
+        System.out.println("[DASHBOARD] Initializing controller...");
+        try {
+            loadClientCards();
 
-        // Ensure toggle matches current state
-        themeToggle.setSelected(MainUIContext.getInstance().isDarkModeActive());
+            if (themeToggle != null) {
+                themeToggle.setSelected(
+                    MainUIContext.getInstance().isDarkModeActive()
+                );
+            }
+            System.out.println("[DASHBOARD] Initialization complete.");
+        } catch (Exception e) {
+            System.err.println("[DASHBOARD] Error during initialization:");
+            e.printStackTrace();
+        }
     }
 
     private void loadClientCards() {
+        System.out.println("[DASHBOARD] Loading mock client cards...");
         List<ClientOrganization> clients = MockUIProvider.getMockClients(3);
         clientCardsArea.getChildren().clear();
 
@@ -101,6 +112,7 @@ public class DashboardController {
             card.getChildren().addAll(nameLabel, statusLabel);
             clientCardsArea.getChildren().add(card);
         }
+        System.out.println("[DASHBOARD] Loaded " + clients.size() + " cards.");
     }
 
     @FXML
