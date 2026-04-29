@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefWidth="1200" prefHeight="800"
+    xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.RegistryController">
+
+  <!-- Topbar -->
+  <HBox styleClass="reg-topbar" alignment="CENTER_LEFT">
+    <Label text="AVAL" styleClass="reg-wm-aval" />
+    <Label text="AIRE" styleClass="reg-wm-aire" />
+    <Region HBox.hgrow="ALWAYS" />
+    <Label text="Signed in as Aryan" styleClass="tb-user" />
+    <Button text="Sign out" onAction="#handleSignOut" styleClass="btn-ghost" />
+  </HBox>
+
+  <!-- Content -->
+  <VBox VBox.vgrow="ALWAYS" styleClass="reg-body" alignment="TOP_CENTER">
+    <VBox maxWidth="760" spacing="16">
+      <HBox alignment="CENTER_LEFT" spacing="16">
+        <VBox spacing="3">
+          <Label text="Client Registry" styleClass="reg-title" />
+          <Label text="Select a company to enter its workspace." styleClass="reg-sub" />
+        </VBox>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="+ Add Client" styleClass="btn-accent" onAction="#handleAddClient" />
+      </HBox>
+      <TextField fx:id="searchField" promptText="Search..."
+          styleClass="reg-search-field" />
+      <TableView fx:id="clientTable" VBox.vgrow="ALWAYS"
+                 styleClass="client-table"
+                 onMouseClicked="#handleRowClick">
+        <columns>
+          <TableColumn fx:id="nameCol"     text="Company"  prefWidth="280" />
+          <TableColumn fx:id="industryCol" text="Industry" prefWidth="240" />
+          <TableColumn fx:id="statusCol"   text="Status"   prefWidth="120" />
+          <TableColumn fx:id="arrowCol"    text=""         prefWidth="60"  />
+        </columns>
+      </TableView>
+    </VBox>
+  </VBox>
+
+</VBox>

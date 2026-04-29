@@ -145,3 +145,103 @@
 .btn-primary:hover {
     -fx-background-color: -fx-accent-hover;
 }
+
+/* --- Phase 3: Registry Screen --- */
+.reg-topbar {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: transparent transparent -fx-border transparent;
+    -fx-padding: 0 32 0 32;
+    -fx-min-height: 60px; -fx-max-height: 60px;
+}
+.reg-wm-aval {
+    -fx-font-family: "Jura"; -fx-font-size: 24px;
+    -fx-font-weight: bold;   -fx-text-fill: -fx-accent;
+}
+.reg-wm-aire {
+    -fx-font-family: "Segoe UI"; -fx-font-size: 14px;
+    -fx-font-weight: 300;        -fx-text-fill: -fx-text-muted;
+    -fx-padding: 0 0 4 4;
+}
+.tb-user {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-padding: 0 20 0 0;
+    -fx-font-size: 14px;
+}
+.reg-body {
+    -fx-background-color: -fx-bg-subtle;
+    -fx-padding: 40 0 40 0;
+}
+.reg-title {
+    -fx-font-size: 32px; -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.reg-sub {
+    -fx-font-size: 15px; -fx-text-fill: -fx-text-muted;
+}
+.btn-accent {
+    -fx-background-color: -fx-accent; -fx-text-fill: white;
+    -fx-font-size: 13px; -fx-font-weight: bold;
+    -fx-background-radius: 4px; -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+.btn-accent:hover { -fx-background-color: -fx-accent-hover; }
+.btn-ghost {
+    -fx-background-color: transparent; -fx-text-fill: -fx-text-muted;
+    -fx-border-color: -fx-border; -fx-border-radius: 4px;
+    -fx-font-size: 13px; -fx-padding: 6 12 6 12;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover {
+    -fx-border-color: -fx-text-primary; -fx-text-fill: -fx-text-primary;
+}
+.reg-search-field {
+    -fx-background-color: -fx-bg; -fx-border-color: -fx-border;
+    -fx-border-radius: 6px; -fx-background-radius: 6px;
+    -fx-font-size: 14px; -fx-padding: 10 12 10 12;
+}
+.client-table {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border; -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-control-inner-background: transparent;
+    -fx-control-inner-background-alt: transparent;
+}
+.client-table .column-header-background {
+    -fx-background-color: -fx-bg-inset;
+    -fx-background-radius: 6px 6px 0 0;
+}
+.client-table .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 40px; -fx-border-color: transparent transparent -fx-border transparent;
+}
+.client-table .column-header .label {
+    -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -fx-text-muted;
+}
+.client-table .table-row-cell {
+    -fx-background-color: -fx-bg;
+    -fx-cell-size: 64px;
+    -fx-border-color: transparent transparent -fx-border-subtle transparent;
+}
+.client-table .table-row-cell:hover {
+    -fx-background-color: -fx-bg-subtle; -fx-cursor: hand;
+}
+.client-table .table-cell {
+    -fx-border-color: transparent;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 16 0 16;
+}
+.badge {
+    -fx-font-size: 12px; -fx-font-weight: bold;
+    -fx-padding: 4 10 4 10;
+    -fx-background-radius: 12px;
+}
+.badge-active {
+    -fx-background-color: -fx-green-bg; -fx-text-fill: -fx-green-text;
+    -fx-border-color: -fx-green-border; -fx-border-radius: 12px;
+}
+.badge-pending {
+    -fx-background-color: -fx-amber-bg; -fx-text-fill: -fx-amber-text;
+}
+.badge-review {
+    -fx-background-color: -fx-accent-dim; -fx-text-fill: -fx-red-text;
+}

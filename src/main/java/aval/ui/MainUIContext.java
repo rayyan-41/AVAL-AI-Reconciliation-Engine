@@ -1,5 +1,6 @@
 package aval.ui;
 
+import aval.domain.core.ClientOrganization;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Scene;
@@ -13,6 +14,7 @@ public class MainUIContext {
     private final BooleanProperty darkModeActive = new SimpleBooleanProperty(
         false
     );
+    private ClientOrganization activeClient;
 
     private MainUIContext() {
         // Private constructor for Singleton
@@ -35,6 +37,14 @@ public class MainUIContext {
 
     public void setDarkModeActive(boolean active) {
         darkModeActive.set(active);
+    }
+
+    public ClientOrganization getActiveClient() {
+        return activeClient;
+    }
+
+    public void setActiveClient(ClientOrganization activeClient) {
+        this.activeClient = activeClient;
     }
 
     /**
