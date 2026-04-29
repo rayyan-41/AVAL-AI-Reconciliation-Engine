@@ -1,220 +1,49 @@
 .root {
-    /* Primary Palette */
-    -fx-background: #ffffff;
-    -fx-secondary-bg: #f8f9fa;
-    -fx-text-base: #1a1a1a;
-    -fx-text-muted: #6c757d;
-
-    /* Accent - Old Money Bordeaux */
-    -fx-accent-red: #800020;
-    -fx-accent-red-hover: #a52a2a;
-    -fx-accent-navy: #002366;
-
-    /* Functional Colors */
-    -fx-theme-border-color: #e0e0e0;
-    -fx-control-inner-background: #ffffff;
+    -fx-bg: #ffffff;
+    -fx-bg-subtle: #f7f8fa;
+    -fx-bg-inset: #f0f2f5;
+    -fx-text-primary: #0d0d0d;
+    -fx-text-secondary: #3a3a3a;
+    -fx-text-muted: #6b7280;
+    -fx-text-ghost: #a0aab4;
+    -fx-accent: #800020;
+    -fx-accent-hover: #9a0025;
+    -fx-accent-dim: #fdf2f5;
+    -fx-border: #e2e5e9;
+    -fx-border-strong: #c8cdd6;
+    -fx-green-bg: #f0faf2;
+    -fx-green-border: #b6d9be;
+    -fx-green-text: #1a5c2a;
+    -fx-amber-bg: #fffbeb;
+    -fx-amber-text: #92400e;
+    -fx-red-text: #991b1b;
 }
 
-.label {
-    -fx-text-fill: -fx-text-base;
-    -fx-font-family: "Segoe UI Semibold", "Verdana";
-}
-
-.button {
-    -fx-background-color: -fx-accent-red;
-    -fx-text-fill: white;
-    -fx-background-radius: 4px;
-    -fx-cursor: hand;
+.splash-aval {
+    -fx-font-family: "Jura";
+    -fx-font-size: 72px;
     -fx-font-weight: bold;
+    -fx-text-fill: #c0001a;
 }
 
-.button:hover {
-    -fx-background-color: -fx-accent-red-hover;
+.splash-aire {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 26px;
+    -fx-font-weight: 300;
+    -fx-text-fill: #2a2a2a;
+    -fx-padding: 0 0 0 5;
 }
 
-.table-view {
-    -fx-background-color: transparent;
-    -fx-border-color: -fx-theme-border-color;
-    -fx-border-width: 1px;
-}
-
-.table-view .column-header {
-    -fx-background-color: -fx-secondary-bg;
-    -fx-border-color: transparent transparent -fx-theme-border-color
-        transparent;
-}
-
-.table-view .cell {
-    -fx-text-fill: -fx-text-base;
-    -fx-border-color: transparent;
-}
-
-.table-row-cell:odd {
-    -fx-background-color: #fafafa;
-}
-
-.table-row-cell:selected {
-    -fx-background-color: -fx-accent-navy;
-    -fx-text-fill: white;
-}
-
-/* Splash Screen Specifics */
-.splash-progress {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
+.splash-log {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 10px;
+    -fx-text-fill: #aaaaaa;
 }
 
 .splash-progress .track {
     -fx-background-color: transparent;
 }
-
 .splash-progress .bar {
-    -fx-background-color: -fx-accent-red;
+    -fx-background-color: #c0001a;
     -fx-background-insets: 0;
-}
-
-/* Authentication Gate Styles */
-.login-card {
-    -fx-background-color: white;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 10, 0, 0, 5);
-    -fx-background-radius: 8px;
-    -fx-padding: 40px;
-}
-
-.underlined-field {
-    -fx-background-color: transparent;
-    -fx-border-color: -fx-theme-border-color;
-    -fx-border-width: 0 0 1 0;
-    -fx-text-fill: -fx-text-base;
-    -fx-prompt-text-fill: -fx-text-muted;
-}
-
-.underlined-field:focused {
-    -fx-border-color: -fx-accent-red;
-    -fx-effect: dropshadow(three-pass-box, -fx-accent-red, 2, 0, 0, 1);
-}
-
-.wide-button {
-    -fx-padding: 10 20 10 20;
-}
-
-/* Dashboard Shell */
-.sidebar {
-    -fx-background-color: -fx-secondary-bg;
-    -fx-border-color: transparent -fx-theme-border-color transparent
-        transparent;
-}
-
-.sidebar-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: -fx-text-base;
-    -fx-alignment: CENTER_LEFT;
-    -fx-padding: 10 15 10 15;
-}
-
-.sidebar-button:hover {
-    -fx-background-color: #e9ecef;
-}
-
-.top-bar {
-    -fx-background-color: white;
-    -fx-border-color: transparent transparent -fx-theme-border-color
-        transparent;
-}
-
-/* Ingestion Portal */
-.drop-zone {
-    -fx-border-color: #adb5bd;
-    -fx-border-width: 2px;
-    -fx-border-style: dashed;
-    -fx-background-color: #f8f9fa;
-    -fx-background-radius: 8px;
-    -fx-border-radius: 8px;
-    -fx-cursor: hand;
-}
-
-.drop-zone:hover {
-    -fx-border-color: -fx-accent-red;
-}
-
-.client-card {
-    -fx-background-color: white;
-    -fx-border-color: -fx-theme-border-color;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
-}
-
-.client-card:hover {
-    -fx-border-color: -fx-accent-red;
-}
-
-/* AI Processing Lab */
-.ai-list-view {
-    -fx-background-color: transparent;
-    -fx-border-color: -fx-theme-border-color;
-    -fx-background-insets: 0;
-}
-
-.ai-list-view .list-cell {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent #f1f3f5 transparent;
-    -fx-padding: 12 15 12 15;
-}
-
-/* Reconciliation Workspace */
-.reconciliation-split-pane {
-    -fx-background-color: transparent;
-    -fx-padding: 10 0 0 0;
-}
-
-.floating-action-bar {
-    -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-border-color: #e0e0e0;
-    -fx-border-radius: 50px;
-    -fx-background-radius: 50px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 20, 0, 0, 10);
-}
-
-.approve-button {
-    -fx-background-color: #28a745;
-    -fx-text-fill: white;
-    -fx-background-radius: 20px;
-}
-
-.approve-button:hover {
-    -fx-background-color: #218838;
-}
-
-.reject-button {
-    -fx-background-color: -fx-accent-red;
-    -fx-text-fill: white;
-    -fx-background-radius: 20px;
-    -fx-font-weight: bold;
-}
-
-/* Audit & Insights Vault */
-.kpi-card {
-    -fx-background-color: white;
-    -fx-padding: 20px;
-    -fx-border-color: -fx-theme-border-color;
-    -fx-border-radius: 8px;
-    -fx-background-radius: 8px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 5);
-}
-
-.export-button {
-    -fx-background-color: -fx-accent-red;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-padding: 10 20 10 20;
-}
-
-.anomaly-row {
-    -fx-background-color: #ffefef;
-}
-
-.anomaly-row:odd {
-    -fx-background-color: #fff5f5;
 }

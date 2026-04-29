@@ -3,48 +3,40 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.AnchorPane?>
 <StackPane
-    prefHeight="400.0"
-    prefWidth="600.0"
-    style="-fx-background-color: #FAF9F6;"
+    prefWidth="800"
+    prefHeight="500"
+    style="-fx-background-color: #faf9f6;"
     xmlns="http://javafx.com/javafx/17"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="aval.ui.controller.SplashController"
 >
 
-    <AnchorPane>
-        <VBox layoutX="50.0" layoutY="140.0" spacing="-15">
-            <Label
-                text="AVAL"
-                style="-fx-font-family: 'Jura', 'Trebuchet MS', sans-serif; -fx-font-size: 64px; -fx-font-weight: bold; -fx-text-fill: #DB0000;"
-            />
+  <!-- Top-left brand block -->
+  <VBox
+        StackPane.alignment="TOP_LEFT"
+        style="-fx-padding: 130 0 0 60;"
+        spacing="-8"
+    >
+    <Label text="AVAL" styleClass="splash-aval" />
+    <Label text="AIRE" styleClass="splash-aire" />
+  </VBox>
 
-            <Label
-                text="AIRE"
-                style="-fx-font-family: 'Segoe UI Semilight'; -fx-font-size: 28px; -fx-text-fill: #1A1A1A; -fx-padding: 0 0 0 5;"
-            />
-        </VBox>
+  <!-- Bottom-left log label -->
+  <Label
+        fx:id="logLabel"
+        text="Initializing..."
+        StackPane.alignment="BOTTOM_LEFT"
+        style="-fx-padding: 0 0 20 20;"
+        styleClass="splash-log"
+    />
 
-        <VBox
-            AnchorPane.bottomAnchor="10.0"
-            AnchorPane.leftAnchor="20.0"
-            AnchorPane.rightAnchor="20.0"
-            spacing="5"
-        >
-            <Label
-                fx:id="logLabel"
-                text="Initializing..."
-                style="-fx-font-family: 'Consolas', 'Monospaced'; -fx-font-size: 10px; -fx-text-fill: #6C757D;"
-            />
-        </VBox>
-    </AnchorPane>
-
-    <ProgressBar
+  <!-- Bottom progress bar -->
+  <ProgressBar
         fx:id="progressBar"
         maxWidth="Infinity"
-        prefHeight="2.0"
-        progress="0.0"
+        prefHeight="3"
+        progress="0"
         StackPane.alignment="BOTTOM_CENTER"
         styleClass="splash-progress"
     />

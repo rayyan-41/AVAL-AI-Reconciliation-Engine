@@ -1,27 +1,18 @@
-//Dev: Rayyan
-//Use Cases: App Bootstrap & Integration Wiring
 package aval;
 
-import aval.ui.MainUIContext;
-import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.Duration;
 
 /**
  * Main entry point for the AVAL AI Reconciliation Engine.
  */
-//@desc:   Main entry point that bootstraps the JavaFX application and manages the splash screen.
-//@grasp:  Controller
-//@gof:    N/A
 public class Main extends Application {
-
-    private PauseTransition transitionDelay;
 
     @Override
     public void start(Stage primaryStage) {
@@ -30,74 +21,39 @@ public class Main extends Application {
                 "[BOOT] Starting AVAL AI Reconciliation Engine..."
             );
 
-            // 1. Keep the JavaFX runtime alive even when windows are closed
-            Platform.setImplicitExit(false);
+            Platform.setImplicitExit(true);
 
-            // 2. Setup and show Splash Screen
+            // Load fonts before any Scene is created
+            Font.loadFont(
+                getClass().getResourceAsStream("/aval/ui/fonts/Jura-Bold.ttf"),
+                72
+            );
+            Font.loadFont(
+                getClass().getResourceAsStream(
+                    "/aval/ui/fonts/Jura-SemiBold.ttf"
+                ),
+                18
+            );
+
             System.out.println("[BOOT] Displaying Splash Screen...");
             FXMLLoader splashLoader = new FXMLLoader(
                 getClass().getResource("/aval/ui/views/Splash.fxml")
             );
             Parent splashRoot = splashLoader.load();
-            Scene splashScene = new Scene(splashRoot);
+            Scene splashScene = new Scene(splashRoot, 800, 500);
+
+            // Add the light theme css
+            splashScene
+                .getStylesheets()
+                .add(
+                    getClass()
+                        .getResource("/aval/ui/styles/fintech-light.css")
+                        .toExternalForm()
+                );
+
             primaryStage.initStyle(StageStyle.UNDECORATED);
             primaryStage.setScene(splashScene);
             primaryStage.show();
-
-            // 3. Initiate background loading of the Dashboard
-            transitionDelay = new PauseTransition(Duration.seconds(3.5));
-            transitionDelay.setOnFinished(event -> {
-                System.out.println("[TRANSITION] Switching to Dashboard...");
-
-                Platform.runLater(() -> {
-                    try {
-                        // Load Dashboard
-                        System.out.println(
-                            "[TRANSITION] Loading Dashboard.fxml..."
-                        );
-                        FXMLLoader mainLoader = new FXMLLoader(
-                            getClass().getResource(
-                                "/aval/ui/views/Dashboard.fxml"
-                            )
-                        );
-                        Parent dashboardRoot = mainLoader.load();
-
-                        Stage mainStage = new Stage();
-                        Scene mainScene = new Scene(dashboardRoot, 1200, 800);
-
-                        // Apply Theme
-                        System.out.println(
-                            "[TRANSITION] Applying global theme..."
-                        );
-                        MainUIContext.getInstance().applyTheme(mainScene);
-
-                        mainStage.setTitle("AVAL AI Reconciliation Engine");
-                        mainStage.setScene(mainScene);
-
-                        // 4. Critical Handover: Show new first, then hide old
-                        System.out.println(
-                            "[TRANSITION] Launching Main Stage..."
-                        );
-                        mainStage.show();
-
-                        // Hide splash
-                        primaryStage.hide();
-
-                        // 5. Allow app to exit naturally now that main window is up
-                        Platform.setImplicitExit(true);
-                        System.out.println("[SUCCESS] Boot sequence finished.");
-                    } catch (Exception e) {
-                        System.err.println(
-                            "[FATAL ERROR] Failed to switch to Dashboard:"
-                        );
-                        e.printStackTrace();
-                        Platform.exit(); // Exit if we can't load the main UI
-                    }
-                });
-            });
-
-            transitionDelay.play();
-            System.out.println("[BOOT] Transition timer running.");
         } catch (Exception e) {
             System.err.println("[FATAL ERROR] Boot failed:");
             e.printStackTrace();

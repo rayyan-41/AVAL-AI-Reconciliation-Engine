@@ -3,11 +3,23 @@ package aval.ui.controller;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class SplashController {
+
+    private static final String[] MESSAGES = {
+        "Initializing AVAL AIRE runtime...",
+        "Loading vectorization engine...",
+        "Connecting to persistence layer...",
+        "Verifying secure context...",
+        "Ready.",
+    };
 
     @FXML
     private ProgressBar progressBar;
@@ -16,26 +28,42 @@ public class SplashController {
     private Label logLabel;
 
     public void initialize() {
-        Timeline timeline = new Timeline(
-            new KeyFrame(Duration.ZERO, e -> {
-                progressBar.setProgress(0.1);
-                logLabel.setText("Loading schema...");
-            }),
-            new KeyFrame(Duration.seconds(1), e -> {
-                progressBar.setProgress(0.4);
-                logLabel.setText("Waking AI...");
-            }),
-            new KeyFrame(Duration.seconds(2), e -> {
-                progressBar.setProgress(0.8);
-                logLabel.setText("Connecting to pgvector...");
-            }),
-            new KeyFrame(Duration.seconds(3), e -> {
-                progressBar.setProgress(1.0);
-                logLabel.setText("Boot sequence complete.");
-                System.out.println("Load complete");
-            })
-        );
-        timeline.setCycleCount(1);
-        timeline.play();
+        Timeline tl = new Timeline();
+        for (int i = 0; i < MESSAGES.length; i++) {
+            final int idx = i;
+            double secs = 0.4 + idx * 0.32;
+            tl
+                .getKeyFrames()
+                .add(
+                    new KeyFrame(Duration.seconds(secs), e -> {
+                        progressBar.setProgress(
+                            (double) (idx + 1) / MESSAGES.length
+                        );
+                        logLabel.setText(MESSAGES[idx]);
+                    })
+                );
+        }
+        tl.setOnFinished(e -> navigateTo("Auth.fxml"));
+        tl.play();
+    }
+
+    private void navigateTo(String fxml) {
+        try {
+            Stage stage = (Stage) progressBar.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/" + fxml)
+            );
+            Parent root = loader.load();
+            Scene newScene = new Scene(root);
+
+            // Reapply existing stylesheets from the old scene if any
+            newScene
+                .getStylesheets()
+                .addAll(progressBar.getScene().getStylesheets());
+
+            stage.setScene(newScene);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
