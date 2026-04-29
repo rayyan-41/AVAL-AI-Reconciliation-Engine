@@ -47,3 +47,101 @@
     -fx-background-color: #c0001a;
     -fx-background-insets: 0;
 }
+
+/* --- Phase 2: Auth Screen --- */
+.auth-left {
+    -fx-background-color: -fx-bg-subtle;
+    -fx-border-color: transparent -fx-border transparent transparent;
+    -fx-padding: 80 68 80 68;
+}
+
+.auth-wordmark {
+    -fx-alignment: BOTTOM_LEFT;
+}
+
+.auth-wm-aval {
+    -fx-font-family: "Jura";
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-accent;
+}
+
+.auth-wm-aire {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 17px;
+    -fx-font-weight: 300;
+    -fx-text-fill: -fx-text-muted;
+    -fx-padding: 0 0 4 4;
+}
+
+.auth-heading {
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-padding: 40 0 20 0;
+}
+
+.auth-body {
+    -fx-font-size: 15px;
+    -fx-text-fill: -fx-text-secondary;
+    -fx-padding: 0 0 20 0;
+    -fx-line-spacing: 4px;
+}
+
+.auth-rule {
+    -fx-min-height: 3;
+    -fx-max-height: 3;
+    -fx-background-color: -fx-accent;
+    -fx-min-width: 36;
+    -fx-max-width: 36;
+    -fx-padding: 28 0 28 0;
+}
+
+.auth-right {
+    -fx-background-color: -fx-bg;
+}
+
+.lf-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+.lf-sub {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-text-muted;
+    -fx-padding: 0 0 20 0;
+}
+
+.field-label {
+    -fx-font-size: 11px;
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-weight: bold;
+}
+
+.underlined-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -fx-border-strong transparent;
+    -fx-border-width: 0 0 1.5 0;
+    -fx-font-size: 14px;
+    -fx-padding: 9 2 9 2;
+}
+
+.underlined-field:focused {
+    -fx-border-color: transparent transparent -fx-accent transparent;
+}
+
+.btn-primary {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 12 20 12 20;
+    -fx-cursor: hand;
+}
+
+.btn-primary:hover {
+    -fx-background-color: -fx-accent-hover;
+}

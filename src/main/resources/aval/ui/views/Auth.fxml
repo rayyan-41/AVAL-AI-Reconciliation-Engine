@@ -1,32 +1,88 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<?xml version="1.0" encoding="UTF-8" ?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<HBox
+    prefWidth="1200"
+    prefHeight="800"
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.AuthController"
+>
 
-<StackPane fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0"
-           styleClass="root"
-           xmlns="http://javafx.com/javafx/17"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="aval.ui.controller.AuthController">
+  <!-- LEFT PANEL -->
+  <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
+    <HBox styleClass="auth-wordmark">
+      <Label text="AVAL" styleClass="auth-wm-aval" />
+      <Label text="AIRE" styleClass="auth-wm-aire" />
+    </HBox>
+    <Label
+            text="Intelligent reconciliation&#10;for modern finance."
+            styleClass="auth-heading"
+            wrapText="true"
+        />
+    <Label
+            text="AVAL AIRE combines deterministic rule-matching with AI..."
+            styleClass="auth-body"
+            wrapText="true"
+        />
+    <Region styleClass="auth-rule" />
+    <!-- Feature list: 4 Labels each preceded by a small dot Label -->
+    <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 10 0 0 0;">
+      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
+      <Label text="Deterministic rule-matching" styleClass="auth-body" />
+    </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
+      <Label text="Semantic vectorization" styleClass="auth-body" />
+    </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
+      <Label text="Probabilistic match engine" styleClass="auth-body" />
+    </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
+      <Label text="Multi-source consolidation" styleClass="auth-body" />
+    </HBox>
+  </VBox>
 
-    <VBox alignment="CENTER" maxWidth="400.0" spacing="20.0" styleClass="login-card" StackPane.alignment="CENTER">
-        <Label style="-fx-font-size: 24px; -fx-font-weight: bold;" text="Secure Access" />
-        <Label style="-fx-text-fill: -fx-text-muted;" text="Enter your workspace credentials to continue." />
-
-        <VBox spacing="10.0">
-            <Label text="Workspace ID" />
-            <TextField fx:id="workspaceIdField" promptText="WS-XXXX-XXXX" styleClass="underlined-field" />
-        </VBox>
-
-        <VBox spacing="10.0">
-            <Label text="Passkey" />
-            <PasswordField fx:id="passkeyField" promptText="••••••••" styleClass="underlined-field" />
-        </VBox>
-
-        <Button fx:id="authButton" maxWidth="Infinity" onAction="#handleAuthenticate" prefHeight="45.0" styleClass="wide-button" text="Authenticate" />
+  <!-- RIGHT PANEL -->
+  <VBox
+        styleClass="auth-right"
+        HBox.hgrow="ALWAYS"
+        alignment="CENTER"
+        spacing="0"
+    >
+    <VBox maxWidth="360" spacing="26">
+      <Label text="Sign in" styleClass="lf-title" />
+      <Label text="Enter your credentials to continue." styleClass="lf-sub" />
+      <VBox spacing="7">
+        <Label text="WORKSPACE ID" styleClass="field-label" />
+        <TextField
+                    fx:id="workspaceIdField"
+                    promptText="WS-XXXX-XXXX"
+                    styleClass="underlined-field"
+                />
+      </VBox>
+      <VBox spacing="7">
+        <Label text="PASSKEY" styleClass="field-label" />
+        <PasswordField
+                    fx:id="passkeyField"
+                    promptText="••••••••"
+                    styleClass="underlined-field"
+                />
+      </VBox>
+      <Button
+                text="Authenticate"
+                maxWidth="Infinity"
+                onAction="#handleAuthenticate"
+                styleClass="btn-primary"
+            />
     </VBox>
-</StackPane>
+  </VBox>
+
+</HBox>
