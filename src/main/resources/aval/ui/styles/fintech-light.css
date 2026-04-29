@@ -245,3 +245,46 @@
 .badge-review {
     -fx-background-color: -fx-accent-dim; -fx-text-fill: -fx-red-text;
 }
+
+/* --- Phase 4: Workspace Shell --- */
+.ws-topbar {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: transparent transparent -fx-border transparent;
+    -fx-min-height: 52px; -fx-max-height: 52px;
+}
+.ws-co-tab {
+    -fx-padding: 0 24 0 24;
+    -fx-border-color: transparent -fx-border transparent transparent;
+    -fx-min-width: 220px;
+}
+.ws-co-name { -fx-font-size: 14px; -fx-font-weight: bold; }
+.ws-co-id   { -fx-font-family: "Consolas"; -fx-font-size: 11px;
+              -fx-text-fill: -fx-text-muted; }
+.ws-tab {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12.5px; -fx-padding: 0 16 0 16;
+    -fx-min-height: 52px; -fx-cursor: hand;
+}
+.ws-tab:selected {
+    -fx-text-fill: -fx-accent; -fx-font-weight: bold;
+    -fx-border-color: transparent transparent -fx-accent transparent;
+    -fx-border-width: 0 0 2 0;
+}
+.ws-tab:hover:!selected { -fx-text-fill: -fx-text-primary; }
+.ws-tab:disabled { -fx-opacity: 0.4; -fx-cursor: default; }
+.btn-exit {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border-strong;
+    -fx-border-radius: 4px; -fx-background-radius: 4px;
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12px; -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+    -fx-margin: 0 16 0 0;
+}
+.btn-exit:hover {
+    -fx-border-color: -fx-accent;
+    -fx-text-fill: -fx-accent;
+    -fx-background-color: -fx-accent-dim;
+}

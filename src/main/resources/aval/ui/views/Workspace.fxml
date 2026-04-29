@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefWidth="1200" prefHeight="800"
+    xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.WorkspaceController">
+
+  <top>
+    <HBox styleClass="ws-topbar" alignment="CENTER_LEFT">
+
+      <!-- Company identity tab -->
+      <HBox styleClass="ws-co-tab" alignment="CENTER_LEFT" spacing="10">
+        <VBox alignment="CENTER_LEFT">
+          <Label fx:id="wsCompanyName" styleClass="ws-co-name" />
+          <Label fx:id="wsCompanyId"   styleClass="ws-co-id" />
+        </VBox>
+      </HBox>
+
+      <!-- Tab nav (ToggleGroup) -->
+      <HBox fx:id="tabNav" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+        <ToggleButton fx:id="tabFinance"  text="Finance Dashboard"
+            styleClass="ws-tab" onAction="#showFinance" />
+        <ToggleButton fx:id="tabRecon"    text="Reconciliation"
+            styleClass="ws-tab" onAction="#showRecon" />
+        <ToggleButton fx:id="tabManual"   text="Manual Check"
+            styleClass="ws-tab" onAction="#showManual"
+            disable="true" />
+        <ToggleButton fx:id="tabReport"   text="Report"
+            styleClass="ws-tab" onAction="#showReport"
+            disable="true" />
+      </HBox>
+
+      <!-- Exit -->
+      <Button text="Exit Workspace" styleClass="btn-exit"
+              onAction="#handleExit" />
+    </HBox>
+  </top>
+
+  <center>
+    <!-- Sub-views loaded programmatically into this StackPane -->
+    <StackPane fx:id="contentPane" />
+  </center>
+
+</BorderPane>
