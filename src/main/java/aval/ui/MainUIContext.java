@@ -1,6 +1,8 @@
 package aval.ui;
 
+import aval.domain.ai.MatchHypothesis;
 import aval.domain.core.ClientOrganization;
+import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Scene;
@@ -15,6 +17,8 @@ public class MainUIContext {
         false
     );
     private ClientOrganization activeClient;
+    private List<MatchHypothesis> pendingHypotheses;
+    private Object workspaceController; // Using Object to avoid circular deps, cast later if needed.
 
     private MainUIContext() {
         // Private constructor for Singleton
@@ -45,6 +49,22 @@ public class MainUIContext {
 
     public void setActiveClient(ClientOrganization activeClient) {
         this.activeClient = activeClient;
+    }
+
+    public List<MatchHypothesis> getPendingHypotheses() {
+        return pendingHypotheses;
+    }
+
+    public void setPendingHypotheses(List<MatchHypothesis> pendingHypotheses) {
+        this.pendingHypotheses = pendingHypotheses;
+    }
+
+    public void setWorkspaceController(Object workspaceController) {
+        this.workspaceController = workspaceController;
+    }
+
+    public Object getWorkspaceController() {
+        return workspaceController;
     }
 
     /**

@@ -15,13 +15,26 @@ import javafx.stage.Stage;
 
 public class WorkspaceController {
 
-    @FXML private Label wsCompanyName;
-    @FXML private Label wsCompanyId;
-    @FXML private ToggleButton tabFinance;
-    @FXML private ToggleButton tabRecon;
-    @FXML private ToggleButton tabManual;
-    @FXML private ToggleButton tabReport;
-    @FXML private StackPane contentPane;
+    @FXML
+    private Label wsCompanyName;
+
+    @FXML
+    private Label wsCompanyId;
+
+    @FXML
+    private ToggleButton tabFinance;
+
+    @FXML
+    private ToggleButton tabRecon;
+
+    @FXML
+    private ToggleButton tabManual;
+
+    @FXML
+    private ToggleButton tabReport;
+
+    @FXML
+    private StackPane contentPane;
 
     private Node financeView;
     private Node reconView;
@@ -29,20 +42,26 @@ public class WorkspaceController {
     private Node reportView;
 
     public void initialize() {
-        ClientOrganization client = MainUIContext.getInstance().getActiveClient();
+        MainUIContext.getInstance().setWorkspaceController(this);
+        ClientOrganization client =
+            MainUIContext.getInstance().getActiveClient();
         if (client != null) {
             wsCompanyName.setText(client.getName());
-            wsCompanyId.setText(client.getOrgId() + " · " + getIndustryFromName(client.getName()));
+            wsCompanyId.setText(
+                client.getOrgId() +
+                    " · " +
+                    getIndustryFromName(client.getName())
+            );
         } else {
             wsCompanyName.setText("Unknown Company");
             wsCompanyId.setText("Unknown ID");
         }
 
         // Load all sub-views into StackPane
-        financeView  = loadFxml("Finance.fxml");
-        reconView    = loadFxml("Recon.fxml");
-        manualView   = loadFxml("ManualCheck.fxml");
-        reportView   = loadFxml("Report.fxml");
+        financeView = loadFxml("Finance.fxml");
+        reconView = loadFxml("Recon.fxml");
+        manualView = loadFxml("ManualCheck.fxml");
+        reportView = loadFxml("Report.fxml");
 
         if (financeView != null) contentPane.getChildren().add(financeView);
         if (reconView != null) contentPane.getChildren().add(reconView);
@@ -70,7 +89,9 @@ public class WorkspaceController {
 
     private Node loadFxml(String fxml) {
         try {
-            return FXMLLoader.load(getClass().getResource("/aval/ui/views/" + fxml));
+            return FXMLLoader.load(
+                getClass().getResource("/aval/ui/views/" + fxml)
+            );
         } catch (Exception e) {
             System.err.println("Could not load sub-view: " + fxml);
             e.printStackTrace();
@@ -88,24 +109,48 @@ public class WorkspaceController {
         showReport();
     }
 
-    @FXML public void showFinance() { if (financeView != null) showView(financeView); tabFinance.setSelected(true); }
-    @FXML public void showRecon()   { if (reconView != null) showView(reconView); tabRecon.setSelected(true); }
-    @FXML public void showManual()  { if (manualView != null) showView(manualView); tabManual.setSelected(true); }
-    @FXML public void showReport()  { if (reportView != null) showView(reportView); tabReport.setSelected(true); }
+    @FXML
+    public void showFinance() {
+        if (financeView != null) showView(financeView);
+        tabFinance.setSelected(true);
+    }
+
+    @FXML
+    public void showRecon() {
+        if (reconView != null) showView(reconView);
+        tabRecon.setSelected(true);
+    }
+
+    @FXML
+    public void showManual() {
+        if (manualView != null) showView(manualView);
+        tabManual.setSelected(true);
+    }
+
+    @FXML
+    public void showReport() {
+        if (reportView != null) showView(reportView);
+        tabReport.setSelected(true);
+    }
 
     private void showView(Node view) {
         contentPane.getChildren().forEach(n -> n.setVisible(false));
         view.setVisible(true);
     }
 
-    @FXML void handleExit() {
+    @FXML
+    void handleExit() {
         MainUIContext.getInstance().setActiveClient(null);
         try {
             Stage stage = (Stage) wsCompanyName.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/aval/ui/views/Registry.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/Registry.fxml")
+            );
             Parent root = loader.load();
             Scene newScene = new Scene(root);
-            newScene.getStylesheets().addAll(wsCompanyName.getScene().getStylesheets());
+            newScene
+                .getStylesheets()
+                .addAll(wsCompanyName.getScene().getStylesheets());
             stage.setScene(newScene);
         } catch (Exception e) {
             e.printStackTrace();
