@@ -288,3 +288,77 @@
     -fx-text-fill: -fx-accent;
     -fx-background-color: -fx-accent-dim;
 }
+
+/* --- Phase 5: Finance Dashboard --- */
+.fd-scroll {
+    -fx-background-color: transparent;
+}
+.fd-scroll .viewport {
+    -fx-background-color: transparent;
+}
+.fd-title {
+    -fx-font-size: 32px; -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.fd-sub {
+    -fx-font-size: 15px; -fx-text-fill: -fx-text-muted;
+}
+.stat-card {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: -fx-border; -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 20 24 20 24;
+}
+.sc-label {
+    -fx-font-size: 13px; -fx-text-fill: -fx-text-muted;
+}
+.sc-value {
+    -fx-font-size: 28px; -fx-font-weight: bold;
+}
+.sc-sub {
+    -fx-font-size: 12px; -fx-text-fill: -fx-text-ghost;
+}
+.fd-card {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: -fx-border; -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 28 32 28 32;
+}
+.fdc-label {
+    -fx-font-size: 11px; -fx-font-family: "Consolas", "Courier New";
+    -fx-font-weight: bold; -fx-text-fill: -fx-text-muted;
+    -fx-padding: 0 0 16 0;
+}
+.section-heading {
+    -fx-font-size: 18px; -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-padding: 0 0 16 0;
+}
+.data-table {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border; -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-control-inner-background: transparent;
+    -fx-control-inner-background-alt: transparent;
+    -fx-fixed-cell-size: 48px;
+}
+.data-table .column-header-background {
+    -fx-background-color: -fx-bg-inset;
+    -fx-background-radius: 6px 6px 0 0;
+}
+.data-table .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 40px; -fx-border-color: transparent transparent -fx-border transparent;
+}
+.data-table .column-header .label {
+    -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -fx-text-muted;
+}
+.data-table .table-row-cell {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: transparent transparent -fx-border-subtle transparent;
+}
+.data-table .table-cell {
+    -fx-border-color: transparent;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 16 0 16;
+}

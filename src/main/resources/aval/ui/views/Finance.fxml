@@ -1,6 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Label?>
-<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-    <Label text="Finance Dashboard Placeholder" style="-fx-font-size: 24px;" />
-</VBox>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Priority?>
+
+<ScrollPane fitToWidth="true" styleClass="fd-scroll"
+    xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.FinanceController">
+  <VBox spacing="0" style="-fx-padding: 36 40 36 40;">
+
+    <!-- Title -->
+    <Label fx:id="fdTitle" styleClass="fd-title" />
+    <Label fx:id="fdSub"   styleClass="fd-sub" />
+
+    <!-- Stat cards: 4 equal HBox children -->
+    <HBox fx:id="statRow" spacing="14" style="-fx-padding: 28 0 28 0;">
+      <!-- 4 x VBox.styleClass="stat-card" injected by controller -->
+    </HBox>
+
+    <!-- Metadata grid: 2 fd-card VBoxes side by side -->
+    <HBox spacing="18" style="-fx-padding: 0 0 28 0;">
+      <VBox styleClass="fd-card" HBox.hgrow="ALWAYS">
+        <Label text="COMPANY INFORMATION" styleClass="fdc-label" />
+        <GridPane fx:id="coGrid" styleClass="meta-grid" />
+      </VBox>
+      <VBox styleClass="fd-card" HBox.hgrow="ALWAYS">
+        <Label text="LEDGER METADATA" styleClass="fdc-label" />
+        <GridPane fx:id="ldgGrid" styleClass="meta-grid" />
+      </VBox>
+    </HBox>
+
+    <!-- History -->
+    <Label text="Reconciliation History" styleClass="section-heading" />
+    <TableView fx:id="historyTable" styleClass="data-table">
+      <columns>
+        <TableColumn text="Date"         fx:id="hDateCol"    prefWidth="110" />
+        <TableColumn text="Period"        fx:id="hPeriodCol"  prefWidth="110" />
+        <TableColumn text="Transactions"  fx:id="hTxnsCol"    prefWidth="110" />
+        <TableColumn text="Matched"       fx:id="hMatchedCol" prefWidth="90"  />
+        <TableColumn text="Match Rate"    fx:id="hRateCol"    prefWidth="100" />
+        <TableColumn text="Anomalies"     fx:id="hAnomCol"    prefWidth="90"  />
+        <TableColumn text="Status"        fx:id="hStatusCol"  prefWidth="100" />
+      </columns>
+    </TableView>
+
+  </VBox>
+</ScrollPane>
