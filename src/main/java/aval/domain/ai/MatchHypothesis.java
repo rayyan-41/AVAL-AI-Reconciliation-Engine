@@ -11,6 +11,7 @@ import java.util.UUID;
 //@gof:    N/A
 public class MatchHypothesis {
 
+    //---------------- Attributes ------------------------//
     private final UUID hypothesisId;
     private final StandardizedTransaction ledgerTransaction;
     private final StandardizedTransaction bankTransaction;
@@ -19,6 +20,7 @@ public class MatchHypothesis {
     private HypothesisStatus status;
     private String justification;
 
+    //CONSTRUCTOR
     public MatchHypothesis(
         StandardizedTransaction ledgerTransaction,
         StandardizedTransaction bankTransaction,
@@ -33,41 +35,19 @@ public class MatchHypothesis {
         this.status = HypothesisStatus.PENDING_REVIEW;
     }
 
-    public UUID getHypothesisId() {
-        return hypothesisId;
-    }
+    //----------- Methods ------------//
 
-    public StandardizedTransaction getLedgerTransaction() {
-        return ledgerTransaction;
-    }
-
-    public StandardizedTransaction getBankTransaction() {
-        return bankTransaction;
-    }
-
-    public double getConfidenceScore() {
-        return confidenceScore;
-    }
-
-    public MatchType getMatchType() {
-        return matchType;
-    }
-
-    public HypothesisStatus getStatus() {
-        return status;
-    }
-
-    public String getJustification() {
-        return justification;
-    }
-
-    public void setStatus(HypothesisStatus status) {
-        this.status = status;
-    }
-
-    public void setJustification(String justification) {
-        this.justification = justification;
-    }
+    //Getters
+    public UUID getHypothesisId() { return hypothesisId; }
+    public StandardizedTransaction getLedgerTransaction() { return ledgerTransaction; }
+    public StandardizedTransaction getBankTransaction() { return bankTransaction; }
+    public double getConfidenceScore() { return confidenceScore; }
+    public MatchType getMatchType() { return matchType; }
+    public HypothesisStatus getStatus() { return status; }
+    public String getJustification() { return justification; }
+    //Setters
+    public void setStatus(HypothesisStatus status) { this.status = status; }
+    public void setJustification(String justification) { this.justification = justification; }
 
     @Override
     public String toString() {

@@ -15,6 +15,7 @@ import java.util.UUID;
 //@gof:    N/A
 public class ReconciliationWorkspace {
 
+    //-------------- Attribute ----------------------//
     private UUID workspaceId;
     private WorkspaceStatus status;
     private ClientOrganization clientOrganization;
@@ -23,6 +24,7 @@ public class ReconciliationWorkspace {
     private List<MatchHypothesis> hypotheses;
     private List<ReconciliationRecord> records;
 
+    //Constructor
     public ReconciliationWorkspace(
         UUID workspaceId,
         ClientOrganization clientOrganization,
@@ -36,36 +38,18 @@ public class ReconciliationWorkspace {
         this.hypotheses = new ArrayList<>();
         this.records = new ArrayList<>();
     }
+    
+    //---------- Methods ------------//
+    
+    //Getters
+    public UUID getWorkspaceId() { return workspaceId; }
+    public ClientOrganization getClientOrganization() { return clientOrganization; }
+    public MatchingConfig getMatchingConfig() { return matchingConfig; }
+    public List<FinancialDataset> getDatasets() { return datasets; }
+    public List<MatchHypothesis> getHypotheses() {  return hypotheses; }
+    public List<ReconciliationRecord> getRecords() { return records;}
+    public WorkspaceStatus getStatus() { return status; }
+    //Setters
+    public void setStatus(WorkspaceStatus status) { this.status = status;}
 
-    public UUID getWorkspaceId() {
-        return workspaceId;
-    }
-
-    public WorkspaceStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(WorkspaceStatus status) {
-        this.status = status;
-    }
-
-    public ClientOrganization getClientOrganization() {
-        return clientOrganization;
-    }
-
-    public MatchingConfig getMatchingConfig() {
-        return matchingConfig;
-    }
-
-    public List<FinancialDataset> getDatasets() {
-        return datasets;
-    }
-
-    public List<MatchHypothesis> getHypotheses() {
-        return hypotheses;
-    }
-
-    public List<ReconciliationRecord> getRecords() {
-        return records;
-    }
 }
