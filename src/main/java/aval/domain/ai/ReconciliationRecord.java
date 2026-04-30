@@ -1,5 +1,3 @@
-//Dev: Rayyan
-//Use Cases: UC6-UC9
 package aval.domain.ai;
 
 import aval.domain.SystemUser;
@@ -11,11 +9,13 @@ import java.util.UUID;
 //@gof:    N/A
 public class ReconciliationRecord {
 
+    //---------------- Attributes ------------------//
     private final UUID recordId;
     private final MatchHypothesis hypothesis;
     private final SystemUser confirmingUser;
     private final LocalDateTime reconciledAt;
 
+    //Constructor
     public ReconciliationRecord(
         MatchHypothesis hypothesis,
         SystemUser confirmingUser
@@ -26,6 +26,9 @@ public class ReconciliationRecord {
         this.reconciledAt = LocalDateTime.now();
     }
 
+    //---------- Methods -----------//
+
+    //Getters
     public UUID getRecordId() {
         return recordId;
     }

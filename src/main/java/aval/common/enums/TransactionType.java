@@ -1,5 +1,3 @@
-//Dev: Safwan
-//Use Cases: UC2, UC3
 package aval.common.enums;
 
 //@desc:   Classifies each RawTransaction for matching and standardization.
@@ -9,5 +7,5 @@ public enum TransactionType {
     DEBIT,
     CREDIT,
     REVERSAL,
-    ADJUSTMENT
+    ADJUSTMENT,
 }

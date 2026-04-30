@@ -1,9 +1,9 @@
 //Dev: Safwan
 //Use Cases: UC3
 package aval.domain.ingestion;
+
 import aval.common.enums.DataSourceType;
 import aval.common.enums.DatasetStatus;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +13,24 @@ import java.util.UUID;
 //@grasp:  Information Expert
 //@gof:    N/A
 public class RawBankStatement extends FinancialDataset {
+
+    //---------- Attributes ---------------//
     private String bankName;
     private String accountNumber;
     private LocalDate statementPeriodStart;
     private LocalDate statementPeriodEnd;
 
-    public RawBankStatement(UUID datasetId, LocalDate importDate, String filePath, DatasetStatus status, String bankName, String accountNumber, LocalDate statementPeriodStart, LocalDate statementPeriodEnd) {
+    //Constructor
+    public RawBankStatement(
+        UUID datasetId,
+        LocalDate importDate,
+        String filePath,
+        DatasetStatus status,
+        String bankName,
+        String accountNumber,
+        LocalDate statementPeriodStart,
+        LocalDate statementPeriodEnd
+    ) {
         super(datasetId, importDate, filePath, status);
         this.bankName = bankName;
         this.accountNumber = accountNumber;
@@ -34,11 +46,15 @@ public class RawBankStatement extends FinancialDataset {
     @Override
     public boolean validate() {
         // Ensure core banking metadata is present and dates make chronological sense
-        return this.bankName != null && !this.bankName.trim().isEmpty()
-                && this.accountNumber != null && !this.accountNumber.trim().isEmpty()
-                && this.statementPeriodStart != null
-                && this.statementPeriodEnd != null
-                && !this.statementPeriodStart.isAfter(this.statementPeriodEnd);
+        return (
+            this.bankName != null &&
+            !this.bankName.trim().isEmpty() &&
+            this.accountNumber != null &&
+            !this.accountNumber.trim().isEmpty() &&
+            this.statementPeriodStart != null &&
+            this.statementPeriodEnd != null &&
+            !this.statementPeriodStart.isAfter(this.statementPeriodEnd)
+        );
     }
 
     // Provides the bounding box coordinates [RegionName, X, Y, Width, Height]
@@ -46,8 +62,8 @@ public class RawBankStatement extends FinancialDataset {
     public List<String[]> extractTableRegion() {
         List<String[]> regions = new ArrayList<>();
         // Standard heuristic coordinates for a typical Pakistani bank statement
-        regions.add(new String[]{"HEADER_BOUNDS", "50", "700", "500", "25"});
-        regions.add(new String[]{"DATA_BOUNDS", "50", "100", "500", "600"});
+        regions.add(new String[] { "HEADER_BOUNDS", "50", "700", "500", "25" });
+        regions.add(new String[] { "DATA_BOUNDS", "50", "100", "500", "600" });
         return regions;
     }
 }

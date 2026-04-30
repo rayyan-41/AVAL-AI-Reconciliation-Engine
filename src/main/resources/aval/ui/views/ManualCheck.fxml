@@ -1,6 +1,65 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Label?>
-<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-    <Label text="Manual Check Placeholder" style="-fx-font-size: 24px;" />
+<?xml version="1.0" encoding="UTF-8" ?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.ManualCheckController"
+>
+
+  <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane">
+    <VBox style="-fx-padding: 28 32 28 32;" spacing="20">
+
+      <Label fx:id="mcTitle" text="Manual Check" styleClass="mc-title" />
+      <Label fx:id="mcSub" styleClass="mc-sub" wrapText="true" />
+
+      <!-- Progress -->
+      <VBox spacing="6">
+        <HBox>
+          <Label text="Review progress" styleClass="mc-prog-label" />
+          <Region HBox.hgrow="ALWAYS" />
+          <Label fx:id="mcProgText" styleClass="mc-prog-label-r" />
+        </HBox>
+        <ProgressBar
+                    fx:id="mcProgressBar"
+                    maxWidth="Infinity"
+                    progress="0"
+                    styleClass="mc-progress"
+                />
+      </VBox>
+
+      <!-- Table -->
+      <TableView fx:id="mcTable" styleClass="mc-table data-table">
+        <columns>
+          <TableColumn text="Confidence" fx:id="mcConfCol" prefWidth="90" />
+          <TableColumn text="Ledger Tx" fx:id="mcLedgerCol" prefWidth="200" />
+          <TableColumn text="Bank Tx" fx:id="mcBankCol" prefWidth="200" />
+          <TableColumn text="AI Justification" fx:id="mcJustCol" />
+          <TableColumn text="Action" fx:id="mcActionCol" prefWidth="160" />
+        </columns>
+      </TableView>
+
+    </VBox>
+  </ScrollPane>
+
+  <!-- Footer bar -->
+  <HBox
+        fx:id="mcCompleteBar"
+        styleClass="mc-complete-bar"
+        visible="false"
+        managed="false"
+        alignment="CENTER_LEFT"
+    >
+    <Label
+            text="All items reviewed. Proceed to generate the reconciliation report."
+            styleClass="mc-complete-text"
+            HBox.hgrow="ALWAYS"
+        />
+    <Button
+            text="Proceed to Report"
+            styleClass="btn-proceed"
+            onAction="#handleProceedToReport"
+        />
+  </HBox>
+
 </VBox>

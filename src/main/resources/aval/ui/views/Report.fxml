@@ -1,6 +1,65 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Label?>
-<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-    <Label text="Report Placeholder" style="-fx-font-size: 24px;" />
-</VBox>
+<?xml version="1.0" encoding="UTF-8" ?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<ScrollPane
+    fitToWidth="true"
+    styleClass="scroll-pane"
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.ReportController"
+>
+  <VBox style="-fx-padding: 36 40 36 40;" spacing="28">
+
+    <Label fx:id="rptTitle" styleClass="fd-title" />
+    <Label fx:id="rptSub" styleClass="fd-sub" />
+
+    <!-- 5 stat cards -->
+    <HBox fx:id="rptStatRow" spacing="12" />
+
+    <!-- Actions card -->
+    <VBox styleClass="fd-card" spacing="0">
+      <Label text="Export and Distribution" styleClass="uc-title" />
+      <Label
+                text="Generate the verified report or send directly to the client."
+                styleClass="uc-sub"
+                wrapText="true"
+            />
+      <HBox spacing="12" style="-fx-padding: 16 0 0 0;">
+        <Button
+                    fx:id="btnGenerate"
+                    text="Generate Report"
+                    styleClass="btn-gen"
+                    onAction="#handleGenerate"
+                />
+        <Button
+                    fx:id="btnEmail"
+                    text="Email to Company"
+                    styleClass="btn-email"
+                    onAction="#handleEmail"
+                />
+      </HBox>
+      <Label
+                fx:id="feedbackLabel"
+                styleClass="feedback-label"
+                visible="false"
+                managed="false"
+                style="-fx-padding: 16 0 0 0;"
+            />
+    </VBox>
+
+    <!-- Lineage table -->
+    <Label text="Reconciliation Lineage" styleClass="section-heading" />
+    <TableView fx:id="lineageTable" styleClass="data-table">
+      <columns>
+        <TableColumn text="Ledger Ref" fx:id="rlRefCol" prefWidth="110" />
+        <TableColumn text="Ledger Narr" fx:id="rlNarrCol" />
+        <TableColumn text="Bank Ref" fx:id="rbRefCol" prefWidth="110" />
+        <TableColumn text="Bank Narr" fx:id="rbNarrCol" />
+        <TableColumn text="Match Type" fx:id="rTypeCol" prefWidth="140" />
+        <TableColumn text="Confidence" fx:id="rConfCol" prefWidth="90" />
+        <TableColumn text="Resolution" fx:id="rResCol" prefWidth="130" />
+      </columns>
+    </TableView>
+
+  </VBox>
+</ScrollPane>

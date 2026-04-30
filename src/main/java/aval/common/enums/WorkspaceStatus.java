@@ -1,5 +1,3 @@
-//Dev: Safwan
-//Use Cases: UC1
 package aval.common.enums;
 
 //@desc:   Represents the lifecycle state of a ReconciliationWorkspace.
@@ -9,5 +7,5 @@ public enum WorkspaceStatus {
     OPEN,
     IN_PROGRESS,
     COMPLETED,
-    LOCKED
+    LOCKED,
 }

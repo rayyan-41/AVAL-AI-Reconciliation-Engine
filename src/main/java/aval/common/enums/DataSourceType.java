@@ -1,5 +1,3 @@
-//Dev: Safwan
-//Use Cases: UC2, UC3
 package aval.common.enums;
 
 //@desc:   Enumerates the origin of a financial dataset uploaded into AVAL.

@@ -7,14 +7,19 @@ package aval.domain.core;
 //@gof:    N/A
 public class MatchingConfig {
 
+    //----------- Attributes ----------------//
     private final Double autoConfirmThreshold;
     private final Double reviewFloor;
 
+    //Constructor
     public MatchingConfig() {
         this.autoConfirmThreshold = 0.95;
         this.reviewFloor = 0.70;
     }
 
+    //----------- Methods ------------//
+
+    //Getters
     public Double getAutoConfirmThreshold() {
         return this.autoConfirmThreshold;
     }

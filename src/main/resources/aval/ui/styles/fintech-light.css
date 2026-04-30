@@ -10,6 +10,7 @@
     -fx-accent-hover: #9a0025;
     -fx-accent-dim: #fdf2f5;
     -fx-border: #e2e5e9;
+    -fx-border-subtle: #edf0f4;
     -fx-border-strong: #c8cdd6;
     -fx-green-bg: #f0faf2;
     -fx-green-border: #b6d9be;
@@ -17,6 +18,13 @@
     -fx-amber-bg: #fffbeb;
     -fx-amber-text: #92400e;
     -fx-red-text: #991b1b;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
 }
 
 .splash-aval {
@@ -526,4 +534,133 @@
 }
 .lmb {
     -fx-background-color: -fx-bg;
+}
+
+/* --- Phase 7: Manual Check --- */
+.mc-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.mc-sub {
+    -fx-font-size: 15px;
+    -fx-text-fill: -fx-text-muted;
+}
+.mc-prog-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-secondary;
+}
+.mc-prog-label-r {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-text-muted;
+}
+.mc-progress .track {
+    -fx-background-color: -fx-bg-inset;
+    -fx-background-radius: 4px;
+}
+.mc-progress .bar {
+    -fx-background-color: -fx-accent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4px;
+}
+.mc-table {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-control-inner-background: transparent;
+    -fx-control-inner-background-alt: transparent;
+    -fx-fixed-cell-size: 80px;
+}
+.mc-complete-bar {
+    -fx-background-color: -fx-green-bg;
+    -fx-border-color: -fx-green-border transparent transparent transparent;
+    -fx-padding: 16 32 16 32;
+}
+.mc-complete-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-green-text;
+    -fx-font-weight: bold;
+}
+.btn-proceed {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+}
+.btn-approve {
+    -fx-background-color: -fx-green-bg;
+    -fx-text-fill: -fx-green-text;
+    -fx-border-color: -fx-green-border;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+.btn-reject {
+    -fx-background-color: -fx-accent-dim;
+    -fx-text-fill: -fx-red-text;
+    -fx-border-color: -fx-accent-dim;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.conf-pill {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 10 4 10;
+    -fx-background-radius: 12px;
+}
+.conf-hi {
+    -fx-background-color: -fx-amber-bg;
+    -fx-text-fill: -fx-amber-text;
+}
+.conf-lo {
+    -fx-background-color: -fx-accent-dim;
+    -fx-text-fill: -fx-red-text;
+}
+
+/* --- Phase 8: Report --- */
+.uc-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.uc-sub {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-text-muted;
+    -fx-padding: 8 0 16 0;
+}
+.btn-gen {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 10 18 10 18;
+    -fx-cursor: hand;
+}
+.btn-gen:hover {
+    -fx-background-color: -fx-accent-hover;
+}
+.btn-email {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-muted;
+    -fx-border-color: -fx-border-strong;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 10 18 10 18;
+    -fx-cursor: hand;
+}
+.btn-email:hover {
+    -fx-text-fill: -fx-text-primary;
+    -fx-border-color: -fx-text-primary;
+}
+.feedback-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-green-text;
+    -fx-font-weight: bold;
 }

@@ -1,7 +1,9 @@
 package aval.ui.controller;
 
+import aval.domain.ai.MatchHypothesis;
 import aval.domain.core.ClientOrganization;
 import aval.ui.MainUIContext;
+import java.util.List;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -40,6 +42,8 @@ public class WorkspaceController {
     private Node reconView;
     private Node manualView;
     private Node reportView;
+    private ManualCheckController manualCheckController;
+    private ReportController reportController;
 
     public void initialize() {
         MainUIContext.getInstance().setWorkspaceController(this);
@@ -60,8 +64,8 @@ public class WorkspaceController {
         // Load all sub-views into StackPane
         financeView = loadFxml("Finance.fxml");
         reconView = loadFxml("Recon.fxml");
-        manualView = loadFxml("ManualCheck.fxml");
-        reportView = loadFxml("Report.fxml");
+        loadManualView();
+        loadReportView();
 
         if (financeView != null) contentPane.getChildren().add(financeView);
         if (reconView != null) contentPane.getChildren().add(reconView);
@@ -99,6 +103,39 @@ public class WorkspaceController {
         }
     }
 
+    private void loadManualView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/ManualCheck.fxml")
+            );
+            manualView = loader.load();
+            manualCheckController = loader.getController();
+            if (manualCheckController != null) {
+                manualCheckController.setWorkspaceController(this);
+            }
+        } catch (Exception e) {
+            System.err.println("Could not load sub-view: ManualCheck.fxml");
+            e.printStackTrace();
+            manualView = null;
+            manualCheckController = null;
+        }
+    }
+
+    private void loadReportView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/Report.fxml")
+            );
+            reportView = loader.load();
+            reportController = loader.getController();
+        } catch (Exception e) {
+            System.err.println("Could not load sub-view: Report.fxml");
+            e.printStackTrace();
+            reportView = null;
+            reportController = null;
+        }
+    }
+
     public void unlockManualCheck() {
         tabManual.setDisable(false);
         showManual();
@@ -123,12 +160,26 @@ public class WorkspaceController {
 
     @FXML
     public void showManual() {
+        if (manualCheckController != null) {
+            List<MatchHypothesis> hypotheses = MainUIContext.getInstance()
+                .getPendingHypotheses();
+            if (hypotheses != null) {
+                manualCheckController.setItems(hypotheses);
+            }
+        }
         if (manualView != null) showView(manualView);
         tabManual.setSelected(true);
     }
 
     @FXML
     public void showReport() {
+        if (reportController != null) {
+            List<MatchHypothesis> hypotheses = MainUIContext.getInstance()
+                .getPendingHypotheses();
+            if (hypotheses != null) {
+                reportController.populateReport(hypotheses);
+            }
+        }
         if (reportView != null) showView(reportView);
         tabReport.setSelected(true);
     }

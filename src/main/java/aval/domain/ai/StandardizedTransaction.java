@@ -12,6 +12,7 @@ import java.util.UUID;
 //@gof:    N/A
 public class StandardizedTransaction {
 
+    //------------ Attributes ------------//
     private final UUID transactionId;
     private final LocalDate valueDate;
     private final BigDecimal amount;
@@ -19,6 +20,7 @@ public class StandardizedTransaction {
     private final TransactionType type;
     private final UUID sourceDatasetId;
 
+    //Constructor
     public StandardizedTransaction(
         UUID transactionId,
         LocalDate valueDate,
@@ -35,6 +37,9 @@ public class StandardizedTransaction {
         this.sourceDatasetId = sourceDatasetId;
     }
 
+    //--------- Methods -----------//
+
+    //Getters
     public UUID getTransactionId() {
         return transactionId;
     }

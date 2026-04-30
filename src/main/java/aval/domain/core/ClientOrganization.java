@@ -11,11 +11,13 @@ import java.util.UUID;
 //@gof:    N/A
 public class ClientOrganization {
 
+    //------ Attributes --------//
     private UUID orgId;
     private String name;
     private String contactMetadata;
     private List<ReconciliationWorkspace> workspaces;
 
+    //Constructor
     public ClientOrganization(UUID orgId, String name, String contactMetadata) {
         this.orgId = orgId;
         this.name = name;
@@ -23,6 +25,9 @@ public class ClientOrganization {
         this.workspaces = new ArrayList<>();
     }
 
+    //------------ Methods -------------//
+
+    //Getters
     public UUID getOrgId() {
         return orgId;
     }

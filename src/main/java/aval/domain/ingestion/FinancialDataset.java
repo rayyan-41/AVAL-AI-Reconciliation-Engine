@@ -15,6 +15,7 @@ import java.util.UUID;
 //@gof:    N/A
 public abstract class FinancialDataset {
 
+    //-------------- Attributes --------------------------------//
     private UUID datasetId;
     private LocalDate importDate;
     private String filePath;
@@ -22,6 +23,7 @@ public abstract class FinancialDataset {
     private List<RawTransaction> rawTransactions;
     private List<StandardizedTransaction> standardizedTransactions;
 
+    //Constructor
     public FinancialDataset(
         UUID datasetId,
         LocalDate importDate,
@@ -36,10 +38,14 @@ public abstract class FinancialDataset {
         this.standardizedTransactions = new ArrayList<>();
     }
 
+    //-------------------- Methods --------------------//
+
+    //Abstractions
     public abstract DataSourceType getSourceType();
 
     public abstract boolean validate();
 
+    //Getters
     public List<RawTransaction> getRawTransactions() {
         return this.rawTransactions;
     }

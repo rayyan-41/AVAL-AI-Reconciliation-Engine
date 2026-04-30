@@ -1,5 +1,3 @@
-//Dev: Safwan
-//Use Cases: UC2-UC4
 package aval.common.enums;
 
 //@desc:   Tracks the processing lifecycle of a FinancialDataset from upload to standardisation.

@@ -9,14 +9,19 @@ import java.util.UUID;
 //@gof:    N/A
 public class SemanticEmbedding {
 
+    //----------- Attributes ---------//
     private final UUID transactionId;
     private final float[] vector;
 
+    // Constructor
     public SemanticEmbedding(UUID transactionId, float[] vector) {
         this.transactionId = transactionId;
         this.vector = vector;
     }
 
+    //----------- Methods -----------//
+
+    //Getters
     public UUID getTransactionId() {
         return transactionId;
     }
