@@ -200,7 +200,10 @@ public class WorkspaceController {
     public void showReport() {
         if (reportController != null) {
             List<MatchHypothesis> hypotheses = MainUIContext.getInstance()
-                .getPendingHypotheses();
+                .getAllHypotheses();
+            if (hypotheses == null) {
+                hypotheses = MainUIContext.getInstance().getPendingHypotheses();
+            }
             if (hypotheses != null) {
                 reportController.populateReport(hypotheses);
             }

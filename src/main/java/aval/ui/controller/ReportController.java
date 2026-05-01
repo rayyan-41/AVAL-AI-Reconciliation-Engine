@@ -2,13 +2,18 @@ package aval.ui.controller;
 
 import aval.common.enums.HypothesisStatus;
 import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.ReconciliationRecord;
+import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
+import aval.service.ReportService;
 import aval.ui.MainUIContext;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -72,7 +77,10 @@ public class ReportController {
         setupLineageTable();
 
         List<MatchHypothesis> existing = MainUIContext.getInstance()
-            .getPendingHypotheses();
+            .getAllHypotheses();
+        if (existing == null) {
+            existing = MainUIContext.getInstance().getPendingHypotheses();
+        }
         if (existing != null) {
             populateReport(existing);
         }
@@ -117,16 +125,61 @@ public class ReportController {
     @FXML
     void handleGenerate() {
         ClientOrganization client = MainUIContext.getInstance().getActiveClient();
-        String clientName = client != null ? client.getName().replace(" ", "_") : "Unknown_Client";
-        showFeedback("Generating...");
+        String clientName = client != null
+            ? client.getName().replace(" ", "_")
+            : "Unknown_Client";
+        String outputPath =
+            System.getProperty("user.home") +
+            "\\reconciliation_report_" +
+            clientName +
+            "_Sep2024.csv";
+        showFeedback("Generating report...");
 
-        PauseTransition pt = new PauseTransition(Duration.millis(1200));
-        pt.setOnFinished(e ->
-            showFeedback(
-                "Report generated: reconciliation_report_" + clientName + "_Sep2024.csv"
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                MainUIContext ctx = MainUIContext.getInstance();
+                ReportService rptSvc = ctx.getReportService();
+                if (rptSvc == null) {
+                    throw new IllegalStateException(
+                        "Report service is not initialized."
+                    );
+                }
+
+                List<ReconciliationRecord> records = ctx.getReconciledRecords();
+                List<StandardizedTransaction> unmatchedL = ctx.getUnmatchedLedger();
+                List<StandardizedTransaction> unmatchedB = ctx.getUnmatchedBank();
+                List<MatchHypothesis> pending = new ArrayList<>();
+                List<String> anomalies = ctx.getAnomalies();
+
+                if (records == null) records = new ArrayList<>();
+                if (unmatchedL == null) unmatchedL = new ArrayList<>();
+                if (unmatchedB == null) unmatchedB = new ArrayList<>();
+                if (anomalies == null) anomalies = new ArrayList<>();
+
+                rptSvc.generateReconciliationReport(
+                    records,
+                    unmatchedL,
+                    unmatchedB,
+                    pending,
+                    anomalies,
+                    outputPath
+                );
+                return null;
+            }
+        };
+        task.setOnSucceeded(e ->
+            Platform.runLater(() -> showFeedback("Report saved to: " + outputPath))
+        );
+        task.setOnFailed(e ->
+            Platform.runLater(() ->
+                showFeedback("Error: " + task.getException().getMessage())
             )
         );
-        pt.play();
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
