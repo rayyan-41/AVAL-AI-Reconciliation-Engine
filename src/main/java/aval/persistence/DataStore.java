@@ -491,13 +491,15 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            System.err.println(
-                "findSystemUserByUsername failed: " + e.getMessage()
+            throw new RuntimeException(
+                "findSystemUserByUsername failed: " + e.getMessage(),
+                e
             );
         } catch (IllegalArgumentException e) {
-            System.err.println(
+            throw new RuntimeException(
                 "findSystemUserByUsername failed due to invalid role mapping: " +
-                e.getMessage()
+                e.getMessage(),
+                e
             );
         }
         return null;

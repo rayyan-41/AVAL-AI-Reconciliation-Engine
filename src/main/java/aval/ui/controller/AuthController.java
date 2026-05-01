@@ -1,5 +1,12 @@
 package aval.ui.controller;
 
+import aval.common.enums.UserRole;
+import aval.domain.SystemUser;
+import aval.persistence.DataStore;
+import aval.ui.MainUIContext;
+import java.sql.SQLException;
+import java.util.UUID;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -42,8 +49,65 @@ public class AuthController {
             return;
         }
 
-        // Phase 2: navigate to Registry.fxml
-        navigateTo("Registry.fxml");
+        String username = workspaceIdField.getText().trim();
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+
+        Task<SystemUser> authTask = new Task<>() {
+            @Override
+            protected SystemUser call() throws Exception {
+                if (ds == null) {
+                    throw new SQLException("DataStore not initialized");
+                }
+                return ds.findSystemUserByUsername(username);
+            }
+        };
+
+        authTask.setOnSucceeded(e -> {
+            SystemUser user = authTask.getValue();
+            if (user != null) {
+                MainUIContext.getInstance().setCurrentUser(user);
+                navigateTo("Registry.fxml");
+            } else {
+                workspaceIdField.setStyle(
+                    "-fx-border-color: transparent transparent #991b1b transparent;"
+                );
+            }
+        });
+
+        authTask.setOnFailed(e -> {
+            Throwable failure = authTask.getException();
+            if (isSqlFailure(failure)) {
+                MainUIContext.getInstance().setCurrentUser(
+                    createSyntheticUser(username)
+                );
+                navigateTo("Registry.fxml");
+                return;
+            }
+
+            workspaceIdField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;"
+            );
+            System.err.println("Authentication failed: " + failure.getMessage());
+        });
+
+        Thread authThread = new Thread(authTask);
+        authThread.setDaemon(true);
+        authThread.start();
+    }
+
+    private SystemUser createSyntheticUser(String username) {
+        return new SystemUser(UUID.randomUUID(), username, UserRole.ACCOUNTANT);
+    }
+
+    private boolean isSqlFailure(Throwable throwable) {
+        Throwable cursor = throwable;
+        while (cursor != null) {
+            if (cursor instanceof SQLException) {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 
     private void navigateTo(String fxml) {

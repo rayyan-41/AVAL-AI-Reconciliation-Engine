@@ -47,29 +47,41 @@ public class Main extends Application {
                 18
             );
 
-            Connection connection = DriverManager.getConnection(
-                "jdbc:postgresql://localhost:5432/aval_db",
-                "aval_user",
-                "aval_password"
-            );
-            DataStore dataStore = new DataStore(connection);
-            VectorizationEngine vectorizationEngine =
-                new LangChain4jVectorizationEngine(
-                    "http://localhost:11434",
-                    "nomic-embed-text"
-                );
-            MatchingEngine matchingEngine = new RuleBasedMatchingEngine();
+            DataStore dataStore = null;
+            IngestionService ingestionService = null;
+            ReconciliationService reconciliationService = null;
 
-            IngestionService ingestionService = new IngestionService(
-                dataStore,
-                vectorizationEngine
-            );
-            ReconciliationService reconciliationService =
-                new ReconciliationService(
-                    vectorizationEngine,
-                    matchingEngine,
-                    dataStore
+            try {
+                Connection connection = DriverManager.getConnection(
+                    "jdbc:postgresql://localhost:5432/aval_db",
+                    "aval_user",
+                    "aval_password"
                 );
+                dataStore = new DataStore(connection);
+                VectorizationEngine vectorizationEngine =
+                    new LangChain4jVectorizationEngine(
+                        "http://localhost:11434",
+                        "nomic-embed-text"
+                    );
+                MatchingEngine matchingEngine = new RuleBasedMatchingEngine();
+
+                ingestionService = new IngestionService(
+                    dataStore,
+                    vectorizationEngine
+                );
+                reconciliationService =
+                    new ReconciliationService(
+                        vectorizationEngine,
+                        matchingEngine,
+                        dataStore
+                    );
+            } catch (Exception e) {
+                System.err.println(
+                    "[BOOT] Backend unavailable. Running UI in fallback mode."
+                );
+                System.err.println("[BOOT] " + e.getMessage());
+            }
+
             ReportService reportService = new ReportService();
             AnomalyDetectionEngine anomalyDetectionEngine =
                 new AnomalyDetectionEngine();
