@@ -1,8 +1,14 @@
 package aval.ui.controller;
 
 import aval.domain.core.ClientOrganization;
+import aval.domain.core.MatchingConfig;
+import aval.domain.core.ReconciliationWorkspace;
+import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
 import aval.ui.util.MockUIProvider;
+import java.util.List;
+import java.util.UUID;
+import javafx.concurrent.Task;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,9 +39,7 @@ public class RegistryController {
     private FilteredList<ClientOrganization> filtered;
 
     public void initialize() {
-        allClients = FXCollections.observableArrayList(
-            MockUIProvider.getMockClients(7)
-        );
+        allClients = FXCollections.observableArrayList();
         filtered = new FilteredList<>(allClients, p -> true);
 
         searchField.textProperty().addListener((obs, old, nw) -> {
@@ -128,6 +132,29 @@ public class RegistryController {
         });
 
         clientTable.setItems(filtered);
+
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+        if (ds == null) {
+            allClients.setAll(MockUIProvider.getMockClients(7));
+            return;
+        }
+
+        Task<List<ClientOrganization>> loadTask = new Task<>() {
+            @Override
+            protected List<ClientOrganization> call() {
+                return ds.findAllClients();
+            }
+        };
+        loadTask.setOnSucceeded(e -> allClients.setAll(loadTask.getValue()));
+        loadTask.setOnFailed(e ->
+            System.err.println(
+                "Failed to load clients from database: " +
+                loadTask.getException().getMessage()
+            )
+        );
+        Thread loadThread = new Thread(loadTask);
+        loadThread.setDaemon(true);
+        loadThread.start();
     }
 
     @FXML
@@ -141,7 +168,27 @@ public class RegistryController {
     }
 
     private void openWorkspace(ClientOrganization client) {
-        MainUIContext.getInstance().setActiveClient(client);
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+
+        ReconciliationWorkspace workspace = new ReconciliationWorkspace(
+            UUID.randomUUID(),
+            client,
+            new MatchingConfig()
+        );
+        if (ds != null) {
+            try {
+                ds.saveReconciliationWorkspace(workspace);
+            } catch (RuntimeException e) {
+                System.err.println(
+                    "Failed to persist workspace. Continuing in local mode: " +
+                    e.getMessage()
+                );
+            }
+        }
+
+        MainUIContext ctx = MainUIContext.getInstance();
+        ctx.setActiveClient(client);
+        ctx.setActiveWorkspace(workspace);
         navigateTo("Workspace.fxml");
     }
 
