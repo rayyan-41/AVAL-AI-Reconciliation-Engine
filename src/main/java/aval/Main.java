@@ -1,5 +1,17 @@
 package aval;
 
+import aval.engine.AnomalyDetectionEngine;
+import aval.engine.LangChain4jVectorizationEngine;
+import aval.engine.MatchingEngine;
+import aval.engine.RuleBasedMatchingEngine;
+import aval.engine.VectorizationEngine;
+import aval.persistence.DataStore;
+import aval.service.IngestionService;
+import aval.service.ReconciliationService;
+import aval.service.ReportService;
+import aval.ui.MainUIContext;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -34,6 +46,40 @@ public class Main extends Application {
                 ),
                 18
             );
+
+            Connection connection = DriverManager.getConnection(
+                "jdbc:postgresql://localhost:5432/aval_db",
+                "aval_user",
+                "aval_password"
+            );
+            DataStore dataStore = new DataStore(connection);
+            VectorizationEngine vectorizationEngine =
+                new LangChain4jVectorizationEngine(
+                    "http://localhost:11434",
+                    "nomic-embed-text"
+                );
+            MatchingEngine matchingEngine = new RuleBasedMatchingEngine();
+
+            IngestionService ingestionService = new IngestionService(
+                dataStore,
+                vectorizationEngine
+            );
+            ReconciliationService reconciliationService =
+                new ReconciliationService(
+                    vectorizationEngine,
+                    matchingEngine,
+                    dataStore
+                );
+            ReportService reportService = new ReportService();
+            AnomalyDetectionEngine anomalyDetectionEngine =
+                new AnomalyDetectionEngine();
+
+            MainUIContext context = MainUIContext.getInstance();
+            context.setDataStore(dataStore);
+            context.setIngestionService(ingestionService);
+            context.setReconciliationService(reconciliationService);
+            context.setReportService(reportService);
+            context.setAnomalyDetectionEngine(anomalyDetectionEngine);
 
             System.out.println("[BOOT] Displaying Splash Screen...");
             FXMLLoader splashLoader = new FXMLLoader(

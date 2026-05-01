@@ -1,7 +1,17 @@
 package aval.ui;
 
+import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.ReconciliationRecord;
+import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
+import aval.domain.core.ReconciliationWorkspace;
+import aval.engine.AnomalyDetectionEngine;
+import aval.persistence.DataStore;
+import aval.service.IngestionService;
+import aval.service.ReconciliationService;
+import aval.service.ReportService;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -12,6 +22,7 @@ import javafx.scene.Scene;
  */
 public class MainUIContext {
 
+    //-------------- Attributes ----------------------//
     private static MainUIContext instance;
     private final BooleanProperty darkModeActive = new SimpleBooleanProperty(
         false
@@ -19,11 +30,29 @@ public class MainUIContext {
     private ClientOrganization activeClient;
     private List<MatchHypothesis> pendingHypotheses;
     private Object workspaceController; // Using Object to avoid circular deps, cast later if needed.
+    private SystemUser currentUser;
+    private ReconciliationWorkspace activeWorkspace;
+    private IngestionService ingestionService;
+    private ReconciliationService reconciliationService;
+    private ReportService reportService;
+    private AnomalyDetectionEngine anomalyDetectionEngine;
+    private DataStore dataStore;
+    private List<StandardizedTransaction> standardizedLedgerTransactions;
+    private List<StandardizedTransaction> standardizedBankTransactions;
+    private List<MatchHypothesis> allHypotheses;
+    private List<ReconciliationRecord> reconciledRecords;
+    private List<StandardizedTransaction> unmatchedLedger;
+    private List<StandardizedTransaction> unmatchedBank;
+    private List<String> anomalies;
 
+    //Constructor
     private MainUIContext() {
         // Private constructor for Singleton
     }
 
+    //---------- Methods ------------//
+
+    //Singleton Accessor
     public static MainUIContext getInstance() {
         if (instance == null) {
             instance = new MainUIContext();
@@ -31,6 +60,7 @@ public class MainUIContext {
         return instance;
     }
 
+    //Theme State
     public BooleanProperty darkModeActiveProperty() {
         return darkModeActive;
     }
@@ -43,6 +73,7 @@ public class MainUIContext {
         darkModeActive.set(active);
     }
 
+    //Getters and Setters
     public ClientOrganization getActiveClient() {
         return activeClient;
     }
@@ -65,6 +96,139 @@ public class MainUIContext {
 
     public Object getWorkspaceController() {
         return workspaceController;
+    }
+
+    public SystemUser getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(SystemUser currentUser) {
+        this.currentUser = currentUser;
+    }
+
+    public ReconciliationWorkspace getActiveWorkspace() {
+        return activeWorkspace;
+    }
+
+    public void setActiveWorkspace(ReconciliationWorkspace activeWorkspace) {
+        this.activeWorkspace = activeWorkspace;
+    }
+
+    public IngestionService getIngestionService() {
+        return ingestionService;
+    }
+
+    public void setIngestionService(IngestionService ingestionService) {
+        this.ingestionService = ingestionService;
+    }
+
+    public ReconciliationService getReconciliationService() {
+        return reconciliationService;
+    }
+
+    public void setReconciliationService(
+        ReconciliationService reconciliationService
+    ) {
+        this.reconciliationService = reconciliationService;
+    }
+
+    public ReportService getReportService() {
+        return reportService;
+    }
+
+    public void setReportService(ReportService reportService) {
+        this.reportService = reportService;
+    }
+
+    public AnomalyDetectionEngine getAnomalyDetectionEngine() {
+        return anomalyDetectionEngine;
+    }
+
+    public void setAnomalyDetectionEngine(
+        AnomalyDetectionEngine anomalyDetectionEngine
+    ) {
+        this.anomalyDetectionEngine = anomalyDetectionEngine;
+    }
+
+    public DataStore getDataStore() {
+        return dataStore;
+    }
+
+    public void setDataStore(DataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+
+    public List<StandardizedTransaction> getStandardizedLedgerTransactions() {
+        return standardizedLedgerTransactions;
+    }
+
+    public void setStandardizedLedgerTransactions(
+        List<StandardizedTransaction> standardizedLedgerTransactions
+    ) {
+        this.standardizedLedgerTransactions = standardizedLedgerTransactions;
+    }
+
+    public List<StandardizedTransaction> getStandardizedBankTransactions() {
+        return standardizedBankTransactions;
+    }
+
+    public void setStandardizedBankTransactions(
+        List<StandardizedTransaction> standardizedBankTransactions
+    ) {
+        this.standardizedBankTransactions = standardizedBankTransactions;
+    }
+
+    public List<MatchHypothesis> getAllHypotheses() {
+        return allHypotheses;
+    }
+
+    public void setAllHypotheses(List<MatchHypothesis> allHypotheses) {
+        this.allHypotheses = allHypotheses;
+    }
+
+    public List<ReconciliationRecord> getReconciledRecords() {
+        return reconciledRecords;
+    }
+
+    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) {
+        this.reconciledRecords = reconciledRecords;
+    }
+
+    //Helper Methods
+    public void addReconciledRecord(ReconciliationRecord record) {
+        if (record == null) {
+            throw new IllegalArgumentException("record cannot be null");
+        }
+        if (reconciledRecords == null) {
+            reconciledRecords = new ArrayList<>();
+        }
+        reconciledRecords.add(record);
+    }
+
+    public List<StandardizedTransaction> getUnmatchedLedger() {
+        return unmatchedLedger;
+    }
+
+    public void setUnmatchedLedger(
+        List<StandardizedTransaction> unmatchedLedger
+    ) {
+        this.unmatchedLedger = unmatchedLedger;
+    }
+
+    public List<StandardizedTransaction> getUnmatchedBank() {
+        return unmatchedBank;
+    }
+
+    public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) {
+        this.unmatchedBank = unmatchedBank;
+    }
+
+    public List<String> getAnomalies() {
+        return anomalies;
+    }
+
+    public void setAnomalies(List<String> anomalies) {
+        this.anomalies = anomalies;
     }
 
     /**

@@ -2,6 +2,7 @@
 //Use Cases: All
 package aval.persistence;
 
+import aval.common.enums.UserRole;
 import aval.common.enums.TransactionType;
 import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
@@ -442,6 +443,62 @@ public class DataStore {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    // ── READ LOOKUPS ─────────────────────────────────────────────────────────
+
+    /**
+     * Fetches all client organizations ordered by display name.
+     */
+    public List<ClientOrganization> findAllClients() {
+        List<ClientOrganization> clients = new ArrayList<>();
+        String sql = "SELECT org_id, name FROM client_organization ORDER BY name";
+        try (
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                clients.add(
+                    new ClientOrganization(
+                        (UUID) rs.getObject("org_id"),
+                        rs.getString("name"),
+                        ""
+                    )
+                );
+            }
+        } catch (SQLException e) {
+            System.err.println("findAllClients failed: " + e.getMessage());
+        }
+        return clients;
+    }
+
+    /**
+     * Resolves a username to a SystemUser record used during authentication.
+     */
+    public SystemUser findSystemUserByUsername(String username) {
+        String sql = "SELECT user_id, username, role FROM system_user WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new SystemUser(
+                        (UUID) rs.getObject("user_id"),
+                        rs.getString("username"),
+                        UserRole.valueOf(rs.getString("role"))
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println(
+                "findSystemUserByUsername failed: " + e.getMessage()
+            );
+        } catch (IllegalArgumentException e) {
+            System.err.println(
+                "findSystemUserByUsername failed due to invalid role mapping: " +
+                e.getMessage()
+            );
         }
         return null;
     }
