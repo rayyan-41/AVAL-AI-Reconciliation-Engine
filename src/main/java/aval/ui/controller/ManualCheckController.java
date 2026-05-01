@@ -1,13 +1,19 @@
 package aval.ui.controller;
 
+import aval.common.enums.UserRole;
 import aval.common.enums.HypothesisStatus;
+import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
+import java.util.UUID;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -104,23 +110,85 @@ public class ManualCheckController {
                 .collect(Collectors.toList())
         );
         resolved = 0;
+        mcCompleteBar.setVisible(false);
+        mcCompleteBar.setManaged(false);
         updateProgress();
     }
 
     private void resolveItem(int index, String decision) {
+        if (index < 0 || index >= mcTable.getItems().size()) {
+            return;
+        }
+
         MatchHypothesis h = mcTable.getItems().get(index);
-        if (decision.equals("APPROVED"))
+        if (h.getStatus() != HypothesisStatus.PENDING_REVIEW) {
+            return;
+        }
+
+        MainUIContext ctx = MainUIContext.getInstance();
+        SystemUser user = ctx.getCurrentUser();
+        if (user == null) {
+            user = new SystemUser(
+                UUID.randomUUID(),
+                "local-user",
+                UserRole.ACCOUNTANT
+            );
+            ctx.setCurrentUser(user);
+        }
+        ReconciliationService svc = ctx.getReconciliationService();
+        if (svc == null) {
+            mcSub.setText(
+                "Manual review persistence unavailable: reconciliation service not initialized."
+            );
+            System.err.println(
+                "Manual review persistence unavailable: reconciliation service not initialized."
+            );
+            return;
+        }
+
+        if ("APPROVED".equals(decision)) {
             h.setStatus(HypothesisStatus.APPROVED);
-        else
+        } else {
             h.setStatus(HypothesisStatus.REJECTED);
+        }
         resolved++;
         mcTable.refresh();
         updateProgress();
+
+        SystemUser finalUser = user;
+        Task<Void> persistTask = new Task<>() {
+            @Override
+            protected Void call() {
+                if ("APPROVED".equals(decision)) {
+                    ReconciliationRecord record = svc.confirmHypothesis(
+                        h,
+                        finalUser
+                    );
+                    MainUIContext.getInstance().addReconciledRecord(record);
+                } else {
+                    svc.rejectHypothesis(h, finalUser);
+                }
+                return null;
+            }
+        };
+        persistTask.setOnFailed(e ->
+            System.err.println(
+                "Failed to persist manual decision: " +
+                persistTask.getException().getMessage()
+            )
+        );
+        Thread thread = new Thread(persistTask);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void updateProgress() {
         int total = mcTable.getItems().size();
-        if (total == 0) return;
+        if (total == 0) {
+            mcProgressBar.setProgress(0);
+            mcProgText.setText("0 of 0 resolved");
+            return;
+        }
         double prog = (double) resolved / total;
         mcProgressBar.setProgress(prog);
         mcProgText.setText(resolved + " of " + total + " resolved");
