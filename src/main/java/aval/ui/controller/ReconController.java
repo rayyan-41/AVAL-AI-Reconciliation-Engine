@@ -1,16 +1,29 @@
 package aval.ui.controller;
 
+import aval.common.enums.DataSourceType;
+import aval.common.enums.HypothesisStatus;
+import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.core.ReconciliationWorkspace;
+import aval.domain.ingestion.FinancialDataset;
+import aval.engine.AnomalyDetectionEngine;
+import aval.service.IngestionService;
+import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
-import aval.ui.util.MockUIProvider;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -57,6 +70,9 @@ public class ReconController {
 
     @FXML
     private Label bankStatus;
+
+    @FXML
+    private Label ledgerStatus;
 
     @FXML
     private StackPane bankPanel;
@@ -122,6 +138,7 @@ public class ReconController {
         setupDropZone();
         setupLedgerTable();
         showBankState("dropzone");
+        updateReconButtonState();
     }
 
     private void setupLedgerTable() {
@@ -179,9 +196,7 @@ public class ReconController {
         );
 
         ObservableList<StandardizedTransaction> txns =
-            FXCollections.observableArrayList(
-                MockUIProvider.getMockTransactions(10)
-            );
+            FXCollections.observableArrayList();
         ledgerTable.setItems(txns);
     }
 
@@ -220,7 +235,86 @@ public class ReconController {
         }
     }
 
+    @FXML
+    void handleLoadLedger() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Select Internal Ledger");
+        fc
+            .getExtensionFilters()
+            .add(new FileChooser.ExtensionFilter("Excel Files", "*.xlsx"));
+        Stage stage = (Stage) ledgerStatus.getScene().getWindow();
+        File f = fc.showOpenDialog(stage);
+        if (f != null) {
+            startLedgerIngestion(f);
+        }
+    }
+
+    private void startLedgerIngestion(File f) {
+        MainUIContext.getInstance().setStandardizedLedgerTransactions(null);
+        updateReconButtonState();
+        ledgerStatus.setText("Loading...");
+        ledgerStatus.getStyleClass().setAll("badge", "badge-pending");
+
+        Task<List<StandardizedTransaction>> task = new Task<>() {
+            @Override
+            protected List<StandardizedTransaction> call() throws Exception {
+                MainUIContext ctx = MainUIContext.getInstance();
+                IngestionService svc = ctx.getIngestionService();
+                ReconciliationWorkspace workspace = ctx.getActiveWorkspace();
+                if (svc == null || workspace == null) {
+                    throw new IllegalStateException(
+                        "Ingestion service or active workspace is not available."
+                    );
+                }
+
+                FinancialDataset dataset = svc.ingestFile(
+                    workspace.getWorkspaceId(),
+                    f.getPath(),
+                    DataSourceType.INTERNAL_EXCEL
+                );
+                if (dataset == null) {
+                    throw new IllegalStateException(
+                        "Ledger file could not be ingested."
+                    );
+                }
+                return svc.standardize(dataset);
+            }
+        };
+
+        task.setOnSucceeded(e ->
+            Platform.runLater(() -> {
+                List<StandardizedTransaction> stdLedger = task.getValue();
+                MainUIContext.getInstance().setStandardizedLedgerTransactions(
+                    stdLedger
+                );
+                ledgerStatus.setText(
+                    "Loaded — " + stdLedger.size() + " records"
+                );
+                ledgerStatus.getStyleClass().setAll("badge", "badge-active");
+                ledgerTable.setItems(FXCollections.observableArrayList(stdLedger));
+                updateReconButtonState();
+            })
+        );
+
+        task.setOnFailed(e ->
+            Platform.runLater(() -> {
+                MainUIContext.getInstance().setStandardizedLedgerTransactions(
+                    null
+                );
+                ledgerStatus.setText("Error");
+                ledgerStatus.getStyleClass().setAll("badge", "badge-review");
+                updateReconButtonState();
+            })
+        );
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     private void startIngestion(File f) {
+        MainUIContext.getInstance().setStandardizedBankTransactions(null);
+        updateReconButtonState();
         showBankState("ingesting");
         ingFilename.setText(f.getName());
         bankStatus.setText("Processing");
@@ -241,20 +335,65 @@ public class ReconController {
     }
 
     private void finishIngestion(File f) {
-        showBankState("ingested");
-        bankStatus.setText("Ingested");
-        bankStatus.getStyleClass().setAll("badge", "badge-active");
-        btnRecon.setDisable(false);
-        reconHint.setText("Both datasets loaded. Ready to reconcile.");
+        Task<List<StandardizedTransaction>> task = new Task<>() {
+            @Override
+            protected List<StandardizedTransaction> call() throws Exception {
+                MainUIContext ctx = MainUIContext.getInstance();
+                IngestionService svc = ctx.getIngestionService();
+                ReconciliationWorkspace workspace = ctx.getActiveWorkspace();
+                if (svc == null || workspace == null) {
+                    throw new IllegalStateException(
+                        "Ingestion service or active workspace is not available."
+                    );
+                }
+
+                FinancialDataset dataset = svc.ingestFile(
+                    workspace.getWorkspaceId(),
+                    f.getPath(),
+                    DataSourceType.EXTERNAL_PDF
+                );
+                if (dataset == null) {
+                    throw new IllegalStateException(
+                        "Bank statement could not be ingested."
+                    );
+                }
+                return svc.standardize(dataset);
+            }
+        };
+
+        task.setOnSucceeded(e ->
+            Platform.runLater(() -> {
+                List<StandardizedTransaction> stdBank = task.getValue();
+                MainUIContext.getInstance().setStandardizedBankTransactions(stdBank);
+                showBankState("ingested");
+                bankStatus.setText("Ingested — " + stdBank.size() + " records");
+                bankStatus.getStyleClass().setAll("badge", "badge-active");
+                updateReconButtonState();
+            })
+        );
+
+        task.setOnFailed(e ->
+            Platform.runLater(() -> {
+                MainUIContext.getInstance().setStandardizedBankTransactions(null);
+                showBankState("dropzone");
+                bankStatus.setText("Parse Error");
+                bankStatus.getStyleClass().setAll("badge", "badge-review");
+                updateReconButtonState();
+            })
+        );
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
     void resetDropZone() {
+        MainUIContext.getInstance().setStandardizedBankTransactions(null);
         showBankState("dropzone");
         bankStatus.setText("Awaiting File");
         bankStatus.getStyleClass().setAll("badge", "badge-pending");
-        btnRecon.setDisable(true);
-        reconHint.setText("Upload Bank Statement to proceed.");
+        updateReconButtonState();
     }
 
     private void showBankState(String state) {
@@ -270,6 +409,15 @@ public class ReconController {
 
     @FXML
     void handlePerformRecon() {
+        MainUIContext ctx = MainUIContext.getInstance();
+        boolean ready =
+            ctx.getStandardizedLedgerTransactions() != null &&
+            ctx.getStandardizedBankTransactions() != null;
+        if (!ready) {
+            updateReconButtonState();
+            return;
+        }
+
         actionBar.setVisible(false);
         actionBar.setManaged(false);
         pipelineStrip.setVisible(true);
@@ -323,23 +471,120 @@ public class ReconController {
     }
 
     private void finishReconciliation() {
-        resultBar.setVisible(true);
-        resultBar.setManaged(true);
+        Task<List<MatchHypothesis>> task = new Task<>() {
+            @Override
+            protected List<MatchHypothesis> call() {
+                MainUIContext ctx = MainUIContext.getInstance();
+                ReconciliationService svc = ctx.getReconciliationService();
+                ReconciliationWorkspace ws = ctx.getActiveWorkspace();
+                List<StandardizedTransaction> stdLedger =
+                    ctx.getStandardizedLedgerTransactions();
+                List<StandardizedTransaction> stdBank =
+                    ctx.getStandardizedBankTransactions();
 
-        // Mock result numbers
-        rbAuto.setText("243");
-        rbManual.setText("5");
+                if (svc == null || ws == null || stdLedger == null || stdBank == null) {
+                    throw new IllegalStateException(
+                        "Reconciliation dependencies are not ready."
+                    );
+                }
+                return svc.runMatching(ws, stdLedger, stdBank);
+            }
+        };
 
-        // Save mock hypotheses to context for Manual Check phase
-        MainUIContext.getInstance().setPendingHypotheses(
-            MockUIProvider.getMockHypotheses(5)
+        task.setOnSucceeded(e ->
+            Platform.runLater(() -> {
+                List<MatchHypothesis> all = task.getValue();
+                MainUIContext ctx = MainUIContext.getInstance();
+                ctx.setAllHypotheses(all);
+
+                long autoCount = all
+                    .stream()
+                    .filter(h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED)
+                    .count();
+                List<MatchHypothesis> pending = all
+                    .stream()
+                    .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
+                    .collect(Collectors.toList());
+                ctx.setPendingHypotheses(pending);
+
+                Set<UUID> matchedLedgerIds = all
+                    .stream()
+                    .map(MatchHypothesis::getLedgerTransaction)
+                    .filter(Objects::nonNull)
+                    .map(StandardizedTransaction::getTransactionId)
+                    .collect(Collectors.toSet());
+                Set<UUID> matchedBankIds = all
+                    .stream()
+                    .map(MatchHypothesis::getBankTransaction)
+                    .filter(Objects::nonNull)
+                    .map(StandardizedTransaction::getTransactionId)
+                    .collect(Collectors.toSet());
+
+                List<StandardizedTransaction> unmatchedLedger = ctx
+                    .getStandardizedLedgerTransactions()
+                    .stream()
+                    .filter(t -> !matchedLedgerIds.contains(t.getTransactionId()))
+                    .collect(Collectors.toList());
+                List<StandardizedTransaction> unmatchedBank = ctx
+                    .getStandardizedBankTransactions()
+                    .stream()
+                    .filter(t -> !matchedBankIds.contains(t.getTransactionId()))
+                    .collect(Collectors.toList());
+
+                ctx.setUnmatchedLedger(unmatchedLedger);
+                ctx.setUnmatchedBank(unmatchedBank);
+
+                AnomalyDetectionEngine anomalyEngine =
+                    ctx.getAnomalyDetectionEngine();
+                List<String> anomalies = anomalyEngine != null
+                    ? anomalyEngine.identifyAnomalies(
+                        unmatchedLedger,
+                        unmatchedBank
+                    )
+                    : List.of();
+                ctx.setAnomalies(anomalies);
+
+                rbAuto.setText(String.valueOf(autoCount));
+                rbManual.setText(String.valueOf(pending.size()));
+                resultBar.setVisible(true);
+                resultBar.setManaged(true);
+                reconHint.setText("Reconciliation complete.");
+
+                Object wsc = ctx.getWorkspaceController();
+                if (wsc instanceof WorkspaceController wc) {
+                    wc.notifyReconciliationCompleted();
+                    wc.unlockManualCheck();
+                }
+            })
         );
 
-        // Unlock the manual check tab via WorkspaceController
-        Object ctrl = MainUIContext.getInstance().getWorkspaceController();
-        if (ctrl instanceof WorkspaceController) {
-            ((WorkspaceController) ctrl).notifyReconciliationCompleted();
-            ((WorkspaceController) ctrl).unlockManualCheck();
-        }
+        task.setOnFailed(e ->
+            Platform.runLater(() -> {
+                reconHint.setText(
+                    "Reconciliation failed: " + task.getException().getMessage()
+                );
+                actionBar.setVisible(true);
+                actionBar.setManaged(true);
+                pipelineStrip.setVisible(false);
+                pipelineStrip.setManaged(false);
+            })
+        );
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void updateReconButtonState() {
+        MainUIContext ctx = MainUIContext.getInstance();
+        boolean ready =
+            ctx.getStandardizedLedgerTransactions() != null &&
+            ctx.getStandardizedBankTransactions() != null;
+        btnRecon.setDisable(!ready);
+        reconHint.setText(
+            ready
+                ? "Both datasets loaded. Ready to reconcile."
+                : "Load both datasets to proceed."
+        );
     }
 }

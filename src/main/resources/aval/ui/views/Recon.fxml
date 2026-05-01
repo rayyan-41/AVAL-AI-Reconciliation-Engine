@@ -76,12 +76,13 @@
       <HBox styleClass="p-hdr">
         <Label text="INTERNAL LEDGER" styleClass="p-title" />
         <Region HBox.hgrow="ALWAYS" />
-        <Label text="Loaded" styleClass="badge, badge-active" />
+        <Label fx:id="ledgerStatus" styleClass="badge, badge-pending" text="Not Loaded" />
+        <Button text="Load Ledger" onAction="#handleLoadLedger" styleClass="btn-ghost" />
       </HBox>
       <VBox VBox.vgrow="ALWAYS" style="-fx-padding: 16;" spacing="12">
         <HBox fx:id="ledgerMetaBar" styleClass="lmb" alignment="CENTER_LEFT" spacing="16">
-            <Label text="248 Records" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
-            <Label text="Sep 1 - Sep 30, 2024" style="-fx-text-fill: -fx-text-muted;" />
+            <Label text="No records loaded" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
+            <Label text="Select an .xlsx file to ingest" style="-fx-text-fill: -fx-text-muted;" />
         </HBox>
         <TableView fx:id="ledgerTable" VBox.vgrow="ALWAYS" styleClass="data-table">
           <columns>
