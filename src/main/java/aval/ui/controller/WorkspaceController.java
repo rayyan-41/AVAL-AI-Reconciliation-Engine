@@ -42,6 +42,7 @@ public class WorkspaceController {
     private Node reconView;
     private Node manualView;
     private Node reportView;
+    private FinanceController financeController;
     private ManualCheckController manualCheckController;
     private ReportController reportController;
 
@@ -62,7 +63,7 @@ public class WorkspaceController {
         }
 
         // Load all sub-views into StackPane
-        financeView = loadFxml("Finance.fxml");
+        loadFinanceView();
         reconView = loadFxml("Recon.fxml");
         loadManualView();
         loadReportView();
@@ -100,6 +101,21 @@ public class WorkspaceController {
             System.err.println("Could not load sub-view: " + fxml);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private void loadFinanceView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/aval/ui/views/Finance.fxml")
+            );
+            financeView = loader.load();
+            financeController = loader.getController();
+        } catch (Exception e) {
+            System.err.println("Could not load sub-view: Finance.fxml");
+            e.printStackTrace();
+            financeView = null;
+            financeController = null;
         }
     }
 
@@ -146,8 +162,17 @@ public class WorkspaceController {
         showReport();
     }
 
+    public void notifyReconciliationCompleted() {
+        if (financeController != null) {
+            financeController.refreshStats();
+        }
+    }
+
     @FXML
     public void showFinance() {
+        if (financeController != null) {
+            financeController.refreshStats();
+        }
         if (financeView != null) showView(financeView);
         tabFinance.setSelected(true);
     }

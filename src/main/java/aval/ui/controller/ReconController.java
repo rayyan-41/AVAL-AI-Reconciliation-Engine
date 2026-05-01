@@ -338,6 +338,7 @@ public class ReconController {
         // Unlock the manual check tab via WorkspaceController
         Object ctrl = MainUIContext.getInstance().getWorkspaceController();
         if (ctrl instanceof WorkspaceController) {
+            ((WorkspaceController) ctrl).notifyReconciliationCompleted();
             ((WorkspaceController) ctrl).unlockManualCheck();
         }
     }

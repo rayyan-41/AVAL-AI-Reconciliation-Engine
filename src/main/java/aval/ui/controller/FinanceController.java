@@ -1,5 +1,8 @@
 package aval.ui.controller;
 
+import aval.common.enums.HypothesisStatus;
+import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
 import aval.ui.MainUIContext;
 import javafx.beans.property.SimpleStringProperty;
@@ -14,6 +17,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import java.util.List;
 
 public class FinanceController {
 
@@ -55,6 +59,34 @@ public class FinanceController {
 
         // History table
         setupHistoryTable();
+    }
+
+    public void refreshStats() {
+        List<MatchHypothesis> all = MainUIContext.getInstance().getAllHypotheses();
+        if (all == null || all.isEmpty()) {
+            return;
+        }
+
+        List<StandardizedTransaction> ledger = MainUIContext.getInstance()
+            .getStandardizedLedgerTransactions();
+        long total = ledger != null ? ledger.size() : 0;
+        long autoN = all
+            .stream()
+            .filter(h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED)
+            .count();
+        long pending = all
+            .stream()
+            .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
+            .count();
+        List<String> anomalies = MainUIContext.getInstance().getAnomalies();
+        long anomN = anomalies != null ? anomalies.size() : 0;
+
+        statRow.getChildren().setAll(
+            makeStatCard("Ledger Transactions", String.valueOf(total), "Current period", "0d0d0d"),
+            makeStatCard("Auto-Matched", String.valueOf(autoN), "Confidence >= 95%", "1a5c2a"),
+            makeStatCard("Pending Review", String.valueOf(pending), "Awaiting confirmation", "92400e"),
+            makeStatCard("Anomalies Detected", String.valueOf(anomN), "Requires investigation", "800020")
+        );
     }
 
     private VBox makeStatCard(String label, String value, String sub, String valColour) {
