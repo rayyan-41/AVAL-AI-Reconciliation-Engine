@@ -12,6 +12,7 @@ import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -28,22 +29,24 @@ public class MainUIContext {
         false
     );
     private ClientOrganization activeClient;
-    private List<MatchHypothesis> pendingHypotheses;
+    private volatile List<MatchHypothesis> pendingHypotheses;
     private Object workspaceController; // Using Object to avoid circular deps, cast later if needed.
-    private SystemUser currentUser;
-    private ReconciliationWorkspace activeWorkspace;
+    private volatile SystemUser currentUser;
+    private volatile ReconciliationWorkspace activeWorkspace;
     private IngestionService ingestionService;
     private ReconciliationService reconciliationService;
     private ReportService reportService;
     private AnomalyDetectionEngine anomalyDetectionEngine;
     private DataStore dataStore;
-    private List<StandardizedTransaction> standardizedLedgerTransactions;
-    private List<StandardizedTransaction> standardizedBankTransactions;
-    private List<MatchHypothesis> allHypotheses;
-    private List<ReconciliationRecord> reconciledRecords = new ArrayList<>();
-    private List<StandardizedTransaction> unmatchedLedger;
-    private List<StandardizedTransaction> unmatchedBank;
-    private List<String> anomalies;
+    private volatile List<StandardizedTransaction> standardizedLedgerTransactions;
+    private volatile List<StandardizedTransaction> standardizedBankTransactions;
+    private volatile List<MatchHypothesis> allHypotheses;
+    private final List<ReconciliationRecord> reconciledRecords = Collections.synchronizedList(
+        new ArrayList<>()
+    );
+    private volatile List<StandardizedTransaction> unmatchedLedger;
+    private volatile List<StandardizedTransaction> unmatchedBank;
+    private volatile List<String> anomalies;
 
     //Constructor
     private MainUIContext() {
@@ -76,7 +79,11 @@ public class MainUIContext {
     public List<StandardizedTransaction> getStandardizedLedgerTransactions() { return standardizedLedgerTransactions; }
     public List<StandardizedTransaction> getStandardizedBankTransactions() { return standardizedBankTransactions; }
     public List<MatchHypothesis> getAllHypotheses() { return allHypotheses; }
-    public List<ReconciliationRecord> getReconciledRecords() { return reconciledRecords; }
+    public List<ReconciliationRecord> getReconciledRecords() {
+        synchronized (reconciledRecords) {
+            return new ArrayList<>(reconciledRecords);
+        }
+    }
     public List<StandardizedTransaction> getUnmatchedLedger() { return unmatchedLedger; }
     public List<StandardizedTransaction> getUnmatchedBank() { return unmatchedBank; }
     public List<String> getAnomalies() { return anomalies; }
@@ -96,13 +103,20 @@ public class MainUIContext {
     public void setStandardizedLedgerTransactions(List<StandardizedTransaction> standardizedLedgerTransactions) { this.standardizedLedgerTransactions = standardizedLedgerTransactions; }
     public void setStandardizedBankTransactions(List<StandardizedTransaction> standardizedBankTransactions) { this.standardizedBankTransactions = standardizedBankTransactions; }
     public void setAllHypotheses(List<MatchHypothesis> allHypotheses) { this.allHypotheses = allHypotheses; }
-    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) { this.reconciledRecords = reconciledRecords != null ? reconciledRecords : new ArrayList<>(); }
+    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) {
+        synchronized (this.reconciledRecords) {
+            this.reconciledRecords.clear();
+            if (reconciledRecords != null) {
+                this.reconciledRecords.addAll(reconciledRecords);
+            }
+        }
+    }
     public void setUnmatchedLedger(List<StandardizedTransaction> unmatchedLedger) { this.unmatchedLedger = unmatchedLedger; }
     public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) { this.unmatchedBank = unmatchedBank; }
     public void setAnomalies(List<String> anomalies) { this.anomalies = anomalies; }
 
     //Helper Methods
-    public synchronized void addReconciledRecord(ReconciliationRecord record) {
+    public void addReconciledRecord(ReconciliationRecord record) {
         if (record == null) {
             throw new IllegalArgumentException("record cannot be null");
         }
