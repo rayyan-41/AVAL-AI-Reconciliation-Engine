@@ -8,6 +8,7 @@ import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
+import java.util.ArrayList;
 import java.util.UUID;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -33,11 +34,14 @@ public class ManualCheckController {
     @FXML private TableColumn<MatchHypothesis, String> mcBankCol;
     @FXML private TableColumn<MatchHypothesis, String> mcJustCol;
     @FXML private TableColumn<MatchHypothesis, Void> mcActionCol;
+    @FXML private VBox anomalyPane;
+    @FXML private ListView<String> anomalyList;
     @FXML private HBox mcCompleteBar;
 
     private WorkspaceController workspaceController;
     private ObservableList<MatchHypothesis> hypothesesList;
     private int resolved = 0;
+    private boolean anomaliesDismissed = true;
 
     public void setWorkspaceController(WorkspaceController wc) {
         this.workspaceController = wc;
@@ -103,8 +107,11 @@ public class ManualCheckController {
     }
 
     public void setItems(List<MatchHypothesis> pendingHypotheses) {
+        List<MatchHypothesis> source = pendingHypotheses != null
+            ? pendingHypotheses
+            : List.of();
         hypothesesList.setAll(
-            pendingHypotheses
+            source
                 .stream()
                 .filter(h -> h.getConfidenceScore() < 0.95)
                 .collect(Collectors.toList())
@@ -113,6 +120,32 @@ public class ManualCheckController {
         mcCompleteBar.setVisible(false);
         mcCompleteBar.setManaged(false);
         updateProgress();
+    }
+
+    public void loadAnomalies() {
+        List<String> anomalies = MainUIContext.getInstance().getAnomalies();
+        if (anomalies != null && !anomalies.isEmpty()) {
+            anomaliesDismissed = false;
+            anomalyList.setItems(FXCollections.observableArrayList(anomalies));
+            anomalyPane.setVisible(true);
+            anomalyPane.setManaged(true);
+        } else {
+            anomaliesDismissed = true;
+            anomalyList.getItems().clear();
+            anomalyPane.setVisible(false);
+            anomalyPane.setManaged(false);
+        }
+        checkIfComplete();
+    }
+
+    @FXML
+    void handleDismissAnomalies() {
+        anomaliesDismissed = true;
+        anomalyPane.setVisible(false);
+        anomalyPane.setManaged(false);
+        anomalyList.getItems().clear();
+        MainUIContext.getInstance().setAnomalies(new ArrayList<>());
+        checkIfComplete();
     }
 
     private void resolveItem(int index, String decision) {
@@ -187,14 +220,23 @@ public class ManualCheckController {
         if (total == 0) {
             mcProgressBar.setProgress(0);
             mcProgText.setText("0 of 0 resolved");
+            checkIfComplete();
             return;
         }
         double prog = (double) resolved / total;
         mcProgressBar.setProgress(prog);
         mcProgText.setText(resolved + " of " + total + " resolved");
-        if (resolved >= total) {
+        checkIfComplete();
+    }
+
+    private void checkIfComplete() {
+        int total = mcTable.getItems().size();
+        if (resolved >= total && anomaliesDismissed) {
             mcCompleteBar.setVisible(true);
             mcCompleteBar.setManaged(true);
+        } else {
+            mcCompleteBar.setVisible(false);
+            mcCompleteBar.setManaged(false);
         }
     }
 

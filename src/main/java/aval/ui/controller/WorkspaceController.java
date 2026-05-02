@@ -188,9 +188,8 @@ public class WorkspaceController {
         if (manualCheckController != null) {
             List<MatchHypothesis> hypotheses = MainUIContext.getInstance()
                 .getPendingHypotheses();
-            if (hypotheses != null) {
-                manualCheckController.setItems(hypotheses);
-            }
+            manualCheckController.setItems(hypotheses);
+            manualCheckController.loadAnomalies();
         }
         if (manualView != null) showView(manualView);
         tabManual.setSelected(true);

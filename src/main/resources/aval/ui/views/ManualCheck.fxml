@@ -39,6 +39,32 @@
         </columns>
       </TableView>
 
+      <!-- Anomaly Review Panel -->
+      <VBox
+            fx:id="anomalyPane"
+            spacing="8"
+            style="-fx-padding: 0 0 20 0;"
+            visible="false"
+            managed="false"
+        >
+        <Label text="Detected Anomalies" styleClass="section-heading" />
+        <Label
+                text="Review and dismiss each flagged item to enable report generation."
+                styleClass="mc-sub"
+                wrapText="true"
+            />
+        <ListView
+                fx:id="anomalyList"
+                prefHeight="180"
+                styleClass="data-table"
+            />
+        <Button
+                text="Dismiss All Anomalies"
+                onAction="#handleDismissAnomalies"
+                styleClass="btn-ghost"
+            />
+      </VBox>
+
     </VBox>
   </ScrollPane>
 
