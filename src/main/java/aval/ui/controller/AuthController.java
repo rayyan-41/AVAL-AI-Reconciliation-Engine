@@ -1,11 +1,8 @@
 package aval.ui.controller;
 
-import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
 import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
-import java.sql.SQLException;
-import java.util.UUID;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -25,40 +22,38 @@ public class AuthController {
 
     @FXML
     private void handleAuthenticate() {
-        boolean hasError = false;
+        String username = workspaceIdField.getText().trim();
+        String passkey = passkeyField.getText();
 
-        if (workspaceIdField.getText().isBlank()) {
+        if (username.isBlank()) {
             workspaceIdField.setStyle(
                 "-fx-border-color: transparent transparent #991b1b transparent;"
             );
-            hasError = true;
-        } else {
-            workspaceIdField.setStyle("");
+            return;
         }
-
-        if (passkeyField.getText().isBlank()) {
+        workspaceIdField.setStyle("");
+        if (passkey.isBlank()) {
             passkeyField.setStyle(
                 "-fx-border-color: transparent transparent #991b1b transparent;"
             );
-            hasError = true;
-        } else {
-            passkeyField.setStyle("");
+            return;
         }
-
-        if (hasError) {
+        passkeyField.setStyle("");
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+        if (ds == null) {
+            workspaceIdField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;"
+            );
+            passkeyField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;"
+            );
             return;
         }
 
-        String username = workspaceIdField.getText().trim();
-        DataStore ds = MainUIContext.getInstance().getDataStore();
-
         Task<SystemUser> authTask = new Task<>() {
             @Override
-            protected SystemUser call() throws Exception {
-                if (ds == null) {
-                    throw new SQLException("DataStore not initialized");
-                }
-                return ds.findSystemUserByUsername(username);
+            protected SystemUser call() {
+                return ds.findSystemUserByCredentials(username, passkey);
             }
         };
 
@@ -71,43 +66,26 @@ public class AuthController {
                 workspaceIdField.setStyle(
                     "-fx-border-color: transparent transparent #991b1b transparent;"
                 );
+                passkeyField.setStyle(
+                    "-fx-border-color: transparent transparent #991b1b transparent;"
+                );
             }
         });
 
         authTask.setOnFailed(e -> {
-            Throwable failure = authTask.getException();
-            if (isSqlFailure(failure)) {
-                MainUIContext.getInstance().setCurrentUser(
-                    createSyntheticUser(username)
-                );
-                navigateTo("Registry.fxml");
-                return;
-            }
-
             workspaceIdField.setStyle(
                 "-fx-border-color: transparent transparent #991b1b transparent;"
             );
+            passkeyField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;"
+            );
+            Throwable failure = authTask.getException();
             System.err.println("Authentication failed: " + failure.getMessage());
         });
 
         Thread authThread = new Thread(authTask);
         authThread.setDaemon(true);
         authThread.start();
-    }
-
-    private SystemUser createSyntheticUser(String username) {
-        return new SystemUser(UUID.randomUUID(), username, UserRole.ACCOUNTANT);
-    }
-
-    private boolean isSqlFailure(Throwable throwable) {
-        Throwable cursor = throwable;
-        while (cursor != null) {
-            if (cursor instanceof SQLException) {
-                return true;
-            }
-            cursor = cursor.getCause();
-        }
-        return false;
     }
 
     private void navigateTo(String fxml) {

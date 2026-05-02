@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.mindrot.jbcrypt.BCrypt;
 
 //@desc:   The sole repository holding a JDBC connection to execute SQL against the PostgreSQL database.
 //@grasp:  Controller
@@ -552,6 +553,44 @@ public class DataStore {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException(
                 "findSystemUserByUsername failed due to invalid role mapping: " +
+                e.getMessage(),
+                e
+            );
+        }
+        return null;
+    }
+
+    public SystemUser findSystemUserByCredentials(
+        String username,
+        String passkey
+    ) {
+        String sql =
+            "SELECT user_id, username, role, password_hash FROM system_user WHERE username = ?";
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String storedHash = rs.getString("password_hash");
+                    if (storedHash != null && BCrypt.checkpw(passkey, storedHash)) {
+                        return new SystemUser(
+                            (UUID) rs.getObject("user_id"),
+                            rs.getString("username"),
+                            UserRole.valueOf(rs.getString("role"))
+                        );
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                "findSystemUserByCredentials failed: " + e.getMessage(),
+                e
+            );
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(
+                "findSystemUserByCredentials failed due to invalid role mapping: " +
                 e.getMessage(),
                 e
             );

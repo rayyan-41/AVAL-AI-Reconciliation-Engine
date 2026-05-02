@@ -1,6 +1,7 @@
 -- AVAL AI Reconciliation Engine - Database Initialization
 -- Extension for AI Vector Similarity Search
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. Standardized Ledger Transactions (Internal Data)
 CREATE TABLE standardized_ledger (
@@ -47,7 +48,16 @@ CREATE TABLE reconciliation_records (
 CREATE TABLE system_user (
     user_id UUID PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    role VARCHAR(20) NOT NULL
+    role VARCHAR(20) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL DEFAULT ''
+);
+
+INSERT INTO system_user (user_id, username, role, password_hash)
+VALUES (
+    gen_random_uuid(),
+    'WS-0001-ARYA',
+    'ACCOUNTANT',
+    '$2a$12$Kix.9A1VRoH0jNZ5vD0WaOivHBKQ3XOhZ2W5XW5CJbE3YHI8SQBKK'
 );
 
 -- 6. Client Organizations
