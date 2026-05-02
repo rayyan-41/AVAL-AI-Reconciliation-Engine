@@ -6,6 +6,7 @@ import aval.common.enums.MatchType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.SemanticEmbedding;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.core.MatchingConfig;
 import aval.persistence.DataStore;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,16 +18,16 @@ public class SemanticMatchingEngine implements MatchingEngine {
 
     private final VectorizationEngine vectorizationEngine;
     private final DataStore dataStore;
-
-    // Configurable thresholds
-    private static final int MAX_CANDIDATES = 3;
+    private final MatchingConfig matchingConfig;
 
     public SemanticMatchingEngine(
         VectorizationEngine vectorizationEngine,
-        DataStore dataStore
+        DataStore dataStore,
+        MatchingConfig matchingConfig
     ) {
         this.vectorizationEngine = vectorizationEngine;
         this.dataStore = dataStore;
+        this.matchingConfig = matchingConfig;
     }
 
     @Override
@@ -35,6 +36,7 @@ public class SemanticMatchingEngine implements MatchingEngine {
         List<StandardizedTransaction> bankTransactions
     ) {
         List<MatchHypothesis> hypotheses = new ArrayList<>();
+        int maxCandidates = matchingConfig.getSemanticMaxCandidates();
 
         for (StandardizedTransaction ledgerTx : ledgerTransactions) {
             try {
@@ -46,7 +48,7 @@ public class SemanticMatchingEngine implements MatchingEngine {
                 List<Object[]> candidates =
                     dataStore.findSimilarBankTransactions(
                         ledgerEmbedding,
-                        MAX_CANDIDATES
+                        maxCandidates
                     );
 
                 // 3. Generate hypotheses using real distance-based confidence

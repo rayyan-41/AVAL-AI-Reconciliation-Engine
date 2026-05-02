@@ -5,6 +5,7 @@ package aval.engine;
 import aval.common.enums.MatchType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.core.MatchingConfig;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +15,12 @@ import java.util.List;
 //@gof:    Strategy
 public class RuleBasedMatchingEngine implements MatchingEngine {
 
-    private static final int DATE_TOLERANCE_DAYS = 7;
+    private final MatchingConfig matchingConfig;
     private static final double EXACT_MATCH_CONFIDENCE = 1.0;
+
+    public RuleBasedMatchingEngine(MatchingConfig matchingConfig) {
+        this.matchingConfig = matchingConfig;
+    }
 
     @Override
     public List<MatchHypothesis> generateHypotheses(
@@ -23,12 +28,13 @@ public class RuleBasedMatchingEngine implements MatchingEngine {
         List<StandardizedTransaction> bankTransactions
     ) {
         List<MatchHypothesis> hypotheses = new ArrayList<>();
+        int dateToleranceDays = matchingConfig.getRuleBasedDateToleranceDays();
 
         // Logic: Iterate through ledger transactions and find potential matches in bank data
         // For a prototype, O(N*M) is acceptable. For production, we would use a hash-map by amount.
         for (StandardizedTransaction ledger : ledgerTransactions) {
             for (StandardizedTransaction bank : bankTransactions) {
-                if (isMatch(ledger, bank)) {
+                if (isMatch(ledger, bank, dateToleranceDays)) {
                     MatchHypothesis hypothesis = new MatchHypothesis(
                         ledger,
                         bank,
@@ -36,7 +42,7 @@ public class RuleBasedMatchingEngine implements MatchingEngine {
                         MatchType.EXACT_RULE
                     );
                     hypothesis.setJustification(
-                        "Exact amount match within date tolerance window."
+                        "Exact amount match within " + dateToleranceDays + "-day tolerance window."
                     );
                     hypotheses.add(hypothesis);
 
@@ -51,11 +57,12 @@ public class RuleBasedMatchingEngine implements MatchingEngine {
 
     /**
      * Business Rule: Transactions match if they have the exact same amount
-     * and occur within 7 days of each other.
+     * and occur within the configured number of days of each other.
      */
     private boolean isMatch(
         StandardizedTransaction ledger,
-        StandardizedTransaction bank
+        StandardizedTransaction bank,
+        int dateToleranceDays
     ) {
         boolean sameAmount =
             ledger.getAmount().compareTo(bank.getAmount()) == 0;
@@ -63,7 +70,7 @@ public class RuleBasedMatchingEngine implements MatchingEngine {
         long daysBetween = Math.abs(
             ChronoUnit.DAYS.between(ledger.getValueDate(), bank.getValueDate())
         );
-        boolean withinDateRange = daysBetween <= DATE_TOLERANCE_DAYS;
+        boolean withinDateRange = daysBetween <= dateToleranceDays;
 
         // Transaction types should usually be opposite (e.g. Ledger Credit vs Bank Debit)
         // or handled by the standardization layer to be comparable.

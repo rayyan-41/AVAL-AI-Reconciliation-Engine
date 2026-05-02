@@ -71,14 +71,15 @@ public class ReportController {
     private TableColumn<MatchHypothesis, String> rResCol;
 
     private final List<MatchHypothesis> currentHypotheses = new ArrayList<>();
+    private String lastGeneratedReportPath = null;
 
     @FXML
     public void initialize() {
         updateHeader();
         setupLineageTable();
 
-        List<MatchHypothesis> existing = MainUIContext.getInstance()
-            .getAllHypotheses();
+        List<MatchHypothesis> existing =
+            MainUIContext.getInstance().getAllHypotheses();
         if (existing == null) {
             existing = MainUIContext.getInstance().getPendingHypotheses();
         }
@@ -97,9 +98,10 @@ public class ReportController {
             .count();
         long approved = all
             .stream()
-            .filter(h ->
-                h.getStatus() == HypothesisStatus.APPROVED &&
-                h.getConfidenceScore() < 0.95
+            .filter(
+                h ->
+                    h.getStatus() == HypothesisStatus.APPROVED &&
+                    h.getConfidenceScore() < 0.95
             )
             .count();
         long rejected = all
@@ -108,16 +110,41 @@ public class ReportController {
             .count();
         long total = all.size();
         long matched = autoMatched + approved;
-        double rate = total == 0 ? 0 : (double) matched / total * 100;
+        double rate = total == 0 ? 0 : ((double) matched / total) * 100;
 
         rptStatRow
             .getChildren()
             .setAll(
-                makeStatCard("Total Hypotheses", String.valueOf(total), "All candidates", "0d0d0d"),
-                makeStatCard("Auto-Matched", String.valueOf(autoMatched), "Confidence ≥ 95%", "1a5c2a"),
-                makeStatCard("Manual Approved", String.valueOf(approved), "Approved in review", "0d0d0d"),
-                makeStatCard("Rejected", String.valueOf(rejected), "Dismissed by reviewer", "800020"),
-                makeStatCard("Final Match Rate", String.format("%.1f%%", rate), "Auto + approved", "1a5c2a")
+                makeStatCard(
+                    "Total Hypotheses",
+                    String.valueOf(total),
+                    "All candidates",
+                    "0d0d0d"
+                ),
+                makeStatCard(
+                    "Auto-Matched",
+                    String.valueOf(autoMatched),
+                    "Confidence ≥ 95%",
+                    "1a5c2a"
+                ),
+                makeStatCard(
+                    "Manual Approved",
+                    String.valueOf(approved),
+                    "Approved in review",
+                    "0d0d0d"
+                ),
+                makeStatCard(
+                    "Rejected",
+                    String.valueOf(rejected),
+                    "Dismissed by reviewer",
+                    "800020"
+                ),
+                makeStatCard(
+                    "Final Match Rate",
+                    String.format("%.1f%%", rate),
+                    "Auto + approved",
+                    "1a5c2a"
+                )
             );
 
         lineageTable.setItems(FXCollections.observableArrayList(all));
@@ -127,30 +154,35 @@ public class ReportController {
     void handleGenerate() {
         MainUIContext ctx = MainUIContext.getInstance();
         List<MatchHypothesis> allHypotheses = ctx.getAllHypotheses();
-        List<MatchHypothesis> stillPending = allHypotheses == null
-            ? new ArrayList<>()
-            : allHypotheses
-                .stream()
-                .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
-                .collect(Collectors.toList());
+        List<MatchHypothesis> stillPending =
+            allHypotheses == null
+                ? new ArrayList<>()
+                : allHypotheses
+                      .stream()
+                      .filter(
+                          h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW
+                      )
+                      .collect(Collectors.toList());
         if (!stillPending.isEmpty()) {
             showFeedback(
                 "Cannot generate report: " +
-                stillPending.size() +
-                " hypotheses are still pending review. Return to Manual Check to resolve them."
+                    stillPending.size() +
+                    " hypotheses are still pending review. Return to Manual Check to resolve them."
             );
             return;
         }
 
         ClientOrganization client = ctx.getActiveClient();
-        String clientName = client != null
-            ? client.getName().replace(" ", "_")
-            : "Unknown_Client";
+        String clientName =
+            client != null
+                ? client.getName().replace(" ", "_")
+                : "Unknown_Client";
         String outputPath =
             System.getProperty("user.home") +
             "\\reconciliation_report_" +
             clientName +
             "_Sep2024.csv";
+        this.lastGeneratedReportPath = outputPath;
         showFeedback("Generating report...");
 
         Task<Void> task = new Task<>() {
@@ -164,8 +196,10 @@ public class ReportController {
                 }
 
                 List<ReconciliationRecord> records = ctx.getReconciledRecords();
-                List<StandardizedTransaction> unmatchedL = ctx.getUnmatchedLedger();
-                List<StandardizedTransaction> unmatchedB = ctx.getUnmatchedBank();
+                List<StandardizedTransaction> unmatchedL =
+                    ctx.getUnmatchedLedger();
+                List<StandardizedTransaction> unmatchedB =
+                    ctx.getUnmatchedBank();
                 List<String> anomalies = ctx.getAnomalies();
 
                 if (records == null) records = new ArrayList<>();
@@ -185,7 +219,9 @@ public class ReportController {
             }
         };
         task.setOnSucceeded(e ->
-            Platform.runLater(() -> showFeedback("Report saved to: " + outputPath))
+            Platform.runLater(() ->
+                showFeedback("Report saved to: " + outputPath)
+            )
         );
         task.setOnFailed(e ->
             Platform.runLater(() ->
@@ -200,22 +236,64 @@ public class ReportController {
 
     @FXML
     void handleEmail() {
-        ClientOrganization client = MainUIContext.getInstance().getActiveClient();
-        String clientName = client != null ? client.getName() : "client";
-        showFeedback("Sending...");
+        if (lastGeneratedReportPath == null) {
+            showFeedback("Generate the report first before emailing.");
+            return;
+        }
 
-        PauseTransition pt = new PauseTransition(Duration.millis(1000));
-        pt.setOnFinished(e ->
-            showFeedback("Report emailed to " + clientName + " - Delivered.")
+        ClientOrganization client =
+            MainUIContext.getInstance().getActiveClient();
+        String toEmail = client.getContactMetadata();
+
+        if (toEmail == null || toEmail.isBlank()) {
+            showFeedback("No email address on file for " + client.getName());
+            return;
+        }
+
+        showFeedback("Sending...");
+        java.io.File reportFile = new java.io.File(lastGeneratedReportPath);
+        aval.service.EmailService emailSvc =
+            MainUIContext.getInstance().getEmailService();
+
+        if (emailSvc == null) {
+            showFeedback("Email service is not configured.");
+            return;
+        }
+
+        Task<Void> emailTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                emailSvc.sendReport(toEmail, client.getName(), reportFile);
+                return null;
+            }
+        };
+
+        emailTask.setOnSucceeded(e ->
+            Platform.runLater(() ->
+                showFeedback("Report emailed to " + toEmail + " - Delivered.")
+            )
         );
-        pt.play();
+        emailTask.setOnFailed(e ->
+            Platform.runLater(() ->
+                showFeedback(
+                    "Email failed: " + emailTask.getException().getMessage()
+                )
+            )
+        );
+
+        Thread emailThread = new Thread(emailTask);
+        emailThread.setDaemon(true);
+        emailThread.start();
     }
 
     private void updateHeader() {
-        ClientOrganization client = MainUIContext.getInstance().getActiveClient();
+        ClientOrganization client =
+            MainUIContext.getInstance().getActiveClient();
         if (client != null) {
             rptTitle.setText(client.getName() + " - Reconciliation Report");
-            rptSub.setText("Summary of reconciliation outcomes, approvals, and final lineage.");
+            rptSub.setText(
+                "Summary of reconciliation outcomes, approvals, and final lineage."
+            );
         } else {
             rptTitle.setText("Reconciliation Report");
             rptSub.setText("Summary of reconciliation outcomes and lineage.");
@@ -224,23 +302,34 @@ public class ReportController {
 
     private void setupLineageTable() {
         rlRefCol.setCellValueFactory(data ->
-            new SimpleStringProperty(getRef(data.getValue().getLedgerTransaction()))
+            new SimpleStringProperty(
+                getRef(data.getValue().getLedgerTransaction())
+            )
         );
         rlNarrCol.setCellValueFactory(data ->
-            new SimpleStringProperty(getNarrative(data.getValue().getLedgerTransaction()))
+            new SimpleStringProperty(
+                getNarrative(data.getValue().getLedgerTransaction())
+            )
         );
         rbRefCol.setCellValueFactory(data ->
-            new SimpleStringProperty(getRef(data.getValue().getBankTransaction()))
+            new SimpleStringProperty(
+                getRef(data.getValue().getBankTransaction())
+            )
         );
         rbNarrCol.setCellValueFactory(data ->
-            new SimpleStringProperty(getNarrative(data.getValue().getBankTransaction()))
+            new SimpleStringProperty(
+                getNarrative(data.getValue().getBankTransaction())
+            )
         );
         rTypeCol.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getMatchType().name())
         );
         rConfCol.setCellValueFactory(data ->
             new SimpleStringProperty(
-                String.format("%.0f%%", data.getValue().getConfidenceScore() * 100)
+                String.format(
+                    "%.0f%%",
+                    data.getValue().getConfidenceScore() * 100
+                )
             )
         );
         rResCol.setCellValueFactory(data ->

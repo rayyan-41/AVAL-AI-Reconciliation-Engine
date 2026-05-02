@@ -8,6 +8,7 @@ import aval.domain.core.ClientOrganization;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.engine.AnomalyDetectionEngine;
 import aval.persistence.DataStore;
+import aval.service.EmailService;
 import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
@@ -36,6 +37,7 @@ public class MainUIContext {
     private IngestionService ingestionService;
     private ReconciliationService reconciliationService;
     private ReportService reportService;
+    private EmailService emailService;
     private AnomalyDetectionEngine anomalyDetectionEngine;
     private DataStore dataStore;
     private volatile List<StandardizedTransaction> standardizedLedgerTransactions;
@@ -74,6 +76,7 @@ public class MainUIContext {
     public IngestionService getIngestionService() { return ingestionService; }
     public ReconciliationService getReconciliationService() { return reconciliationService; }
     public ReportService getReportService() { return reportService; }
+    public EmailService getEmailService() { return emailService; }
     public AnomalyDetectionEngine getAnomalyDetectionEngine() { return anomalyDetectionEngine; }
     public DataStore getDataStore() { return dataStore; }
     public List<StandardizedTransaction> getStandardizedLedgerTransactions() { return standardizedLedgerTransactions; }

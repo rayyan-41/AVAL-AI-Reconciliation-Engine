@@ -1,3 +1,8 @@
+//Dev: Rayyan
+//Use Cases: All (entry point)
+//@desc:   JavaFX application entry point. Initializes UI, database connection, and service layer.
+//@grasp:  Controller, Facade
+//@gof:    N/A
 package aval;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -6,7 +11,9 @@ import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.MatchingEngine;
 import aval.engine.RuleBasedMatchingEngine;
+import aval.engine.SemanticMatchingEngine;
 import aval.engine.VectorizationEngine;
+import aval.domain.core.MatchingConfig;
 import aval.persistence.DataStore;
 import aval.service.IngestionService;
 import aval.service.ReconciliationService;
@@ -111,12 +118,13 @@ public class Main extends Application {
 
                 hikariDataSource = new HikariDataSource(hikariConfig);
                 dataStore = new DataStore(hikariDataSource);
+                MatchingConfig matchingConfig = new MatchingConfig();
                 VectorizationEngine vectorizationEngine =
                     new LangChain4jVectorizationEngine(
                         requireProperty(appConfig, "ollama.baseUrl"),
                         requireProperty(appConfig, "ollama.model")
                     );
-                MatchingEngine matchingEngine = new RuleBasedMatchingEngine();
+                MatchingEngine matchingEngine = new RuleBasedMatchingEngine(matchingConfig);
 
                 ingestionService = new IngestionService(
                     dataStore,

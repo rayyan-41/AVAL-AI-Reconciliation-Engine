@@ -10,11 +10,15 @@ public class MatchingConfig {
     //----------- Attributes ----------------//
     private final Double autoConfirmThreshold;
     private final Double reviewFloor;
+    private final Integer ruleBasedDateToleranceDays;
+    private final Integer semanticMaxCandidates;
 
     //Constructor
     public MatchingConfig() {
         this.autoConfirmThreshold = 0.95;
         this.reviewFloor = 0.70;
+        this.ruleBasedDateToleranceDays = 7;
+        this.semanticMaxCandidates = 3;
     }
 
     //----------- Methods ------------//
@@ -26,5 +30,13 @@ public class MatchingConfig {
 
     public Double getReviewFloor() {
         return this.reviewFloor;
+    }
+
+    public Integer getRuleBasedDateToleranceDays() {
+        return this.ruleBasedDateToleranceDays;
+    }
+
+    public Integer getSemanticMaxCandidates() {
+        return this.semanticMaxCandidates;
     }
 }

@@ -180,7 +180,7 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("findClientOrganizationById failed: " + e.getMessage());
         }
         return null;
     }
@@ -226,7 +226,7 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("findReconciliationWorkspaceById failed: " + e.getMessage());
         }
         return null;
     }
@@ -540,7 +540,7 @@ public class DataStore {
                 );
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("getReconciliationHistory failed: " + e.getMessage());
         }
         return results;
     }
@@ -563,7 +563,7 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("findSystemUserById failed: " + e.getMessage());
         }
         return null;
     }
