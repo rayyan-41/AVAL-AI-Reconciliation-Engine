@@ -1,0 +1,6 @@
+db.url=jdbc:postgresql://HOST:5432/aval_db
+db.username=CHANGE_ME
+db.password=CHANGE_ME
+db.pool.maxSize=10
+ollama.baseUrl=http://localhost:11434
+ollama.model=nomic-embed-text

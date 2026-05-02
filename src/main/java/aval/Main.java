@@ -12,6 +12,11 @@ import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
 import aval.ui.MainUIContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -26,6 +31,40 @@ import javafx.stage.StageStyle;
  * Main entry point for the AVAL AI Reconciliation Engine.
  */
 public class Main extends Application {
+
+    private static Properties loadConfig() throws IOException {
+        Properties props = new Properties();
+        try (
+            InputStream classpathStream = Main.class.getResourceAsStream(
+                "/aval.properties"
+            )
+        ) {
+            if (classpathStream != null) {
+                props.load(classpathStream);
+                return props;
+            }
+        }
+        File externalFile = new File("aval.properties");
+        if (externalFile.exists()) {
+            try (InputStream fileStream = new FileInputStream(externalFile)) {
+                props.load(fileStream);
+                return props;
+            }
+        }
+        throw new IOException(
+            "aval.properties not found. Copy aval.properties.template to aval.properties and fill in your values."
+        );
+    }
+
+    private static String requireProperty(Properties config, String key) {
+        String value = config.getProperty(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(
+                "Missing required configuration key: " + key
+            );
+        }
+        return value;
+    }
 
     @Override
     public void start(Stage primaryStage) {
@@ -54,21 +93,28 @@ public class Main extends Application {
             HikariDataSource hikariDataSource = null;
 
             try {
-                HikariConfig config = new HikariConfig();
-                config.setJdbcUrl("jdbc:postgresql://localhost:5432/aval_db");
-                config.setUsername("aval_user");
-                config.setPassword("aval_password");
-                config.setMaximumPoolSize(10);
-                config.setMinimumIdle(2);
-                config.setConnectionTimeout(30000);
-                config.setIdleTimeout(600000);
+                Properties appConfig = loadConfig();
+                HikariConfig hikariConfig = new HikariConfig();
+                hikariConfig.setJdbcUrl(requireProperty(appConfig, "db.url"));
+                hikariConfig.setUsername(
+                    requireProperty(appConfig, "db.username")
+                );
+                hikariConfig.setPassword(
+                    requireProperty(appConfig, "db.password")
+                );
+                hikariConfig.setMaximumPoolSize(
+                    Integer.parseInt(appConfig.getProperty("db.pool.maxSize", "10"))
+                );
+                hikariConfig.setMinimumIdle(2);
+                hikariConfig.setConnectionTimeout(30000);
+                hikariConfig.setIdleTimeout(600000);
 
-                hikariDataSource = new HikariDataSource(config);
+                hikariDataSource = new HikariDataSource(hikariConfig);
                 dataStore = new DataStore(hikariDataSource);
                 VectorizationEngine vectorizationEngine =
                     new LangChain4jVectorizationEngine(
-                        "http://localhost:11434",
-                        "nomic-embed-text"
+                        requireProperty(appConfig, "ollama.baseUrl"),
+                        requireProperty(appConfig, "ollama.model")
                     );
                 MatchingEngine matchingEngine = new RuleBasedMatchingEngine();
 
@@ -87,7 +133,7 @@ public class Main extends Application {
                 alert.setTitle("Database Unavailable");
                 alert.setHeaderText("Cannot connect to AVAL database.");
                 alert.setContentText(
-                    "Ensure Docker Compose is running: docker compose up db\n\nError: " +
+                    "Check aval.properties configuration and ensure dependencies are running.\n\nError: " +
                     e.getMessage()
                 );
                 alert.showAndWait();

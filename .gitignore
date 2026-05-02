@@ -63,3 +63,6 @@ ehthumbs_vista.db
 # Environments
 .env
 .env.local
+
+# Local runtime configuration
+src/main/resources/aval.properties
