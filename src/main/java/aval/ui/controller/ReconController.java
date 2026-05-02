@@ -199,8 +199,15 @@ public class ReconController {
             }
         );
 
+        populateLedgerTable(List.of());
+    }
+
+    public void populateLedgerTable(List<StandardizedTransaction> transactions) {
+        List<StandardizedTransaction> source = transactions != null
+            ? transactions
+            : List.of();
         ObservableList<StandardizedTransaction> txns =
-            FXCollections.observableArrayList();
+            FXCollections.observableArrayList(source);
         ledgerTable.setItems(txns);
     }
 
@@ -295,7 +302,7 @@ public class ReconController {
                     "Loaded — " + stdLedger.size() + " records"
                 );
                 ledgerStatus.getStyleClass().setAll("badge", "badge-active");
-                ledgerTable.setItems(FXCollections.observableArrayList(stdLedger));
+                populateLedgerTable(stdLedger);
                 updateReconButtonState();
             })
         );
