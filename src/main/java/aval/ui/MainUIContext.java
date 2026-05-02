@@ -40,7 +40,7 @@ public class MainUIContext {
     private List<StandardizedTransaction> standardizedLedgerTransactions;
     private List<StandardizedTransaction> standardizedBankTransactions;
     private List<MatchHypothesis> allHypotheses;
-    private List<ReconciliationRecord> reconciledRecords;
+    private List<ReconciliationRecord> reconciledRecords = new ArrayList<>();
     private List<StandardizedTransaction> unmatchedLedger;
     private List<StandardizedTransaction> unmatchedBank;
     private List<String> anomalies;
@@ -96,18 +96,15 @@ public class MainUIContext {
     public void setStandardizedLedgerTransactions(List<StandardizedTransaction> standardizedLedgerTransactions) { this.standardizedLedgerTransactions = standardizedLedgerTransactions; }
     public void setStandardizedBankTransactions(List<StandardizedTransaction> standardizedBankTransactions) { this.standardizedBankTransactions = standardizedBankTransactions; }
     public void setAllHypotheses(List<MatchHypothesis> allHypotheses) { this.allHypotheses = allHypotheses; }
-    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) { this.reconciledRecords = reconciledRecords; }
+    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) { this.reconciledRecords = reconciledRecords != null ? reconciledRecords : new ArrayList<>(); }
     public void setUnmatchedLedger(List<StandardizedTransaction> unmatchedLedger) { this.unmatchedLedger = unmatchedLedger; }
     public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) { this.unmatchedBank = unmatchedBank; }
     public void setAnomalies(List<String> anomalies) { this.anomalies = anomalies; }
 
     //Helper Methods
-    public void addReconciledRecord(ReconciliationRecord record) {
+    public synchronized void addReconciledRecord(ReconciliationRecord record) {
         if (record == null) {
             throw new IllegalArgumentException("record cannot be null");
-        }
-        if (reconciledRecords == null) {
-            reconciledRecords = new ArrayList<>();
         }
         reconciledRecords.add(record);
     }

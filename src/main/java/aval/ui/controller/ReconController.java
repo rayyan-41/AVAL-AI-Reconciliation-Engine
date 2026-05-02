@@ -2,7 +2,10 @@ package aval.ui.controller;
 
 import aval.common.enums.DataSourceType;
 import aval.common.enums.HypothesisStatus;
+import aval.common.enums.UserRole;
+import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
+import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.domain.ingestion.FinancialDataset;
@@ -11,6 +14,7 @@ import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -506,6 +510,20 @@ public class ReconController {
                     .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
                     .collect(Collectors.toList());
                 ctx.setPendingHypotheses(pending);
+
+                SystemUser systemBot = new SystemUser(
+                    UUID.randomUUID(),
+                    "System (Auto-Reconcile)",
+                    UserRole.ADMIN
+                );
+                List<ReconciliationRecord> autoRecords = all
+                    .stream()
+                    .filter(
+                        h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED
+                    )
+                    .map(h -> new ReconciliationRecord(h, systemBot))
+                    .collect(Collectors.toList());
+                ctx.setReconciledRecords(new ArrayList<>(autoRecords));
 
                 Set<UUID> matchedLedgerIds = all
                     .stream()
