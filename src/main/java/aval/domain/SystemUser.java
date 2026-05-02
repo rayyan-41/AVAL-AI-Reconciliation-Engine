@@ -10,25 +10,22 @@ import java.util.UUID;
 //@gof:    N/A
 public class SystemUser {
 
+    //-------------- Attributes ----------------------//
     private final UUID userId;
     private final String username;
     private final UserRole role;
 
+    //Constructor
     public SystemUser(UUID userId, String username, UserRole role) {
         this.userId = userId;
         this.username = username;
         this.role = role;
     }
 
-    public UUID getUserId() {
-        return userId;
-    }
+    //---------- Methods ------------//
 
-    public String getUsername() {
-        return username;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
+    //Getters
+    public UUID getUserId() { return userId; }
+    public String getUsername() { return username; }
+    public UserRole getRole() { return role; }
 }

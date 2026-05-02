@@ -1,5 +1,7 @@
 package aval;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.MatchingEngine;
@@ -10,8 +12,6 @@ import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
 import aval.ui.MainUIContext;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -50,14 +50,20 @@ public class Main extends Application {
             DataStore dataStore = null;
             IngestionService ingestionService = null;
             ReconciliationService reconciliationService = null;
+            HikariDataSource hikariDataSource = null;
 
             try {
-                Connection connection = DriverManager.getConnection(
-                    "jdbc:postgresql://localhost:5432/aval_db",
-                    "aval_user",
-                    "aval_password"
-                );
-                dataStore = new DataStore(connection);
+                HikariConfig config = new HikariConfig();
+                config.setJdbcUrl("jdbc:postgresql://localhost:5432/aval_db");
+                config.setUsername("aval_user");
+                config.setPassword("aval_password");
+                config.setMaximumPoolSize(10);
+                config.setMinimumIdle(2);
+                config.setConnectionTimeout(30000);
+                config.setIdleTimeout(600000);
+
+                hikariDataSource = new HikariDataSource(config);
+                dataStore = new DataStore(hikariDataSource);
                 VectorizationEngine vectorizationEngine =
                     new LangChain4jVectorizationEngine(
                         "http://localhost:11434",
@@ -80,6 +86,12 @@ public class Main extends Application {
                     "[BOOT] Backend unavailable. Running UI in fallback mode."
                 );
                 System.err.println("[BOOT] " + e.getMessage());
+            }
+
+            if (hikariDataSource != null) {
+                HikariDataSource finalDataSource = hikariDataSource;
+                Runtime.getRuntime()
+                    .addShutdownHook(new Thread(finalDataSource::close));
             }
 
             ReportService reportService = new ReportService();

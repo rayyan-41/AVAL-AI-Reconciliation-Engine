@@ -1,7 +1,6 @@
 package aval.engine;
 
 import aval.domain.ai.StandardizedTransaction;
-import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;

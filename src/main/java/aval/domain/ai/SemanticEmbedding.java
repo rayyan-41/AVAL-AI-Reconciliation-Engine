@@ -22,11 +22,6 @@ public class SemanticEmbedding {
     //----------- Methods -----------//
 
     //Getters
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public float[] getVector() {
-        return vector;
-    }
+    public UUID getTransactionId() { return transactionId; }
+    public float[] getVector() { return vector; }
 }

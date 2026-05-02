@@ -11,6 +11,7 @@ import java.util.UUID;
 //@gof:    N/A
 public class RawTransaction {
 
+    //-------------- Attributes ----------------------//
     private UUID transactionId;
     private String rawDate;
     private String rawAmount;
@@ -18,6 +19,7 @@ public class RawTransaction {
     private TransactionType transactionType;
     private FinancialDataset sourceDataset;
 
+    //Constructor
     public RawTransaction(
         UUID transactionId,
         String rawDate,
@@ -77,27 +79,11 @@ public class RawTransaction {
         return new BigDecimal(cleaned);
     }
 
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public String getRawDate() {
-        return rawDate;
-    }
-
-    public String getRawAmount() {
-        return rawAmount;
-    }
-
-    public String getNarrative() {
-        return narrative;
-    }
-
-    public TransactionType getTransactionType() {
-        return transactionType;
-    }
-
-    public FinancialDataset getSourceDataset() {
-        return sourceDataset;
-    }
+    //Getters
+    public UUID getTransactionId() { return transactionId; }
+    public String getRawDate() { return rawDate; }
+    public String getRawAmount() { return rawAmount; }
+    public String getNarrative() { return narrative; }
+    public TransactionType getTransactionType() { return transactionType; }
+    public FinancialDataset getSourceDataset() { return sourceDataset; }
 }

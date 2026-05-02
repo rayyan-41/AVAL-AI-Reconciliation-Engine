@@ -20,16 +20,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import javax.sql.DataSource;
 
 //@desc:   The sole repository holding a JDBC connection to execute SQL against the PostgreSQL database.
 //@grasp:  Controller
 //@gof:    Repository / DAO
 public class DataStore {
 
-    private Connection connection;
+    private final DataSource dataSource;
 
-    public DataStore(Connection connection) {
-        this.connection = connection;
+    public DataStore(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     /**
@@ -43,7 +44,10 @@ public class DataStore {
             "INSERT INTO standardized_ledger (transaction_id, value_date, amount, narrative, transaction_type, source_dataset_id, embedding) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?::vector)";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, tx.getTransactionId());
             pstmt.setDate(2, java.sql.Date.valueOf(tx.getValueDate()));
             pstmt.setBigDecimal(3, tx.getAmount());
@@ -67,7 +71,10 @@ public class DataStore {
             "INSERT INTO standardized_bank (transaction_id, value_date, amount, narrative, transaction_type, source_dataset_id, embedding) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?::vector)";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, tx.getTransactionId());
             pstmt.setDate(2, java.sql.Date.valueOf(tx.getValueDate()));
             pstmt.setBigDecimal(3, tx.getAmount());
@@ -95,7 +102,10 @@ public class DataStore {
             "LIMIT ?";
 
         List<Object[]> results = new ArrayList<>();
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setString(1, formatVector(ledgerEmbedding.getVector()));
             pstmt.setInt(2, limit);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -139,7 +149,10 @@ public class DataStore {
     public void saveClientOrganization(ClientOrganization org) {
         String sql =
             "INSERT INTO client_organization (org_id, name) VALUES (?, ?) ON CONFLICT (org_id) DO UPDATE SET name = EXCLUDED.name";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, org.getOrgId());
             pstmt.setString(2, org.getName());
             pstmt.executeUpdate();
@@ -151,7 +164,10 @@ public class DataStore {
     public ClientOrganization findClientOrganizationById(UUID id) {
         String sql =
             "SELECT org_id, name FROM client_organization WHERE org_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -171,7 +187,10 @@ public class DataStore {
     public void saveReconciliationWorkspace(ReconciliationWorkspace workspace) {
         String sql =
             "INSERT INTO reconciliation_workspace (workspace_id, org_id, status) VALUES (?, ?, ?) ON CONFLICT (workspace_id) DO UPDATE SET status = EXCLUDED.status";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, workspace.getWorkspaceId());
             pstmt.setObject(
                 2,
@@ -189,7 +208,10 @@ public class DataStore {
     public ReconciliationWorkspace findReconciliationWorkspaceById(UUID id) {
         String sql =
             "SELECT workspace_id, org_id, status FROM reconciliation_workspace WHERE workspace_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -220,7 +242,10 @@ public class DataStore {
             "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) " +
             "VALUES (?, ?, ?, ?, ?, ?) " +
             "ON CONFLICT (dataset_id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, dataset.getDatasetId());
             pstmt.setObject(2, workspaceId);
             pstmt.setString(3, dataset.getFilePath());
@@ -236,7 +261,10 @@ public class DataStore {
     public void saveRawTransactions(List<RawTransaction> rawTransactions) {
         String sql =
             "INSERT INTO raw_transactions (transaction_id, raw_date, raw_amount, narrative, transaction_type, source_dataset_id) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (RawTransaction tx : rawTransactions) {
                 pstmt.setObject(1, tx.getTransactionId());
                 pstmt.setString(2, tx.getRawDate());
@@ -262,7 +290,10 @@ public class DataStore {
     public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {
         String sql =
             "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (MatchHypothesis h : hypotheses) {
                 pstmt.setObject(1, h.getHypothesisId());
                 pstmt.setObject(
@@ -298,7 +329,10 @@ public class DataStore {
     public void saveReconciliationRecords(List<ReconciliationRecord> records) {
         String sql =
             "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (ReconciliationRecord r : records) {
                 pstmt.setObject(1, r.getRecordId());
                 pstmt.setObject(
@@ -337,7 +371,10 @@ public class DataStore {
                                        aval.common.enums.HypothesisStatus status,
                                        String justification) throws SQLException {
         String sql = "UPDATE match_hypotheses SET status = ?, justification = ? WHERE hypothesis_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setString(1, status.name());
             pstmt.setString(2, justification);
             pstmt.setObject(3, hypothesisId);
@@ -354,7 +391,10 @@ public class DataStore {
     public void updateWorkspaceStatus(UUID workspaceId,
                                       aval.common.enums.WorkspaceStatus status) throws SQLException {
         String sql = "UPDATE reconciliation_workspace SET status = ? WHERE workspace_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setString(1, status.name());
             pstmt.setObject(2, workspaceId);
             int rows = pstmt.executeUpdate();
@@ -373,8 +413,11 @@ public class DataStore {
     public void deleteReconciliationWorkspace(UUID workspaceId) throws SQLException {
         String deleteDatasets  = "DELETE FROM financial_dataset WHERE workspace_id = ?";
         String deleteWorkspace = "DELETE FROM reconciliation_workspace WHERE workspace_id = ?";
-        try (PreparedStatement ds = connection.prepareStatement(deleteDatasets);
-             PreparedStatement ws = connection.prepareStatement(deleteWorkspace)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement ds = conn.prepareStatement(deleteDatasets);
+            PreparedStatement ws = conn.prepareStatement(deleteWorkspace)
+        ) {
             ds.setObject(1, workspaceId);
             ds.executeUpdate();
             ws.setObject(1, workspaceId);
@@ -390,7 +433,10 @@ public class DataStore {
      */
     public void deleteFinancialDataset(UUID datasetId) throws SQLException {
         String sql = "DELETE FROM financial_dataset WHERE dataset_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, datasetId);
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
@@ -408,7 +454,8 @@ public class DataStore {
             "FROM reconciliation_records rr JOIN match_hypotheses mh ON rr.hypothesis_id = mh.hypothesis_id " +
             "ORDER BY rr.reconciled_at DESC LIMIT 50";
         try (
-            PreparedStatement pstmt = connection.prepareStatement(sql);
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
         ) {
             while (rs.next()) {
@@ -430,7 +477,10 @@ public class DataStore {
     public SystemUser findSystemUserById(UUID id) {
         String sql =
             "SELECT user_id, username, role FROM system_user WHERE user_id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setObject(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -456,7 +506,8 @@ public class DataStore {
         List<ClientOrganization> clients = new ArrayList<>();
         String sql = "SELECT org_id, name FROM client_organization ORDER BY name";
         try (
-            PreparedStatement pstmt = connection.prepareStatement(sql);
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
         ) {
             while (rs.next()) {
@@ -479,7 +530,10 @@ public class DataStore {
      */
     public SystemUser findSystemUserByUsername(String username) {
         String sql = "SELECT user_id, username, role FROM system_user WHERE username = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {

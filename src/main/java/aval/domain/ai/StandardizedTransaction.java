@@ -40,29 +40,12 @@ public class StandardizedTransaction {
     //--------- Methods -----------//
 
     //Getters
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public LocalDate getValueDate() {
-        return valueDate;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getNarrative() {
-        return narrative;
-    }
-
-    public TransactionType getType() {
-        return type;
-    }
-
-    public UUID getSourceDatasetId() {
-        return sourceDatasetId;
-    }
+    public UUID getTransactionId() { return transactionId; }
+    public LocalDate getValueDate() { return valueDate; }
+    public BigDecimal getAmount() { return amount; }
+    public String getNarrative() { return narrative; }
+    public TransactionType getType() { return type; }
+    public UUID getSourceDatasetId() { return sourceDatasetId; }
 
     @Override
     public String toString() {

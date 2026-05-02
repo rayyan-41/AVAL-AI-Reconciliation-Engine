@@ -46,29 +46,12 @@ public abstract class FinancialDataset {
     public abstract boolean validate();
 
     //Getters
-    public List<RawTransaction> getRawTransactions() {
-        return this.rawTransactions;
-    }
-
-    public List<StandardizedTransaction> getStandardizedTransactions() {
-        return this.standardizedTransactions;
-    }
-
-    public String getFilePath() {
-        return this.filePath;
-    }
-
-    public UUID getDatasetId() {
-        return this.datasetId;
-    }
-
-    public LocalDate getImportDate() {
-        return this.importDate;
-    }
-
-    public DatasetStatus getStatus() {
-        return this.status;
-    }
+    public List<RawTransaction> getRawTransactions() { return this.rawTransactions; }
+    public List<StandardizedTransaction> getStandardizedTransactions() { return this.standardizedTransactions; }
+    public String getFilePath() { return this.filePath; }
+    public UUID getDatasetId() { return this.datasetId; }
+    public LocalDate getImportDate() { return this.importDate; }
+    public DatasetStatus getStatus() { return this.status; }
 
     public void markAsStandardized() {
         this.status = DatasetStatus.STANDARDIZED;

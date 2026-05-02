@@ -1,0 +1,1324 @@
+================================================================================
+AVAL AIRE — PRODUCTION GAPS & IMPLEMENTATION PLAN
+Full audit of every incomplete or unsafe area, with exact fixes.
+Version 1.0 | April 2026 | AVAL Engineering
+================================================================================
+
+This document is a plain-text companion to AVAL_Integration_Plan.docx.
+It lists every gap that prevents the application from being production-ready,
+ordered by severity, with the exact files to change and the exact code to write.
+
+Nothing in this document is theoretical. Every issue was found by reading the
+actual source files in this repository.
+
+--------------------------------------------------------------------------------
+SEVERITY LEGEND
+--------------------------------------------------------------------------------
+  [BLOCKING]  Will cause data corruption, wrong output, or a security breach.
+              Do not ship without fixing.
+  [HIGH]      Will cause a runtime crash or complete feature failure in real use.
+  [MEDIUM]    Incomplete feature. Works in happy-path demos but fails in
+              production scenarios.
+  [LOW]       Hygiene / defensive programming. Does not break anything today
+              but will cause problems as the codebase grows.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+ISSUE 01 — SINGLE JDBC CONNECTION SHARED ACROSS CONCURRENT THREADS
+Severity  : BLOCKING
+Files     : src/main/java/aval/persistence/DataStore.java
+            src/main/java/aval/Main.java
+            pom.xml
+================================================================================
+
+PROBLEM
+-------
+DataStore holds exactly one java.sql.Connection object:
+
+    private Connection connection;
+    public DataStore(Connection connection) { this.connection = connection; }
+
+Every method in DataStore uses this single connection directly. JDBC Connection
+objects are NOT thread-safe. The integration plan requires multiple JavaFX
+Task<T> threads running concurrently:
+  - Ledger ingestion Task writes to standardized_ledger
+  - Bank ingestion Task writes to standardized_bank
+  - Auth Task reads from system_user
+
+When two Tasks call DataStore at the same time, you get:
+  - "Connection is closed" SQLExceptions
+  - Corrupted ResultSet reads (one thread's cursor advanced by another)
+  - Silent data loss
+
+This is intermittent and hard to reproduce in testing, which makes it dangerous.
+
+FIX — Replace the single Connection with HikariCP connection pool
+-----------------------------------------------------------------
+
+Step 1. Add HikariCP to pom.xml (inside <dependencies>):
+
+    <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>5.1.0</version>
+    </dependency>
+
+Step 2. Replace DataStore constructor and field:
+
+    // REMOVE this:
+    private Connection connection;
+    public DataStore(Connection connection) { this.connection = connection; }
+
+    // ADD this:
+    import com.zaxxer.hikari.HikariConfig;
+    import com.zaxxer.hikari.HikariDataSource;
+    import javax.sql.DataSource;
+
+    private final DataSource dataSource;
+
+    public DataStore(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+Step 3. In every DataStore method, replace:
+
+    // BEFORE (unsafe — uses shared connection):
+    PreparedStatement ps = connection.prepareStatement(sql);
+
+    // AFTER (safe — borrows a connection from the pool, returns it on close):
+    try (Connection conn = dataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        // ... rest of method unchanged
+    }
+
+    This pattern works because HikariDataSource.getConnection() returns a
+    pooled connection, and the try-with-resources closes (returns) it when done.
+    Each Task gets its own connection. No sharing, no races.
+
+Step 4. Change Main.java service wiring:
+
+    // REMOVE:
+    Connection conn = DriverManager.getConnection(url, user, pass);
+    DataStore dataStore = new DataStore(conn);
+
+    // ADD:
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl("jdbc:postgresql://localhost:5432/aval_db");
+    config.setUsername("aval_user");
+    config.setPassword("aval_password");
+    config.setMaximumPoolSize(10);
+    config.setMinimumIdle(2);
+    config.setConnectionTimeout(30000);
+    config.setIdleTimeout(600000);
+    HikariDataSource hikariDataSource = new HikariDataSource(config);
+    DataStore dataStore = new DataStore(hikariDataSource);
+
+    // Add shutdown hook so the pool closes cleanly when the app exits:
+    Runtime.getRuntime().addShutdownHook(new Thread(hikariDataSource::close));
+
+VERIFICATION
+------------
+After this change, start the app and simultaneously:
+1. Load a ledger file (triggers standardize() Task)
+2. While it is running, load a bank PDF (triggers another standardize() Task)
+Both should complete without any SQLException in the console.
+
+
+================================================================================
+ISSUE 02 — NO PASSWORD VERIFICATION (AUTH IS DECORATIVE)
+Severity  : BLOCKING
+Files     : src/main/java/aval/ui/controller/AuthController.java
+            src/main/java/aval/persistence/DataStore.java
+            db-init/01-init.sql
+================================================================================
+
+PROBLEM
+-------
+The system_user table has no password column:
+
+    CREATE TABLE system_user (
+        user_id UUID PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        role VARCHAR(20) NOT NULL
+    );
+
+AuthController checks only that the passkey field is non-blank. Any non-empty
+string is accepted. Knowing a valid username is all that is required to log in.
+
+FIX — Add password_hash column and bcrypt verification
+------------------------------------------------------
+
+Step 1. Add password_hash column to the DB schema.
+Add this to db-init/01-init.sql (or run it as a migration):
+
+    ALTER TABLE system_user ADD COLUMN password_hash VARCHAR(255) NOT NULL DEFAULT '';
+
+    -- Seed a test user with bcrypt hash of "aval2024" (generated offline):
+    INSERT INTO system_user (user_id, username, role, password_hash)
+    VALUES (
+        gen_random_uuid(),
+        'WS-0001-ARYA',
+        'ACCOUNTANT',
+        '$2a$12$Kix.9A1VRoH0jNZ5vD0WaOivHBKQ3XOhZ2W5XW5CJbE3YHI8SQBKK'
+    );
+    -- The hash above is bcrypt of "aval2024" with cost 12.
+    -- Generate your own hashes using: https://bcrypt-generator.com/
+
+Step 2. Add BCrypt to pom.xml:
+
+    <dependency>
+        <groupId>org.mindrot</groupId>
+        <artifactId>jbcrypt</artifactId>
+        <version>0.4</version>
+    </dependency>
+
+Step 3. Add findSystemUserByCredentials() to DataStore.java:
+
+    import org.mindrot.jbcrypt.BCrypt;
+
+    public SystemUser findSystemUserByCredentials(String username, String passkey) {
+        String sql = "SELECT user_id, username, role, password_hash " +
+                     "FROM system_user WHERE username = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String storedHash = rs.getString("password_hash");
+                    if (BCrypt.checkpw(passkey, storedHash)) {
+                        return new SystemUser(
+                            (UUID) rs.getObject("user_id"),
+                            rs.getString("username"),
+                            UserRole.valueOf(rs.getString("role"))
+                        );
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("findSystemUserByCredentials failed: " + e.getMessage());
+        }
+        return null; // null = bad credentials
+    }
+
+Step 4. Update AuthController.handleAuthenticate():
+
+    @FXML
+    private void handleAuthenticate() {
+        String username = workspaceIdField.getText().trim();
+        String passkey  = passkeyField.getText();
+
+        if (username.isBlank()) {
+            workspaceIdField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;");
+            return;
+        }
+        if (passkey.isBlank()) {
+            passkeyField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;");
+            return;
+        }
+
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+
+        Task<SystemUser> authTask = new Task<>() {
+            @Override protected SystemUser call() {
+                return ds.findSystemUserByCredentials(username, passkey);
+            }
+        };
+
+        authTask.setOnSucceeded(e -> Platform.runLater(() -> {
+            SystemUser user = authTask.getValue();
+            if (user != null) {
+                MainUIContext.getInstance().setCurrentUser(user);
+                navigateTo("Registry.fxml");
+            } else {
+                // Show error — do NOT say which field is wrong (security)
+                workspaceIdField.setStyle(
+                    "-fx-border-color: transparent transparent #991b1b transparent;");
+                passkeyField.setStyle(
+                    "-fx-border-color: transparent transparent #991b1b transparent;");
+            }
+        }));
+
+        authTask.setOnFailed(e -> Platform.runLater(() -> {
+            // DB unavailable — fail CLOSED (see Issue 03)
+            workspaceIdField.setStyle(
+                "-fx-border-color: transparent transparent #991b1b transparent;");
+        }));
+
+        new Thread(authTask).start();
+    }
+
+VERIFICATION
+------------
+- Correct username + correct passkey -> navigates to Registry.
+- Correct username + wrong passkey -> stays on Auth, both fields highlighted.
+- Unknown username -> stays on Auth, both fields highlighted.
+- DB offline -> stays on Auth (fails closed, see Issue 03).
+
+
+================================================================================
+ISSUE 03 — AUTH FALLBACK FAILS OPEN (DB UNAVAILABLE = FREE LOGIN)
+Severity  : BLOCKING
+Files     : src/main/java/aval/ui/controller/AuthController.java
+            src/main/java/aval/Main.java
+================================================================================
+
+PROBLEM
+-------
+The integration plan recommended a dev-mode fallback where, if the DB is
+unreachable, a synthetic SystemUser is created and the user is admitted anyway.
+This is a security hole. A production machine with a DB connectivity blip would
+accept ANY login with no validation.
+
+FIX — Remove the fallback entirely. Fail closed.
+------------------------------------------------
+
+In AuthController, the Task.setOnFailed handler must NOT create a synthetic user.
+It must show an error and stay on the Auth screen (see Issue 02 fix above — the
+setOnFailed handler already does this correctly).
+
+In Main.java, wrap the connection pool creation in a try-catch. If the DB is
+unreachable at startup, show a dialog and exit cleanly instead of continuing:
+
+    try {
+        HikariDataSource hikariDataSource = new HikariDataSource(config);
+        dataStore = new DataStore(hikariDataSource);
+    } catch (Exception e) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Database Unavailable");
+        alert.setHeaderText("Cannot connect to AVAL database.");
+        alert.setContentText(
+            "Ensure Docker Compose is running: docker compose up db\n\n" +
+            "Error: " + e.getMessage());
+        alert.showAndWait();
+        Platform.exit();
+        return;
+    }
+
+VERIFICATION
+------------
+Stop the Docker database container. Launch the app. An error dialog should
+appear and the application should exit. It must NOT reach the login screen.
+
+
+================================================================================
+ISSUE 04 — AUTO-RECONCILED RECORDS MISSING FROM REPORT (CORRECTNESS BUG)
+Severity  : BLOCKING
+Files     : src/main/java/aval/ui/controller/ReconController.java
+            src/main/java/aval/ui/MainUIContext.java
+================================================================================
+
+PROBLEM
+-------
+When ReconciliationService.runMatching() runs, it correctly creates
+ReconciliationRecord objects for every AUTO_RECONCILED hypothesis and saves
+them to the database via dataStore.saveReconciliationRecords(autoRecords).
+
+However, runMatching() returns only List<MatchHypothesis>. The auto-records are
+never returned to the caller. In ReconController.finishReconciliation(), after
+the Task completes, no code exists to put those auto-records into
+MainUIContext.reconciledRecords.
+
+Result: ReportController.handleGenerate() calls ctx.getReconciledRecords() and
+gets only the manually approved records from ManualCheckController. Every
+auto-matched transaction (typically 95%+ of the dataset) is absent from the
+generated CSV report. The report is silently, severely incomplete.
+
+FIX — Reconstruct auto-records from the hypothesis list after runMatching()
+--------------------------------------------------------------------------
+
+In ReconController, inside the task.setOnSucceeded() block, after splitting
+the hypotheses by status, add:
+
+    // Reconstruct ReconciliationRecord objects for all auto-reconciled items.
+    // These were saved to the DB inside runMatching(), but were not returned.
+    // We recreate them in-memory so the report has the full picture.
+    SystemUser systemBot = new SystemUser(
+        UUID.randomUUID(),
+        "System (Auto-Reconcile)",
+        UserRole.ADMIN
+    );
+
+    List<ReconciliationRecord> autoRecords = all.stream()
+        .filter(h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED)
+        .map(h -> new ReconciliationRecord(h, systemBot))
+        .collect(Collectors.toList());
+
+    // Seed MainUIContext with the auto-records so the report starts populated.
+    // ManualCheckController will append approved manual records on top of these.
+    ctx.setReconciledRecords(new ArrayList<>(autoRecords));
+
+Also add setReconciledRecords() and addReconciledRecord() to MainUIContext:
+
+    private List<ReconciliationRecord> reconciledRecords = new ArrayList<>();
+
+    public List<ReconciliationRecord> getReconciledRecords() {
+        return reconciledRecords;
+    }
+
+    public void setReconciledRecords(List<ReconciliationRecord> records) {
+        this.reconciledRecords = records;
+    }
+
+    public synchronized void addReconciledRecord(ReconciliationRecord record) {
+        this.reconciledRecords.add(record);
+    }
+    // Note: addReconciledRecord is synchronized because ManualCheckController
+    // calls it from a background Task thread (see Issue 06).
+
+VERIFICATION
+------------
+After running reconciliation on a dataset of N transactions where M are
+auto-matched and K go to manual review, then approving all K manually:
+- ctx.getReconciledRecords().size() should equal M + K (approved manual ones).
+- The generated CSV should have M + K data rows.
+- Check the database: reconciliation_records table should also have M + K rows.
+
+
+================================================================================
+ISSUE 05 — ANOMALY WORKFLOW BLOCKS REPORT GENERATION WITH NO RESOLUTION PATH
+Severity  : HIGH
+Files     : src/main/java/aval/service/ReportService.java
+            src/main/java/aval/ui/controller/ReportController.java
+            src/main/java/aval/ui/controller/ReconController.java
+================================================================================
+
+PROBLEM
+-------
+ReportService.generateReconciliationReport() has this contract:
+"Throws UnresolvedItemsException if pendingHypotheses or unresolvedAnomalies
+are non-empty."
+
+AnomalyDetectionEngine.identifyAnomalies() flags:
+- Exact duplicate transactions (same date + amount)
+- Outliers > 3 standard deviations
+- Sunday-dated transactions
+
+All three are common in real financial datasets. When anomalies are detected,
+they are stored in MainUIContext.anomalies as List<String>. In
+ReportController.handleGenerate(), those strings are passed directly to
+generateReconciliationReport() as the unresolvedAnomalies parameter.
+
+Result: If any anomaly was detected at all, calling generateReconciliationReport()
+throws UnresolvedItemsException and the report cannot be generated. There is no
+screen in the UI for the user to review or dismiss anomalies. Report generation
+is permanently blocked.
+
+FIX — Two parts: UI anomaly review panel + correct report call
+-------------------------------------------------------------
+
+PART A: Add anomaly review to the ManualCheck screen.
+The Manual Check screen is the natural place to review anomalies alongside
+low-confidence hypotheses.
+
+In ManualCheck.fxml, add a collapsible anomaly section below the hypothesis table:
+
+    <!-- Anomaly Review Panel -->
+    <VBox fx:id="anomalyPane" spacing="8" style="-fx-padding: 0 0 20 0;"
+          visible="false" managed="false">
+        <Label text="Detected Anomalies" styleClass="section-heading" />
+        <Label text="Review and dismiss each flagged item to enable report generation."
+               styleClass="mc-sub" wrapText="true" />
+        <ListView fx:id="anomalyList" prefHeight="180" styleClass="data-table" />
+        <Button text="Dismiss All Anomalies" onAction="#handleDismissAnomalies"
+                styleClass="btn-ghost" />
+    </VBox>
+
+In ManualCheckController, add:
+
+    @FXML private VBox anomalyPane;
+    @FXML private ListView<String> anomalyList;
+
+    private boolean anomaliesDismissed = false;
+
+    // Call this from WorkspaceController.showManual() after setItems()
+    public void loadAnomalies() {
+        List<String> anomalies = MainUIContext.getInstance().getAnomalies();
+        if (anomalies != null && !anomalies.isEmpty()) {
+            anomalyList.setItems(FXCollections.observableArrayList(anomalies));
+            anomalyPane.setVisible(true);
+            anomalyPane.setManaged(true);
+        } else {
+            anomaliesDismissed = true; // no anomalies = already clear
+        }
+    }
+
+    @FXML
+    void handleDismissAnomalies() {
+        anomaliesDismissed = true;
+        anomalyPane.setVisible(false);
+        anomalyPane.setManaged(false);
+        // Clear anomalies from context so they are not passed to ReportService
+        MainUIContext.getInstance().setAnomalies(new ArrayList<>());
+        checkIfComplete();
+    }
+
+    // Modify checkIfComplete / the footer trigger to require anomalies dismissed:
+    private void checkIfComplete() {
+        if (resolved >= mcTable.getItems().size() && anomaliesDismissed) {
+            mcCompleteBar.setVisible(true);
+            mcCompleteBar.setManaged(true);
+        }
+    }
+
+PART B: Fix ReportController to pass empty anomaly list (after dismissal).
+The context's anomaly list is cleared when the user clicks Dismiss, so:
+
+    List<String> anomalies = ctx.getAnomalies();
+    if (anomalies == null) anomalies = new ArrayList<>();
+    // After dismissal, this list is empty and ReportService will not throw.
+
+VERIFICATION
+------------
+- Ingest a dataset that contains duplicate transactions.
+- Run reconciliation. Anomalies should appear in the Manual Check screen.
+- Before dismissing, click Proceed to Report — it should not be available.
+- Dismiss anomalies. Proceed to Report becomes available.
+- Generate report — no UnresolvedItemsException.
+
+
+================================================================================
+ISSUE 06 — MAINCUICONTEXT IS NOT THREAD-SAFE
+Severity  : HIGH
+Files     : src/main/java/aval/ui/MainUIContext.java
+================================================================================
+
+PROBLEM
+-------
+MainUIContext is a singleton accessed by both the JavaFX Application Thread
+(reading values to update UI) and multiple background Task threads (writing
+values after ingestion, matching, and approval). All fields are plain Java
+object references with no visibility guarantees.
+
+The Java Memory Model does not guarantee that a write made on Thread A is
+visible to Thread B without a happens-before relationship. In practice this
+causes:
+- stale reads (UI shows old data after ingestion completes)
+- lost writes (one Task's result overwrites another's silently)
+
+The most dangerous races are on:
+  - standardizedLedgerTransactions (written by ledger Task, read by recon Task)
+  - reconciledRecords (written by multiple ManualCheck Task calls)
+  - allHypotheses (written by recon Task, read by Report screen)
+
+FIX — Make fields volatile and list mutations synchronized
+---------------------------------------------------------
+
+For simple reference assignments (set once, read later), volatile is enough:
+
+    private volatile SystemUser currentUser;
+    private volatile ReconciliationWorkspace activeWorkspace;
+    private volatile List<MatchHypothesis> allHypotheses;
+    private volatile List<StandardizedTransaction> standardizedLedgerTransactions;
+    private volatile List<StandardizedTransaction> standardizedBankTransactions;
+    private volatile List<StandardizedTransaction> unmatchedLedger;
+    private volatile List<StandardizedTransaction> unmatchedBank;
+    private volatile List<String> anomalies;
+    private volatile List<MatchHypothesis> pendingHypotheses;
+
+For reconciledRecords, which is appended to from multiple threads:
+
+    private final List<ReconciliationRecord> reconciledRecords =
+        Collections.synchronizedList(new ArrayList<>());
+
+    public List<ReconciliationRecord> getReconciledRecords() {
+        synchronized (reconciledRecords) {
+            return new ArrayList<>(reconciledRecords); // return defensive copy
+        }
+    }
+
+    public void setReconciledRecords(List<ReconciliationRecord> records) {
+        synchronized (reconciledRecords) {
+            reconciledRecords.clear();
+            reconciledRecords.addAll(records);
+        }
+    }
+
+    public void addReconciledRecord(ReconciliationRecord record) {
+        reconciledRecords.add(record); // synchronizedList handles this
+    }
+
+VERIFICATION
+------------
+Run the ingestion for ledger and bank files with short pauses between starting
+each, so Tasks genuinely overlap. Confirm that both datasets are available in
+context after both Tasks complete. No NPE or stale-data symptoms should appear.
+
+
+================================================================================
+ISSUE 07 — WORKSPACE STATUS NEVER UPDATED ON EXIT
+Severity  : HIGH
+Files     : src/main/java/aval/ui/controller/WorkspaceController.java
+================================================================================
+
+PROBLEM
+-------
+WorkspaceController.handleExit() does this:
+
+    MainUIContext.getInstance().setActiveClient(null);
+    // ... navigates to Registry.fxml
+
+It never calls dataStore.updateWorkspaceStatus(workspaceId, COMPLETED).
+Every reconciliation_workspace row created during a session stays permanently
+in IN_PROGRESS status. Any future query filtering by status (e.g., history
+dashboard, reporting across periods) returns wrong results.
+
+FIX — Call updateWorkspaceStatus before navigating away
+-------------------------------------------------------
+
+    @FXML
+    void handleExit() {
+        ReconciliationWorkspace workspace =
+            MainUIContext.getInstance().getActiveWorkspace();
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+
+        if (workspace != null && ds != null) {
+            Task<Void> closeTask = new Task<>() {
+                @Override protected Void call() throws Exception {
+                    ds.updateWorkspaceStatus(
+                        workspace.getWorkspaceId(),
+                        WorkspaceStatus.COMPLETED
+                    );
+                    return null;
+                }
+            };
+            // Fire and forget — don't wait, just initiate
+            new Thread(closeTask).start();
+        }
+
+        // Clear session state
+        MainUIContext ctx = MainUIContext.getInstance();
+        ctx.setActiveClient(null);
+        ctx.setActiveWorkspace(null);
+        ctx.setAllHypotheses(null);
+        ctx.setStandardizedLedgerTransactions(null);
+        ctx.setStandardizedBankTransactions(null);
+        ctx.setUnmatchedLedger(null);
+        ctx.setUnmatchedBank(null);
+        ctx.setAnomalies(null);
+        ctx.setPendingHypotheses(null);
+        ctx.setReconciledRecords(new ArrayList<>());
+
+        navigateTo("Registry.fxml");
+    }
+
+Note: The context clearing block also fixes Issue 10 (stale MainUIContext state).
+
+VERIFICATION
+------------
+Enter and exit a workspace. Check the database:
+    SELECT * FROM reconciliation_workspace;
+The row's status column should read 'COMPLETED'.
+
+
+================================================================================
+ISSUE 08 — HARDCODED DATABASE CREDENTIALS AND ENDPOINTS IN MAIN.JAVA
+Severity  : HIGH
+Files     : src/main/java/aval/Main.java
+================================================================================
+
+PROBLEM
+-------
+Main.java contains:
+
+    String url  = "jdbc:postgresql://localhost:5432/aval_db";
+    String user = "aval_user";
+    String pass = "aval_password";
+    // and:
+    new LangChain4jVectorizationEngine("http://localhost:11434", "nomic-embed-text");
+
+These are hardcoded string literals. There is no way to change the database host,
+port, credentials, or Ollama endpoint without recompiling the application.
+In any environment other than a developer's local machine (staging, client
+deployment), this will either fail to connect or expose credentials in source
+control.
+
+FIX — Load configuration from a properties file
+----------------------------------------------
+
+Step 1. Create src/main/resources/aval.properties:
+
+    # Database
+    db.url=jdbc:postgresql://localhost:5432/aval_db
+    db.username=aval_user
+    db.password=aval_password
+    db.pool.maxSize=10
+
+    # Ollama / Vectorization
+    ollama.baseUrl=http://localhost:11434
+    ollama.model=nomic-embed-text
+
+Step 2. Add aval.properties to .gitignore so it is never committed:
+
+    # In .gitignore:
+    src/main/resources/aval.properties
+
+Step 3. Provide a safe template file at src/main/resources/aval.properties.template:
+
+    db.url=jdbc:postgresql://HOST:5432/aval_db
+    db.username=CHANGE_ME
+    db.password=CHANGE_ME
+    db.pool.maxSize=10
+    ollama.baseUrl=http://localhost:11434
+    ollama.model=nomic-embed-text
+
+Step 4. Load the properties file in Main.java:
+
+    private static Properties loadConfig() throws IOException {
+        Properties props = new Properties();
+        // First try the classpath (src/main/resources/aval.properties)
+        InputStream classpathStream =
+            Main.class.getResourceAsStream("/aval.properties");
+        if (classpathStream != null) {
+            props.load(classpathStream);
+            return props;
+        }
+        // Fallback: look next to the JAR
+        File externalFile = new File("aval.properties");
+        if (externalFile.exists()) {
+            props.load(new FileInputStream(externalFile));
+            return props;
+        }
+        throw new IOException(
+            "aval.properties not found. Copy aval.properties.template " +
+            "to aval.properties and fill in your values.");
+    }
+
+Step 5. Use the properties in Main.start():
+
+    Properties config = loadConfig();
+
+    HikariConfig hikariConfig = new HikariConfig();
+    hikariConfig.setJdbcUrl(config.getProperty("db.url"));
+    hikariConfig.setUsername(config.getProperty("db.username"));
+    hikariConfig.setPassword(config.getProperty("db.password"));
+    hikariConfig.setMaximumPoolSize(
+        Integer.parseInt(config.getProperty("db.pool.maxSize", "10")));
+
+    VectorizationEngine vecEngine = new LangChain4jVectorizationEngine(
+        config.getProperty("ollama.baseUrl"),
+        config.getProperty("ollama.model")
+    );
+
+VERIFICATION
+------------
+Change the db.url in aval.properties to point to a wrong port. The app should
+fail with a clear "cannot connect" error, not a NullPointerException.
+Restore the correct URL. App should start normally.
+
+
+================================================================================
+ISSUE 09 — MOCKUPROVIDER STILL WIRED INTO RECONCONTROLLER
+Severity  : HIGH
+Files     : src/main/java/aval/ui/controller/ReconController.java
+================================================================================
+
+PROBLEM
+-------
+In ReconController.setupLedgerTable(), the ledger TableView is populated with:
+
+    ObservableList<StandardizedTransaction> txns =
+        FXCollections.observableArrayList(MockUIProvider.getMockTransactions(10));
+    ledgerTable.setItems(txns);
+
+When the real ledger ingestion is wired, the user loads a real Excel file, real
+StandardizedTransaction objects are stored in MainUIContext, and the ledger table
+still shows 10 random mock transactions. The user cannot verify their real data
+before running reconciliation.
+
+Similarly, in ReconController.finishReconciliation() (before the backend fix),
+MockUIProvider.getMockHypotheses(5) is used. This is already replaced by the
+real backend call in Issue 04's fix, but the mock import must be confirmed removed.
+
+FIX — Replace mock ledger table population with real data binding
+---------------------------------------------------------------
+
+Remove the MockUIProvider.getMockTransactions(10) call from setupLedgerTable().
+Instead, call this method after real ledger ingestion completes:
+
+    // Add to ReconController:
+    public void populateLedgerTable(List<StandardizedTransaction> transactions) {
+        ledgerTable.setItems(FXCollections.observableArrayList(transactions));
+    }
+
+Call it from the ledger ingestion Task's setOnSucceeded handler
+(already shown in the Integration Plan, Section 5.7):
+
+    task.setOnSucceeded(e -> Platform.runLater(() -> {
+        List<StandardizedTransaction> stdLedger = task.getValue();
+        MainUIContext.getInstance().setStandardizedLedgerTransactions(stdLedger);
+        populateLedgerTable(stdLedger);  // <-- replaces mock
+        ledgerStatus.setText("Loaded — " + stdLedger.size() + " records");
+        // ...
+    }));
+
+Also remove the MockUIProvider import from ReconController.java entirely:
+
+    // DELETE this line:
+    import aval.ui.util.MockUIProvider;
+
+VERIFICATION
+------------
+Load a real .xlsx ledger file. The right panel table should show the actual
+transaction records from that file, with real dates, amounts, and narratives.
+
+
+================================================================================
+ISSUE 10 — STALE MAINCUICONTEXT STATE BETWEEN WORKSPACE SESSIONS
+Severity  : HIGH
+Files     : src/main/java/aval/ui/controller/WorkspaceController.java
+            src/main/java/aval/ui/MainUIContext.java
+================================================================================
+
+PROBLEM
+-------
+MainUIContext is a JVM-scoped singleton. When a user exits Workspace A and
+enters Workspace B in the same app session, the previous session's data remains:
+- standardizedLedgerTransactions from Company A's ledger
+- allHypotheses from Company A's reconciliation
+- reconciledRecords from Company A's manual review
+
+WorkspaceController.initialize() for Company B reads these stale values.
+ManualCheckController.setItems() is called with Company A's pending hypotheses.
+ReportController.populateReport() is called with Company A's hypothesis list.
+The Finance Dashboard shows Company A's stats on Company B's screen.
+
+FIX — Clear all session fields on exit (already in Issue 07 fix)
+---------------------------------------------------------------
+
+The context-clearing block in handleExit() (shown in Issue 07) handles this.
+Ensure EVERY session-specific field is set to null or an empty list on exit.
+The complete list of fields to clear:
+
+    ctx.setActiveWorkspace(null);
+    ctx.setStandardizedLedgerTransactions(null);
+    ctx.setStandardizedBankTransactions(null);
+    ctx.setAllHypotheses(null);
+    ctx.setPendingHypotheses(null);
+    ctx.setReconciledRecords(new ArrayList<>());
+    ctx.setUnmatchedLedger(null);
+    ctx.setUnmatchedBank(null);
+    ctx.setAnomalies(null);
+    // Do NOT clear currentUser — the user stays logged in between workspaces.
+    // Do NOT clear activeClient until after navigating away.
+
+VERIFICATION
+------------
+In one session: open Company A, run a full reconciliation, exit workspace.
+Then open Company B. The Finance Dashboard must show Company B's name and
+no stat data (or Company B's real stats). The Manual Check screen must be
+empty. Running reconciliation for Company B must only show Company B's data.
+
+
+================================================================================
+ISSUE 11 — REPORT PENDING VALIDATION IS IMPLICIT, NOT ENFORCED
+Severity  : MEDIUM
+Files     : src/main/java/aval/ui/controller/ReportController.java
+================================================================================
+
+PROBLEM
+-------
+In ReportController.handleGenerate(), the pendingHypotheses list is passed as
+an empty new ArrayList<>() with a comment saying "should be empty at this point."
+
+This relies entirely on ManualCheckController blocking the Proceed button
+until all items are resolved. If that gate is bypassed (e.g., a developer calls
+workspaceController.unlockReport() directly for testing), or if the gate logic
+has a bug, hypotheses in PENDING_REVIEW status will exist at report time.
+ReportService will throw UnresolvedItemsException and the error will be caught
+silently in the Task's setOnFailed handler with no meaningful feedback.
+
+FIX — Explicitly validate at report generation time
+--------------------------------------------------
+
+In ReportController.handleGenerate(), replace the empty list with a real check:
+
+    List<MatchHypothesis> allHypotheses =
+        MainUIContext.getInstance().getAllHypotheses();
+    List<MatchHypothesis> stillPending = allHypotheses == null
+        ? new ArrayList<>()
+        : allHypotheses.stream()
+            .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
+            .collect(Collectors.toList());
+
+    if (!stillPending.isEmpty()) {
+        showFeedback("Cannot generate report: " + stillPending.size() +
+            " hypotheses are still pending review. " +
+            "Return to Manual Check to resolve them.");
+        return; // abort before starting the Task
+    }
+
+    // proceed with report generation Task using stillPending (which is empty)
+
+VERIFICATION
+------------
+Manually call workspaceController.unlockReport() in a test without completing
+manual review. Navigate to Report and click Generate. A clear error message
+should appear in the feedback label. No partial CSV should be written.
+
+
+================================================================================
+ISSUE 12 — FINANCE DASHBOARD HISTORY TABLE IS HARDCODED MOCK DATA
+Severity  : MEDIUM
+Files     : src/main/java/aval/ui/controller/FinanceController.java
+            src/main/java/aval/persistence/DataStore.java
+================================================================================
+
+PROBLEM
+-------
+FinanceController.setupHistoryTable() populates the reconciliation history
+table with four static rows that never change regardless of which company is
+selected or whether that company has ever had a reconciliation run:
+
+    new HistoryRow("2024-09-01", "Aug 2024", "312", "312", "100.0%", "0", "Verified"),
+    new HistoryRow("2024-08-02", "Jul 2024", "289", "287", "99.3%",  "2", "Verified"),
+    // etc.
+
+FIX — Add a structured DB history query and wire it to the table
+--------------------------------------------------------------
+
+Step 1. Add to DataStore.java:
+
+    public static class ReconciliationHistoryRow {
+        public String date, period, txns, matched, rate, anomalies, status;
+        public ReconciliationHistoryRow(String date, String period,
+            String txns, String matched, String rate,
+            String anomalies, String status) {
+            this.date=date; this.period=period; this.txns=txns;
+            this.matched=matched; this.rate=rate;
+            this.anomalies=anomalies; this.status=status;
+        }
+    }
+
+    public List<ReconciliationHistoryRow> getReconciliationHistoryForOrg(UUID orgId) {
+        List<ReconciliationHistoryRow> rows = new ArrayList<>();
+        String sql =
+            "SELECT " +
+            "  DATE(rr.reconciled_at) AS rec_date, " +
+            "  rw.workspace_id, " +
+            "  COUNT(mh.hypothesis_id) AS total_hyp, " +
+            "  COUNT(CASE WHEN mh.status IN ('AUTO_RECONCILED','APPROVED') " +
+            "    THEN 1 END) AS matched_hyp, " +
+            "  ROUND(100.0 * COUNT(CASE WHEN mh.status IN " +
+            "    ('AUTO_RECONCILED','APPROVED') THEN 1 END) " +
+            "    / NULLIF(COUNT(mh.hypothesis_id),0), 1) AS rate, " +
+            "  rw.status " +
+            "FROM reconciliation_workspace rw " +
+            "JOIN match_hypotheses mh ON mh.ledger_id IN ( " +
+            "  SELECT transaction_id FROM standardized_ledger " +
+            "  WHERE source_dataset_id IN ( " +
+            "    SELECT dataset_id FROM financial_dataset " +
+            "    WHERE workspace_id = rw.workspace_id)) " +
+            "JOIN reconciliation_records rr " +
+            "  ON rr.hypothesis_id = mh.hypothesis_id " +
+            "WHERE rw.org_id = ? " +
+            "GROUP BY rec_date, rw.workspace_id, rw.status " +
+            "ORDER BY rec_date DESC " +
+            "LIMIT 10";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, orgId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long total   = rs.getLong("total_hyp");
+                    long matched = rs.getLong("matched_hyp");
+                    String rate  = rs.getString("rate") + "%";
+                    long anomN   = total - matched;
+                    rows.add(new ReconciliationHistoryRow(
+                        rs.getString("rec_date"),
+                        rs.getString("rec_date").substring(0, 7), // YYYY-MM
+                        String.valueOf(total),
+                        String.valueOf(matched),
+                        rate,
+                        String.valueOf(anomN),
+                        rs.getString("status")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("getReconciliationHistoryForOrg failed: " + e.getMessage());
+        }
+        return rows;
+    }
+
+Step 2. In FinanceController.initialize(), replace the hardcoded list:
+
+    ClientOrganization client = MainUIContext.getInstance().getActiveClient();
+    DataStore ds = MainUIContext.getInstance().getDataStore();
+
+    Task<List<DataStore.ReconciliationHistoryRow>> histTask = new Task<>() {
+        @Override
+        protected List<DataStore.ReconciliationHistoryRow> call() {
+            if (client == null || ds == null) return new ArrayList<>();
+            return ds.getReconciliationHistoryForOrg(client.getOrgId());
+        }
+    };
+
+    histTask.setOnSucceeded(e -> Platform.runLater(() -> {
+        List<DataStore.ReconciliationHistoryRow> dbRows = histTask.getValue();
+        ObservableList<FinanceController.HistoryRow> uiRows =
+            FXCollections.observableArrayList();
+        for (DataStore.ReconciliationHistoryRow r : dbRows) {
+            uiRows.add(new HistoryRow(
+                r.date, r.period, r.txns, r.matched, r.rate,
+                r.anomalies, r.status));
+        }
+        historyTable.setItems(uiRows);
+    }));
+
+    new Thread(histTask).start();
+
+VERIFICATION
+------------
+Open a client that has had at least one reconciliation run. The history table
+should show that run as a row. A brand-new client should show an empty table,
+not the four hardcoded rows.
+
+
+================================================================================
+ISSUE 13 — ADD CLIENT WORKFLOW NOT IMPLEMENTED
+Severity  : MEDIUM
+Files     : src/main/java/aval/ui/controller/RegistryController.java
+            src/main/java/aval/persistence/DataStore.java
+            src/main/resources/aval/ui/views/Registry.fxml
+================================================================================
+
+PROBLEM
+-------
+RegistryController.handleAddClient() prints a message to System.out and returns.
+The "+ Add Client" button is visible and styled in the UI, giving the impression
+that onboarding is possible, but no form, no validation, and no DB insert exist.
+
+FIX — Implement a simple dialog-based client creation flow
+---------------------------------------------------------
+
+Step 1. Add saveClientOrganization() to DataStore.java (a method already exists
+but check it inserts both columns — name and org_id):
+
+    public void saveClientOrganization(ClientOrganization org) {
+        String sql = "INSERT INTO client_organization (org_id, name) " +
+                     "VALUES (?, ?) ON CONFLICT (org_id) DO NOTHING";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, org.getOrgId());
+            ps.setString(2, org.getName());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("saveClientOrganization failed: " + e.getMessage());
+        }
+    }
+
+Step 2. In RegistryController.handleAddClient(), replace the System.out call
+with a Dialog<String>:
+
+    @FXML
+    private void handleAddClient() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Add New Client");
+        dialog.setHeaderText("Enter the name of the new client organisation.");
+
+        ButtonType addButton = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(
+            addButton, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Company name");
+        dialog.getDialogPane().setContent(nameField);
+
+        // Disable Add button if name is blank
+        Node addNode = dialog.getDialogPane().lookupButton(addButton);
+        addNode.setDisable(true);
+        nameField.textProperty().addListener(
+            (obs, old, nw) -> addNode.setDisable(nw.trim().isBlank()));
+
+        dialog.setResultConverter(btn -> {
+            if (btn == addButton) return nameField.getText().trim();
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(name -> {
+            ClientOrganization newClient = new ClientOrganization(
+                UUID.randomUUID(), name, "");
+            DataStore ds = MainUIContext.getInstance().getDataStore();
+            Task<Void> saveTask = new Task<>() {
+                @Override protected Void call() throws Exception {
+                    ds.saveClientOrganization(newClient);
+                    return null;
+                }
+            };
+            saveTask.setOnSucceeded(e -> Platform.runLater(() ->
+                allClients.add(newClient)));
+            new Thread(saveTask).start();
+        });
+    }
+
+VERIFICATION
+------------
+Click "+ Add Client". A dialog should appear. Enter a name and click Add.
+The new row should appear immediately in the registry table. On next app launch,
+the new client should still be present (loaded from DB).
+
+
+================================================================================
+ISSUE 14 — EMAIL DELIVERY IS A TIMED UI STUB (UC12 INCOMPLETE)
+Severity  : MEDIUM
+Files     : src/main/java/aval/ui/controller/ReportController.java
+            src/main/java/aval/service/ (new EmailService needed)
+            src/main/resources/aval.properties
+================================================================================
+
+PROBLEM
+-------
+ReportController.handleEmail() is:
+
+    PauseTransition pt = new PauseTransition(Duration.millis(1000));
+    pt.setOnFinished(e -> showFeedback("Report emailed to " + clientName + " — Delivered."));
+    pt.play();
+
+Nothing is sent. "Delivered" is always shown, even if there is no email address,
+no SMTP server, and no generated report yet.
+
+FIX — Implement EmailService with JavaMail
+-----------------------------------------
+
+Step 1. Add JavaMail to pom.xml:
+
+    <dependency>
+        <groupId>com.sun.mail</groupId>
+        <artifactId>javax.mail</artifactId>
+        <version>1.6.2</version>
+    </dependency>
+
+Step 2. Add SMTP config to aval.properties:
+
+    mail.smtp.host=smtp.gmail.com
+    mail.smtp.port=587
+    mail.smtp.username=your-aval-email@gmail.com
+    mail.smtp.password=your-app-password
+    mail.from=noreply@avalaire.com
+
+Step 3. Create src/main/java/aval/service/EmailService.java:
+
+    package aval.service;
+
+    import javax.mail.*;
+    import javax.mail.internet.*;
+    import java.io.File;
+    import java.util.Properties;
+
+    public class EmailService {
+
+        private final String host, username, password, fromAddress;
+        private final int port;
+
+        public EmailService(String host, int port,
+                            String username, String password, String fromAddress) {
+            this.host = host; this.port = port;
+            this.username = username; this.password = password;
+            this.fromAddress = fromAddress;
+        }
+
+        public void sendReport(String toEmail, String clientName,
+                               File reportFile) throws MessagingException {
+            Properties props = new Properties();
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.host", host);
+            props.put("mail.smtp.port", String.valueOf(port));
+
+            Session session = Session.getInstance(props, new Authenticator() {
+                @Override protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(username, password);
+                }
+            });
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(fromAddress));
+            message.setRecipients(Message.RecipientType.TO,
+                InternetAddress.parse(toEmail));
+            message.setSubject("AVAL AIRE — Reconciliation Report: " + clientName);
+
+            MimeBodyPart textPart = new MimeBodyPart();
+            textPart.setText("Please find the reconciliation report attached.");
+
+            MimeBodyPart filePart = new MimeBodyPart();
+            filePart.attachFile(reportFile);
+
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(textPart);
+            multipart.addBodyPart(filePart);
+            message.setContent(multipart);
+
+            Transport.send(message);
+        }
+    }
+
+Step 4. Instantiate EmailService in Main.java alongside other services:
+
+    EmailService emailService = new EmailService(
+        config.getProperty("mail.smtp.host"),
+        Integer.parseInt(config.getProperty("mail.smtp.port")),
+        config.getProperty("mail.smtp.username"),
+        config.getProperty("mail.smtp.password"),
+        config.getProperty("mail.from")
+    );
+    ctx.setEmailService(emailService);
+
+Step 5. In ReportController.handleEmail():
+
+    @FXML
+    void handleEmail() {
+        // Require a report to have been generated first
+        if (lastGeneratedReportPath == null) {
+            showFeedback("Generate the report first before emailing.");
+            return;
+        }
+
+        ClientOrganization client = MainUIContext.getInstance().getActiveClient();
+        String toEmail = client.getContactMetadata(); // or a dedicated email field
+
+        if (toEmail == null || toEmail.isBlank()) {
+            showFeedback("No email address on file for " + client.getName());
+            return;
+        }
+
+        showFeedback("Sending...");
+        File reportFile = new File(lastGeneratedReportPath);
+        EmailService emailSvc = MainUIContext.getInstance().getEmailService();
+
+        Task<Void> emailTask = new Task<>() {
+            @Override protected Void call() throws Exception {
+                emailSvc.sendReport(toEmail, client.getName(), reportFile);
+                return null;
+            }
+        };
+        emailTask.setOnSucceeded(e -> Platform.runLater(() ->
+            showFeedback("Report emailed to " + toEmail + " — Delivered.")));
+        emailTask.setOnFailed(e -> Platform.runLater(() ->
+            showFeedback("Email failed: " + emailTask.getException().getMessage())));
+
+        new Thread(emailTask).start();
+    }
+
+Note: ClientOrganization.contactMetadata is currently a free-text field used
+to store "Active - Last sync: Xh ago" in the mock. The contactMetadata field
+should be repurposed to store an actual email address, or a dedicated
+email_address column should be added to client_organization.
+
+VERIFICATION
+------------
+Configure a real SMTP server in aval.properties. Generate a report.
+Click Email to Company. Check the recipient inbox for the attached CSV.
+
+
+================================================================================
+IMPLEMENTATION ORDER — DO THIS FIRST
+================================================================================
+
+Not all fixes are equal. Some unblock others. Work in this order:
+
+Priority 1 — Infrastructure (must be done before testing any integration)
+  1. Issue 01  — HikariCP connection pool
+  2. Issue 08  — aval.properties config file
+  3. Issue 02  — Password hash column + bcrypt auth
+  4. Issue 03  — Auth fails closed
+
+Priority 2 — Data correctness (must be done before the report is meaningful)
+  5. Issue 04  — Auto-reconciled records added to context
+  6. Issue 06  — MainUIContext thread safety (volatile + synchronized)
+  7. Issue 09  — Remove MockUIProvider from ReconController
+  8. Issue 10  — Clear stale context on workspace exit (part of Issue 07)
+
+Priority 3 — Flow correctness (features that block or mislead)
+  9. Issue 07  — Workspace status updated on exit
+  10. Issue 05  — Anomaly resolution UI in ManualCheck
+  11. Issue 11  — Pending hypothesis validation at report time
+
+Priority 4 — Feature completion
+  12. Issue 12  — Finance history from DB
+  13. Issue 13  — Add Client workflow
+  14. Issue 14  — Email delivery via SMTP
+
+
+================================================================================
+FILES CHANGED — SUMMARY
+================================================================================
+
+pom.xml
+  - Add HikariCP 5.1.0
+  - Add jbcrypt 0.4
+  - Add javax.mail 1.6.2
+
+db-init/01-init.sql
+  - Add password_hash column to system_user
+  - Add seed user row
+
+src/main/resources/aval.properties            (NEW — add to .gitignore)
+src/main/resources/aval.properties.template   (NEW — commit this one)
+
+src/main/java/aval/Main.java
+  - HikariCP pool setup
+  - Config loading from aval.properties
+  - Fail-closed on DB unavailable
+  - EmailService instantiation
+
+src/main/java/aval/ui/MainUIContext.java
+  - 12 new volatile fields
+  - synchronized reconciledRecords list
+  - setReconciledRecords(), addReconciledRecord()
+  - setDataStore(), setEmailService() + getters
+
+src/main/java/aval/persistence/DataStore.java
+  - Constructor changed to accept DataSource (HikariCP)
+  - All methods updated to use try(Connection conn = dataSource.getConnection())
+  - findSystemUserByCredentials() — NEW
+  - findAllClients() — NEW
+  - getReconciliationHistoryForOrg() — NEW (with inner ReconciliationHistoryRow class)
+
+src/main/java/aval/service/EmailService.java  (NEW)
+
+src/main/java/aval/ui/controller/AuthController.java
+  - handleAuthenticate() — Task-based bcrypt credential check, fails closed
+
+src/main/java/aval/ui/controller/RegistryController.java
+  - initialize() — replace MockUIProvider with DataStore.findAllClients() Task
+  - openWorkspace() — create and persist ReconciliationWorkspace
+  - handleAddClient() — Dialog-based client creation
+
+src/main/java/aval/ui/controller/WorkspaceController.java
+  - handleExit() — updateWorkspaceStatus(COMPLETED) + full context clear
+
+src/main/java/aval/ui/controller/FinanceController.java
+  - initialize() — replace hardcoded HistoryRow list with DB query Task
+  - refreshStats() — new method called after reconciliation completes
+
+src/main/java/aval/ui/controller/ReconController.java
+  - Remove MockUIProvider import and mock ledger table call
+  - populateLedgerTable() — new method
+  - handleLoadLedger() — new file picker for .xlsx
+  - startLedgerIngestion() — new Task
+  - finishIngestion() — replaced with real Task
+  - finishReconciliation() — replaced with real Task + auto-record seeding
+
+src/main/java/aval/ui/controller/ManualCheckController.java
+  - resolveItem() — persist via ReconciliationService in background Task
+  - loadAnomalies() — new method
+  - handleDismissAnomalies() — new handler
+  - checkIfComplete() — gates on both hypotheses resolved AND anomalies dismissed
+
+src/main/java/aval/ui/controller/ReportController.java
+  - handleGenerate() — validate pending list, real ReportService Task
+  - handleEmail() — real EmailService Task, requires prior report generation
+
+src/main/resources/aval/ui/views/Recon.fxml
+  - Ledger panel: dynamic ledgerStatus label + Load Ledger button
+
+src/main/resources/aval/ui/views/ManualCheck.fxml
+  - Add anomalyPane VBox + anomalyList ListView + Dismiss button
+
+================================================================================
+END OF DOCUMENT
+================================================================================

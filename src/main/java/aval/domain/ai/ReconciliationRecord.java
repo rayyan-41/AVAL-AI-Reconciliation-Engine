@@ -29,21 +29,10 @@ public class ReconciliationRecord {
     //---------- Methods -----------//
 
     //Getters
-    public UUID getRecordId() {
-        return recordId;
-    }
-
-    public MatchHypothesis getHypothesis() {
-        return hypothesis;
-    }
-
-    public SystemUser getConfirmingUser() {
-        return confirmingUser;
-    }
-
-    public LocalDateTime getReconciledAt() {
-        return reconciledAt;
-    }
+    public UUID getRecordId() { return recordId; }
+    public MatchHypothesis getHypothesis() { return hypothesis; }
+    public SystemUser getConfirmingUser() { return confirmingUser; }
+    public LocalDateTime getReconciledAt() { return reconciledAt; }
 
     public boolean isManualOverride() {
         return (

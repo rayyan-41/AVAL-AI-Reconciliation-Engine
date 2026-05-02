@@ -60,139 +60,46 @@ public class MainUIContext {
         return instance;
     }
 
-    //Theme State
-    public BooleanProperty darkModeActiveProperty() {
-        return darkModeActive;
-    }
+    //Getters
+    public BooleanProperty darkModeActiveProperty() { return darkModeActive; }
+    public boolean isDarkModeActive() { return darkModeActive.get(); }
+    public ClientOrganization getActiveClient() { return activeClient; }
+    public List<MatchHypothesis> getPendingHypotheses() { return pendingHypotheses; }
+    public Object getWorkspaceController() { return workspaceController; }
+    public SystemUser getCurrentUser() { return currentUser; }
+    public ReconciliationWorkspace getActiveWorkspace() { return activeWorkspace; }
+    public IngestionService getIngestionService() { return ingestionService; }
+    public ReconciliationService getReconciliationService() { return reconciliationService; }
+    public ReportService getReportService() { return reportService; }
+    public AnomalyDetectionEngine getAnomalyDetectionEngine() { return anomalyDetectionEngine; }
+    public DataStore getDataStore() { return dataStore; }
+    public List<StandardizedTransaction> getStandardizedLedgerTransactions() { return standardizedLedgerTransactions; }
+    public List<StandardizedTransaction> getStandardizedBankTransactions() { return standardizedBankTransactions; }
+    public List<MatchHypothesis> getAllHypotheses() { return allHypotheses; }
+    public List<ReconciliationRecord> getReconciledRecords() { return reconciledRecords; }
+    public List<StandardizedTransaction> getUnmatchedLedger() { return unmatchedLedger; }
+    public List<StandardizedTransaction> getUnmatchedBank() { return unmatchedBank; }
+    public List<String> getAnomalies() { return anomalies; }
 
-    public boolean isDarkModeActive() {
-        return darkModeActive.get();
-    }
-
-    public void setDarkModeActive(boolean active) {
-        darkModeActive.set(active);
-    }
-
-    //Getters and Setters
-    public ClientOrganization getActiveClient() {
-        return activeClient;
-    }
-
-    public void setActiveClient(ClientOrganization activeClient) {
-        this.activeClient = activeClient;
-    }
-
-    public List<MatchHypothesis> getPendingHypotheses() {
-        return pendingHypotheses;
-    }
-
-    public void setPendingHypotheses(List<MatchHypothesis> pendingHypotheses) {
-        this.pendingHypotheses = pendingHypotheses;
-    }
-
-    public void setWorkspaceController(Object workspaceController) {
-        this.workspaceController = workspaceController;
-    }
-
-    public Object getWorkspaceController() {
-        return workspaceController;
-    }
-
-    public SystemUser getCurrentUser() {
-        return currentUser;
-    }
-
-    public void setCurrentUser(SystemUser currentUser) {
-        this.currentUser = currentUser;
-    }
-
-    public ReconciliationWorkspace getActiveWorkspace() {
-        return activeWorkspace;
-    }
-
-    public void setActiveWorkspace(ReconciliationWorkspace activeWorkspace) {
-        this.activeWorkspace = activeWorkspace;
-    }
-
-    public IngestionService getIngestionService() {
-        return ingestionService;
-    }
-
-    public void setIngestionService(IngestionService ingestionService) {
-        this.ingestionService = ingestionService;
-    }
-
-    public ReconciliationService getReconciliationService() {
-        return reconciliationService;
-    }
-
-    public void setReconciliationService(
-        ReconciliationService reconciliationService
-    ) {
-        this.reconciliationService = reconciliationService;
-    }
-
-    public ReportService getReportService() {
-        return reportService;
-    }
-
-    public void setReportService(ReportService reportService) {
-        this.reportService = reportService;
-    }
-
-    public AnomalyDetectionEngine getAnomalyDetectionEngine() {
-        return anomalyDetectionEngine;
-    }
-
-    public void setAnomalyDetectionEngine(
-        AnomalyDetectionEngine anomalyDetectionEngine
-    ) {
-        this.anomalyDetectionEngine = anomalyDetectionEngine;
-    }
-
-    public DataStore getDataStore() {
-        return dataStore;
-    }
-
-    public void setDataStore(DataStore dataStore) {
-        this.dataStore = dataStore;
-    }
-
-    public List<StandardizedTransaction> getStandardizedLedgerTransactions() {
-        return standardizedLedgerTransactions;
-    }
-
-    public void setStandardizedLedgerTransactions(
-        List<StandardizedTransaction> standardizedLedgerTransactions
-    ) {
-        this.standardizedLedgerTransactions = standardizedLedgerTransactions;
-    }
-
-    public List<StandardizedTransaction> getStandardizedBankTransactions() {
-        return standardizedBankTransactions;
-    }
-
-    public void setStandardizedBankTransactions(
-        List<StandardizedTransaction> standardizedBankTransactions
-    ) {
-        this.standardizedBankTransactions = standardizedBankTransactions;
-    }
-
-    public List<MatchHypothesis> getAllHypotheses() {
-        return allHypotheses;
-    }
-
-    public void setAllHypotheses(List<MatchHypothesis> allHypotheses) {
-        this.allHypotheses = allHypotheses;
-    }
-
-    public List<ReconciliationRecord> getReconciledRecords() {
-        return reconciledRecords;
-    }
-
-    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) {
-        this.reconciledRecords = reconciledRecords;
-    }
+    //Setters
+    public void setDarkModeActive(boolean active) { darkModeActive.set(active); }
+    public void setActiveClient(ClientOrganization activeClient) { this.activeClient = activeClient; }
+    public void setPendingHypotheses(List<MatchHypothesis> pendingHypotheses) { this.pendingHypotheses = pendingHypotheses; }
+    public void setWorkspaceController(Object workspaceController) { this.workspaceController = workspaceController; }
+    public void setCurrentUser(SystemUser currentUser) { this.currentUser = currentUser; }
+    public void setActiveWorkspace(ReconciliationWorkspace activeWorkspace) { this.activeWorkspace = activeWorkspace; }
+    public void setIngestionService(IngestionService ingestionService) { this.ingestionService = ingestionService; }
+    public void setReconciliationService(ReconciliationService reconciliationService) { this.reconciliationService = reconciliationService; }
+    public void setReportService(ReportService reportService) { this.reportService = reportService; }
+    public void setAnomalyDetectionEngine(AnomalyDetectionEngine anomalyDetectionEngine) { this.anomalyDetectionEngine = anomalyDetectionEngine; }
+    public void setDataStore(DataStore dataStore) { this.dataStore = dataStore; }
+    public void setStandardizedLedgerTransactions(List<StandardizedTransaction> standardizedLedgerTransactions) { this.standardizedLedgerTransactions = standardizedLedgerTransactions; }
+    public void setStandardizedBankTransactions(List<StandardizedTransaction> standardizedBankTransactions) { this.standardizedBankTransactions = standardizedBankTransactions; }
+    public void setAllHypotheses(List<MatchHypothesis> allHypotheses) { this.allHypotheses = allHypotheses; }
+    public void setReconciledRecords(List<ReconciliationRecord> reconciledRecords) { this.reconciledRecords = reconciledRecords; }
+    public void setUnmatchedLedger(List<StandardizedTransaction> unmatchedLedger) { this.unmatchedLedger = unmatchedLedger; }
+    public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) { this.unmatchedBank = unmatchedBank; }
+    public void setAnomalies(List<String> anomalies) { this.anomalies = anomalies; }
 
     //Helper Methods
     public void addReconciledRecord(ReconciliationRecord record) {
@@ -203,32 +110,6 @@ public class MainUIContext {
             reconciledRecords = new ArrayList<>();
         }
         reconciledRecords.add(record);
-    }
-
-    public List<StandardizedTransaction> getUnmatchedLedger() {
-        return unmatchedLedger;
-    }
-
-    public void setUnmatchedLedger(
-        List<StandardizedTransaction> unmatchedLedger
-    ) {
-        this.unmatchedLedger = unmatchedLedger;
-    }
-
-    public List<StandardizedTransaction> getUnmatchedBank() {
-        return unmatchedBank;
-    }
-
-    public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) {
-        this.unmatchedBank = unmatchedBank;
-    }
-
-    public List<String> getAnomalies() {
-        return anomalies;
-    }
-
-    public void setAnomalies(List<String> anomalies) {
-        this.anomalies = anomalies;
     }
 
     /**
