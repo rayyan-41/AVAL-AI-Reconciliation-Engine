@@ -242,7 +242,6 @@ public class WorkspaceController {
             closeThread.start();
         }
 
-        ctx.setActiveClient(null);
         ctx.setActiveWorkspace(null);
         ctx.setAllHypotheses(null);
         ctx.setStandardizedLedgerTransactions(null);
@@ -263,6 +262,7 @@ public class WorkspaceController {
                 .getStylesheets()
                 .addAll(wsCompanyName.getScene().getStylesheets());
             stage.setScene(newScene);
+            ctx.setActiveClient(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
