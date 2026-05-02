@@ -17,6 +17,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -82,10 +83,16 @@ public class Main extends Application {
                         dataStore
                     );
             } catch (Exception e) {
-                System.err.println(
-                    "[BOOT] Backend unavailable. Running UI in fallback mode."
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Database Unavailable");
+                alert.setHeaderText("Cannot connect to AVAL database.");
+                alert.setContentText(
+                    "Ensure Docker Compose is running: docker compose up db\n\nError: " +
+                    e.getMessage()
                 );
-                System.err.println("[BOOT] " + e.getMessage());
+                alert.showAndWait();
+                Platform.exit();
+                return;
             }
 
             if (hikariDataSource != null) {
