@@ -8,6 +8,7 @@ import aval.ui.MainUIContext;
 import aval.ui.util.MockUIProvider;
 import java.util.List;
 import java.util.UUID;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -15,8 +16,12 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -199,7 +204,50 @@ public class RegistryController {
 
     @FXML
     private void handleAddClient() {
-        System.out.println("Add Client requested (Not implemented in this phase).");
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Add New Client");
+        dialog.setHeaderText("Enter the name of the new client organisation.");
+
+        ButtonType addButton = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Company name");
+        dialog.getDialogPane().setContent(nameField);
+
+        Node addNode = dialog.getDialogPane().lookupButton(addButton);
+        addNode.setDisable(true);
+        nameField.textProperty().addListener(
+            (obs, old, nw) -> addNode.setDisable(nw == null || nw.trim().isBlank())
+        );
+
+        dialog.setResultConverter(btn -> {
+            if (btn == addButton) return nameField.getText().trim();
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(name -> {
+            ClientOrganization newClient = new ClientOrganization(
+                UUID.randomUUID(),
+                name,
+                ""
+            );
+            DataStore ds = MainUIContext.getInstance().getDataStore();
+            Task<Void> saveTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    ds.saveClientOrganization(newClient);
+                    return null;
+                }
+            };
+            saveTask.setOnSucceeded(e -> Platform.runLater(() -> allClients.add(newClient)));
+            saveTask.setOnFailed(e ->
+                System.err.println("Failed to save client: " + saveTask.getException().getMessage())
+            );
+            Thread saveThread = new Thread(saveTask);
+            saveThread.setDaemon(true);
+            saveThread.start();
+        });
     }
 
     private void navigateTo(String fxml) {
