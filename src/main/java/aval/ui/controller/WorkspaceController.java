@@ -1,9 +1,14 @@
 package aval.ui.controller;
 
+import aval.common.enums.WorkspaceStatus;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.core.ClientOrganization;
+import aval.domain.core.ReconciliationWorkspace;
+import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
+import java.util.ArrayList;
 import java.util.List;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -218,7 +223,35 @@ public class WorkspaceController {
 
     @FXML
     void handleExit() {
-        MainUIContext.getInstance().setActiveClient(null);
+        MainUIContext ctx = MainUIContext.getInstance();
+        ReconciliationWorkspace workspace = ctx.getActiveWorkspace();
+        DataStore dataStore = ctx.getDataStore();
+        if (workspace != null && dataStore != null) {
+            Task<Void> closeTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    dataStore.updateWorkspaceStatus(
+                        workspace.getWorkspaceId(),
+                        WorkspaceStatus.COMPLETED
+                    );
+                    return null;
+                }
+            };
+            Thread closeThread = new Thread(closeTask);
+            closeThread.setDaemon(true);
+            closeThread.start();
+        }
+
+        ctx.setActiveClient(null);
+        ctx.setActiveWorkspace(null);
+        ctx.setAllHypotheses(null);
+        ctx.setStandardizedLedgerTransactions(null);
+        ctx.setStandardizedBankTransactions(null);
+        ctx.setUnmatchedLedger(null);
+        ctx.setUnmatchedBank(null);
+        ctx.setAnomalies(null);
+        ctx.setPendingHypotheses(null);
+        ctx.setReconciledRecords(new ArrayList<>());
         try {
             Stage stage = (Stage) wsCompanyName.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(
