@@ -448,6 +448,76 @@ public class DataStore {
 
     // ── HISTORY ──────────────────────────────────────────────────────────────
 
+    public static class ReconciliationHistoryRow {
+        public String date;
+        public String period;
+        public String txns;
+        public String matched;
+        public String rate;
+        public String anomalies;
+        public String status;
+
+        public ReconciliationHistoryRow(String date, String period, String txns,
+                                       String matched, String rate, String anomalies, String status) {
+            this.date = date;
+            this.period = period;
+            this.txns = txns;
+            this.matched = matched;
+            this.rate = rate;
+            this.anomalies = anomalies;
+            this.status = status;
+        }
+    }
+
+    public List<ReconciliationHistoryRow> getReconciliationHistoryForOrg(UUID orgId) {
+        List<ReconciliationHistoryRow> rows = new ArrayList<>();
+        String sql =
+            "SELECT " +
+            "  DATE(rr.reconciled_at) AS rec_date, " +
+            "  rw.workspace_id, " +
+            "  COUNT(mh.hypothesis_id) AS total_hyp, " +
+            "  COUNT(CASE WHEN mh.status IN ('AUTO_RECONCILED','APPROVED') THEN 1 END) AS matched_hyp, " +
+            "  ROUND(100.0 * COUNT(CASE WHEN mh.status IN ('AUTO_RECONCILED','APPROVED') THEN 1 END) / NULLIF(COUNT(mh.hypothesis_id),0), 1) AS rate, " +
+            "  rw.status " +
+            "FROM reconciliation_workspace rw " +
+            "JOIN match_hypotheses mh ON mh.ledger_id IN ( " +
+            "  SELECT transaction_id FROM standardized_ledger " +
+            "  WHERE source_dataset_id IN ( " +
+            "    SELECT dataset_id FROM financial_dataset " +
+            "    WHERE workspace_id = rw.workspace_id)) " +
+            "JOIN reconciliation_records rr ON rr.hypothesis_id = mh.hypothesis_id " +
+            "WHERE rw.org_id = ? " +
+            "GROUP BY rec_date, rw.workspace_id, rw.status " +
+            "ORDER BY rec_date DESC " +
+            "LIMIT 10";
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)
+        ) {
+            ps.setObject(1, orgId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long total = rs.getLong("total_hyp");
+                    long matched = rs.getLong("matched_hyp");
+                    double rateVal = rs.getDouble("rate");
+                    long anom = total - matched;
+                    rows.add(new ReconciliationHistoryRow(
+                        rs.getString("rec_date"),
+                        rs.getString("rec_date").substring(0, 7),
+                        String.valueOf(total),
+                        String.valueOf(matched),
+                        String.format("%.1f%%", rateVal),
+                        String.valueOf(anom),
+                        rs.getString("status")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("getReconciliationHistoryForOrg failed: " + e.getMessage());
+        }
+        return rows;
+    }
+
     public List<String> getReconciliationHistory() {
         List<String> results = new ArrayList<>();
         String sql =

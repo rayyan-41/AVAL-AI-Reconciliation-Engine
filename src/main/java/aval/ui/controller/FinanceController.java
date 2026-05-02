@@ -4,10 +4,13 @@ import aval.common.enums.HypothesisStatus;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
+import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -17,6 +20,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FinanceController {
@@ -59,6 +63,31 @@ public class FinanceController {
 
         // History table
         setupHistoryTable();
+        loadHistoryData(client);
+    }
+
+    private void loadHistoryData(ClientOrganization client) {
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+        Task<List<DataStore.ReconciliationHistoryRow>> histTask = new Task<>() {
+            @Override
+            protected List<DataStore.ReconciliationHistoryRow> call() {
+                if (client == null || ds == null) return new ArrayList<>();
+                return ds.getReconciliationHistoryForOrg(client.getOrgId());
+            }
+        };
+
+        histTask.setOnSucceeded(e -> Platform.runLater(() -> {
+            List<DataStore.ReconciliationHistoryRow> dbRows = histTask.getValue();
+            ObservableList<HistoryRow> uiRows = FXCollections.observableArrayList();
+            for (DataStore.ReconciliationHistoryRow r : dbRows) {
+                uiRows.add(new HistoryRow(r.date, r.period, r.txns, r.matched, r.rate, r.anomalies, r.status));
+            }
+            historyTable.setItems(uiRows);
+        }));
+
+        Thread histThread = new Thread(histTask);
+        histThread.setDaemon(true);
+        histThread.start();
     }
 
     public void refreshStats() {
@@ -187,21 +216,15 @@ public class FinanceController {
                 Label badge = new Label(status);
                 badge.getStyleClass().addAll("badge");
                 switch (status.toLowerCase()) {
-                    case "verified" -> badge.getStyleClass().add("badge-active");
-                    case "pending" -> badge.getStyleClass().add("badge-pending");
+                    case "completed" -> badge.getStyleClass().add("badge-active");
+                    case "in_progress" -> badge.getStyleClass().add("badge-pending");
                     default -> badge.getStyleClass().add("badge-review");
                 }
                 setGraphic(badge); setText(null);
             }
         });
 
-        ObservableList<HistoryRow> data = FXCollections.observableArrayList(
-            new HistoryRow("2024-09-01", "Aug 2024", "312", "312", "100.0%", "0", "Verified"),
-            new HistoryRow("2024-08-02", "Jul 2024", "289", "287", "99.3%",  "2", "Verified"),
-            new HistoryRow("2024-07-01", "Jun 2024", "305", "300", "98.3%",  "5", "Verified"),
-            new HistoryRow("2024-06-02", "May 2024", "275", "275", "100.0%", "0", "Verified")
-        );
-        historyTable.setItems(data);
+        historyTable.setItems(FXCollections.observableArrayList());
     }
 
     public static class HistoryRow {
