@@ -1,7 +1,7 @@
 package aval.ui.controller;
 
-import aval.common.enums.UserRole;
 import aval.common.enums.HypothesisStatus;
+import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
@@ -9,7 +9,9 @@ import aval.domain.ai.StandardizedTransaction;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -19,8 +21,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ManualCheckController {
 
@@ -56,60 +56,91 @@ public class ManualCheckController {
         mcTable.setItems(hypothesesList);
 
         // Value factories
-        mcConfCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getConfidenceScore()));
+        mcConfCol.setCellValueFactory(data ->
+            new SimpleObjectProperty<>(data.getValue().getConfidenceScore())
+        );
         mcLedgerCol.setCellValueFactory(data -> {
-            return new SimpleStringProperty(formatTransaction(data.getValue().getLedgerTransaction()));
+            return new SimpleStringProperty(
+                formatTransaction(data.getValue().getLedgerTransaction())
+            );
         });
         mcBankCol.setCellValueFactory(data -> {
-            return new SimpleStringProperty(formatTransaction(data.getValue().getBankTransaction()));
+            return new SimpleStringProperty(
+                formatTransaction(data.getValue().getBankTransaction())
+            );
         });
         mcJustCol.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getJustification())
         );
 
         // Confidence pill cell
-        mcConfCol.setCellFactory(col -> new TableCell<MatchHypothesis, Double>() {
-            @Override protected void updateItem(Double conf, boolean empty) {
-                super.updateItem(conf, empty);
-                if (empty || conf == null) { setGraphic(null); return; }
-                int pct = (int)(conf * 100);
-                Label pill = new Label(pct + "%");
-                pill.getStyleClass().addAll("conf-pill", pct >= 85 ? "conf-hi" : "conf-lo");
-                setGraphic(pill); setText(null);
+        mcConfCol.setCellFactory(col ->
+            new TableCell<MatchHypothesis, Double>() {
+                @Override
+                protected void updateItem(Double conf, boolean empty) {
+                    super.updateItem(conf, empty);
+                    if (empty || conf == null) {
+                        setGraphic(null);
+                        return;
+                    }
+                    int pct = (int) (conf * 100);
+                    Label pill = new Label(pct + "%");
+                    pill
+                        .getStyleClass()
+                        .addAll("conf-pill", pct >= 85 ? "conf-hi" : "conf-lo");
+                    setGraphic(pill);
+                    setText(null);
+                }
             }
-        });
+        );
 
         // Action buttons cell
-        mcActionCol.setCellFactory(col -> new TableCell<MatchHypothesis, Void>() {
-            private final Button approve = new Button("Approve");
-            private final Button reject  = new Button("Reject");
-            {
-                approve.getStyleClass().add("btn-approve");
-                reject.getStyleClass().add("btn-reject");
-                approve.setOnAction(e -> resolveItem(getIndex(), "APPROVED"));
-                reject.setOnAction(e  -> resolveItem(getIndex(), "REJECTED"));
-            }
-            @Override protected void updateItem(Void v, boolean empty) {
-                super.updateItem(v, empty);
-                MatchHypothesis item = empty ? null : getTableView().getItems().get(getIndex());
-                if (item == null) { setGraphic(null); return; }
-                if (item.getStatus() == HypothesisStatus.PENDING_REVIEW) {
-                    setGraphic(new HBox(8, approve, reject));
-                } else {
-                    Label done = new Label(item.getStatus().name());
-                    done.setStyle(item.getStatus() == HypothesisStatus.APPROVED
-                        ? "-fx-text-fill: #1a5c2a;" : "-fx-text-fill: #800020;");
-                    setGraphic(done);
+        mcActionCol.setCellFactory(col ->
+            new TableCell<MatchHypothesis, Void>() {
+                private final Button approve = new Button("Approve");
+                private final Button reject = new Button("Reject");
+
+                {
+                    approve.getStyleClass().add("btn-approve");
+                    reject.getStyleClass().add("btn-reject");
+                    approve.setOnAction(e ->
+                        resolveItem(getIndex(), "APPROVED")
+                    );
+                    reject.setOnAction(e ->
+                        resolveItem(getIndex(), "REJECTED")
+                    );
                 }
-                setText(null);
+
+                @Override
+                protected void updateItem(Void v, boolean empty) {
+                    super.updateItem(v, empty);
+                    MatchHypothesis item = empty
+                        ? null
+                        : getTableView().getItems().get(getIndex());
+                    if (item == null) {
+                        setGraphic(null);
+                        return;
+                    }
+                    if (item.getStatus() == HypothesisStatus.PENDING_REVIEW) {
+                        setGraphic(new HBox(8, approve, reject));
+                    } else {
+                        Label done = new Label(item.getStatus().name());
+                        done.setStyle(
+                            item.getStatus() == HypothesisStatus.APPROVED
+                                ? "-fx-text-fill: #1a5c2a;"
+                                : "-fx-text-fill: #800020;"
+                        );
+                        setGraphic(done);
+                    }
+                    setText(null);
+                }
             }
-        });
+        );
     }
 
     public void setItems(List<MatchHypothesis> pendingHypotheses) {
-        List<MatchHypothesis> source = pendingHypotheses != null
-            ? pendingHypotheses
-            : List.of();
+        List<MatchHypothesis> source =
+            pendingHypotheses != null ? pendingHypotheses : List.of();
         hypothesesList.setAll(
             source
                 .stream()
@@ -163,8 +194,11 @@ public class ManualCheckController {
         if (user == null) {
             user = new SystemUser(
                 UUID.randomUUID(),
+                "Local User",
+                "00000-0000000-0",
                 "local-user",
-                UserRole.ACCOUNTANT
+                UserRole.ACCOUNTANT,
+                "Local"
             );
             ctx.setCurrentUser(user);
         }
@@ -207,7 +241,7 @@ public class ManualCheckController {
         persistTask.setOnFailed(e ->
             System.err.println(
                 "Failed to persist manual decision: " +
-                persistTask.getException().getMessage()
+                    persistTask.getException().getMessage()
             )
         );
         Thread thread = new Thread(persistTask);
@@ -256,7 +290,11 @@ public class ManualCheckController {
         if (tx == null) {
             return "";
         }
-        String ref = tx.getTransactionId().toString().substring(0, 8).toUpperCase();
+        String ref = tx
+            .getTransactionId()
+            .toString()
+            .substring(0, 8)
+            .toUpperCase();
         return tx.getNarrative() + "\n" + ref + "\n" + tx.getAmount();
     }
 }

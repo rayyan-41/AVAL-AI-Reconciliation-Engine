@@ -57,7 +57,10 @@ public class ReconciliationService {
         SystemUser systemUser = new SystemUser(
             java.util.UUID.randomUUID(),
             "System (Auto-Reconcile)",
-            aval.common.enums.UserRole.ADMIN
+            "00000-0000000-0",
+            "system_auto",
+            aval.common.enums.UserRole.ADMIN,
+            "System"
         );
 
         for (MatchHypothesis hypothesis : candidates) {

@@ -202,10 +202,11 @@ public class ReconController {
         populateLedgerTable(List.of());
     }
 
-    public void populateLedgerTable(List<StandardizedTransaction> transactions) {
-        List<StandardizedTransaction> source = transactions != null
-            ? transactions
-            : List.of();
+    public void populateLedgerTable(
+        List<StandardizedTransaction> transactions
+    ) {
+        List<StandardizedTransaction> source =
+            transactions != null ? transactions : List.of();
         ObservableList<StandardizedTransaction> txns =
             FXCollections.observableArrayList(source);
         ledgerTable.setItems(txns);
@@ -375,7 +376,9 @@ public class ReconController {
         task.setOnSucceeded(e ->
             Platform.runLater(() -> {
                 List<StandardizedTransaction> stdBank = task.getValue();
-                MainUIContext.getInstance().setStandardizedBankTransactions(stdBank);
+                MainUIContext.getInstance().setStandardizedBankTransactions(
+                    stdBank
+                );
                 showBankState("ingested");
                 bankStatus.setText("Ingested — " + stdBank.size() + " records");
                 bankStatus.getStyleClass().setAll("badge", "badge-active");
@@ -385,7 +388,9 @@ public class ReconController {
 
         task.setOnFailed(e ->
             Platform.runLater(() -> {
-                MainUIContext.getInstance().setStandardizedBankTransactions(null);
+                MainUIContext.getInstance().setStandardizedBankTransactions(
+                    null
+                );
                 showBankState("dropzone");
                 bankStatus.setText("Parse Error");
                 bankStatus.getStyleClass().setAll("badge", "badge-review");
@@ -493,7 +498,12 @@ public class ReconController {
                 List<StandardizedTransaction> stdBank =
                     ctx.getStandardizedBankTransactions();
 
-                if (svc == null || ws == null || stdLedger == null || stdBank == null) {
+                if (
+                    svc == null ||
+                    ws == null ||
+                    stdLedger == null ||
+                    stdBank == null
+                ) {
                     throw new IllegalStateException(
                         "Reconciliation dependencies are not ready."
                     );
@@ -510,18 +520,25 @@ public class ReconController {
 
                 long autoCount = all
                     .stream()
-                    .filter(h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED)
+                    .filter(
+                        h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED
+                    )
                     .count();
                 List<MatchHypothesis> pending = all
                     .stream()
-                    .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
+                    .filter(
+                        h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW
+                    )
                     .collect(Collectors.toList());
                 ctx.setPendingHypotheses(pending);
 
                 SystemUser systemBot = new SystemUser(
                     UUID.randomUUID(),
                     "System (Auto-Reconcile)",
-                    UserRole.ADMIN
+                    "00000-0000000-0",
+                    "system_bot",
+                    UserRole.ADMIN,
+                    "System"
                 );
                 List<ReconciliationRecord> autoRecords = all
                     .stream()
@@ -548,7 +565,9 @@ public class ReconController {
                 List<StandardizedTransaction> unmatchedLedger = ctx
                     .getStandardizedLedgerTransactions()
                     .stream()
-                    .filter(t -> !matchedLedgerIds.contains(t.getTransactionId()))
+                    .filter(t ->
+                        !matchedLedgerIds.contains(t.getTransactionId())
+                    )
                     .collect(Collectors.toList());
                 List<StandardizedTransaction> unmatchedBank = ctx
                     .getStandardizedBankTransactions()
@@ -561,12 +580,13 @@ public class ReconController {
 
                 AnomalyDetectionEngine anomalyEngine =
                     ctx.getAnomalyDetectionEngine();
-                List<String> anomalies = anomalyEngine != null
-                    ? anomalyEngine.identifyAnomalies(
-                        unmatchedLedger,
-                        unmatchedBank
-                    )
-                    : List.of();
+                List<String> anomalies =
+                    anomalyEngine != null
+                        ? anomalyEngine.identifyAnomalies(
+                              unmatchedLedger,
+                              unmatchedBank
+                          )
+                        : List.of();
                 ctx.setAnomalies(anomalies);
 
                 rbAuto.setText(String.valueOf(autoCount));

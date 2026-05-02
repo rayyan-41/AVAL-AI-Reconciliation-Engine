@@ -5,20 +5,19 @@
 //@gof:    N/A
 package aval;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import aval.domain.core.MatchingConfig;
 import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.MatchingEngine;
 import aval.engine.RuleBasedMatchingEngine;
-import aval.engine.SemanticMatchingEngine;
 import aval.engine.VectorizationEngine;
-import aval.domain.core.MatchingConfig;
 import aval.persistence.DataStore;
 import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
 import aval.ui.MainUIContext;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -110,7 +109,9 @@ public class Main extends Application {
                     requireProperty(appConfig, "db.password")
                 );
                 hikariConfig.setMaximumPoolSize(
-                    Integer.parseInt(appConfig.getProperty("db.pool.maxSize", "10"))
+                    Integer.parseInt(
+                        appConfig.getProperty("db.pool.maxSize", "10")
+                    )
                 );
                 hikariConfig.setMinimumIdle(2);
                 hikariConfig.setConnectionTimeout(30000);
@@ -124,25 +125,26 @@ public class Main extends Application {
                         requireProperty(appConfig, "ollama.baseUrl"),
                         requireProperty(appConfig, "ollama.model")
                     );
-                MatchingEngine matchingEngine = new RuleBasedMatchingEngine(matchingConfig);
+                MatchingEngine matchingEngine = new RuleBasedMatchingEngine(
+                    matchingConfig
+                );
 
                 ingestionService = new IngestionService(
                     dataStore,
                     vectorizationEngine
                 );
-                reconciliationService =
-                    new ReconciliationService(
-                        vectorizationEngine,
-                        matchingEngine,
-                        dataStore
-                    );
+                reconciliationService = new ReconciliationService(
+                    vectorizationEngine,
+                    matchingEngine,
+                    dataStore
+                );
             } catch (Exception e) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Database Unavailable");
                 alert.setHeaderText("Cannot connect to AVAL database.");
                 alert.setContentText(
                     "Check aval.properties configuration and ensure dependencies are running.\n\nError: " +
-                    e.getMessage()
+                        e.getMessage()
                 );
                 alert.showAndWait();
                 Platform.exit();
@@ -151,8 +153,9 @@ public class Main extends Application {
 
             if (hikariDataSource != null) {
                 HikariDataSource finalDataSource = hikariDataSource;
-                Runtime.getRuntime()
-                    .addShutdownHook(new Thread(finalDataSource::close));
+                Runtime.getRuntime().addShutdownHook(
+                    new Thread(finalDataSource::close)
+                );
             }
 
             ReportService reportService = new ReportService();
