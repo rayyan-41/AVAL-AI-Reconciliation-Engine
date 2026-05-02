@@ -9,6 +9,7 @@ import aval.service.ReportService;
 import aval.ui.MainUIContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -124,7 +125,24 @@ public class ReportController {
 
     @FXML
     void handleGenerate() {
-        ClientOrganization client = MainUIContext.getInstance().getActiveClient();
+        MainUIContext ctx = MainUIContext.getInstance();
+        List<MatchHypothesis> allHypotheses = ctx.getAllHypotheses();
+        List<MatchHypothesis> stillPending = allHypotheses == null
+            ? new ArrayList<>()
+            : allHypotheses
+                .stream()
+                .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
+                .collect(Collectors.toList());
+        if (!stillPending.isEmpty()) {
+            showFeedback(
+                "Cannot generate report: " +
+                stillPending.size() +
+                " hypotheses are still pending review. Return to Manual Check to resolve them."
+            );
+            return;
+        }
+
+        ClientOrganization client = ctx.getActiveClient();
         String clientName = client != null
             ? client.getName().replace(" ", "_")
             : "Unknown_Client";
@@ -138,7 +156,6 @@ public class ReportController {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                MainUIContext ctx = MainUIContext.getInstance();
                 ReportService rptSvc = ctx.getReportService();
                 if (rptSvc == null) {
                     throw new IllegalStateException(
@@ -149,7 +166,6 @@ public class ReportController {
                 List<ReconciliationRecord> records = ctx.getReconciledRecords();
                 List<StandardizedTransaction> unmatchedL = ctx.getUnmatchedLedger();
                 List<StandardizedTransaction> unmatchedB = ctx.getUnmatchedBank();
-                List<MatchHypothesis> pending = new ArrayList<>();
                 List<String> anomalies = ctx.getAnomalies();
 
                 if (records == null) records = new ArrayList<>();
@@ -161,7 +177,7 @@ public class ReportController {
                     records,
                     unmatchedL,
                     unmatchedB,
-                    pending,
+                    stillPending,
                     anomalies,
                     outputPath
                 );
