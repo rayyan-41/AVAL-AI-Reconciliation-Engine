@@ -62,6 +62,7 @@ public class SplashController {
                 .addAll(progressBar.getScene().getStylesheets());
 
             stage.setScene(newScene);
+            stage.centerOnScreen();
         } catch (Exception e) {
             e.printStackTrace();
         }

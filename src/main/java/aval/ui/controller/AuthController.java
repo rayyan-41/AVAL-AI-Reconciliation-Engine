@@ -10,15 +10,59 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.layout.HBox;
+import javafx.scene.input.MouseEvent;
 
 public class AuthController {
+    @FXML private HBox rootNode;
+    private double xOffset = 0;
+    private double yOffset = 0;
+    @FXML private void handleClose() { System.exit(0); }
 
-    @FXML
+        @FXML
     private TextField workspaceIdField;
 
     @FXML
     private PasswordField passkeyField;
+
+    @FXML
+    private VBox loginForm;
+
+    @FXML
+    private VBox createUserForm;
+
+    @FXML
+    public void initialize() {
+        if (rootNode != null) {
+            rootNode.setOnMousePressed(e -> {
+                xOffset = e.getSceneX();
+                yOffset = e.getSceneY();
+            });
+            rootNode.setOnMouseDragged(e -> {
+                Stage stage = (Stage) rootNode.getScene().getWindow();
+                stage.setX(e.getScreenX() - xOffset);
+                stage.setY(e.getScreenY() - yOffset);
+            });
+        }
+        DataStore ds = MainUIContext.getInstance().getDataStore();
+        if (ds != null && !ds.isAnyUserRegistered()) {
+            if (loginForm != null) {
+                loginForm.setVisible(false);
+                loginForm.setManaged(false);
+            }
+            if (createUserForm != null) {
+                createUserForm.setVisible(true);
+                createUserForm.setManaged(true);
+            }
+        }
+    }
+
+    @FXML
+    private void handleRegister() {
+        navigateTo("Register.fxml");
+    }
 
     @FXML
     private void handleAuthenticate() {
@@ -90,7 +134,7 @@ public class AuthController {
 
     private void navigateTo(String fxml) {
         try {
-            Stage stage = (Stage) workspaceIdField.getScene().getWindow();
+            Stage currentStage = (Stage) workspaceIdField.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/aval/ui/views/" + fxml)
             );
@@ -102,7 +146,18 @@ public class AuthController {
                 .getStylesheets()
                 .addAll(workspaceIdField.getScene().getStylesheets());
 
-            stage.setScene(newScene);
+            if (fxml.equals("Registry.fxml")) {
+                Stage newStage = new Stage();
+                newStage.setTitle("AVAL AIRE");
+                newStage.initStyle(javafx.stage.StageStyle.DECORATED);
+                newStage.setScene(new javafx.scene.Scene(root, 1200, 800));
+                newStage.centerOnScreen();
+                newStage.show();
+                currentStage.close();
+            } else {
+                currentStage.setScene(newScene);
+                currentStage.centerOnScreen();
+            }
         } catch (Exception e) {
             System.err.println(
                 "Could not navigate to " +
@@ -113,3 +168,4 @@ public class AuthController {
         }
     }
 }
+

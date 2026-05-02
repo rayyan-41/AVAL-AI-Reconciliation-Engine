@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="aval.ui.controller.RegisterController">
+<HBox prefWidth="1200" prefHeight="800" fx:id="rootNode">
+  <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
+    <HBox styleClass="auth-wordmark" alignment="BOTTOM_LEFT">
+      <Label text="AVAL" styleClass="auth-wm-aval" />
+      <Label text="AIRE" styleClass="auth-wm-aire" />
+    </HBox>
+    <Label text="Create a new account&#10;to access the system." styleClass="auth-heading" wrapText="true" />
+  </VBox>
+  <VBox styleClass="auth-right" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="0">
+    <VBox maxWidth="360" spacing="15">
+      <Label text="Register User" styleClass="lf-title" />
+      
+      <VBox spacing="5">
+        <Label text="NAME" styleClass="field-label" />
+        <TextField fx:id="nameField" promptText="••••••••" styleClass="underlined-field" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="CNIC" styleClass="field-label" />
+        <TextField fx:id="cnicField" promptText="••••••••" styleClass="underlined-field" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="USERNAME" styleClass="field-label" />
+        <TextField fx:id="usernameField" promptText="••••••••" styleClass="underlined-field" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="PASSWORD" styleClass="field-label" />
+        <PasswordField fx:id="passwordField" promptText="••••••••" styleClass="underlined-field" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="ROLE" styleClass="field-label" />
+        <ComboBox fx:id="roleComboBox" promptText="••••••••" maxWidth="Infinity" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="LOCATION" styleClass="field-label" />
+        <ComboBox fx:id="locationComboBox" promptText="••••••••" maxWidth="Infinity" />
+      </VBox>
+      <VBox spacing="5">
+        <Label text="REGISTRATION KEY" styleClass="field-label" />
+        <PasswordField fx:id="keyField" promptText="••••••••" styleClass="underlined-field" />
+      </VBox>
+      
+      <VBox spacing="10">
+        <Button text="Create User" maxWidth="Infinity" onAction="#handleCreateUser" styleClass="btn-primary" />
+        <Button text="Back to Login" maxWidth="Infinity" onAction="#handleBack" styleClass="btn-secondary" />
+      </VBox>
+    </VBox>
+  </VBox>
+</HBox>
+<Button text="✕" onAction="#handleClose" StackPane.alignment="TOP_RIGHT" style="-fx-background-color: transparent; -fx-font-size: 20px; -fx-text-fill: #666666; -fx-cursor: hand; -fx-padding: 10 20;" />
+</StackPane>

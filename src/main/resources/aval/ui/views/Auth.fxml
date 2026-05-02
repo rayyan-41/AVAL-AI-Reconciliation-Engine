@@ -4,19 +4,15 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.Region?>
-<HBox
-    prefWidth="1200"
-    prefHeight="800"
-    xmlns="http://javafx.com/javafx/17"
-    xmlns:fx="http://javafx.com/fxml/1"
-    fx:controller="aval.ui.controller.AuthController"
->
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="aval.ui.controller.AuthController">
+<HBox prefWidth="1200" prefHeight="800" fx:id="rootNode">
 
   <!-- LEFT PANEL -->
   <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
-    <HBox styleClass="auth-wordmark">
+    <HBox styleClass="auth-wordmark" alignment="BOTTOM_LEFT">
       <Label text="AVAL" styleClass="auth-wm-aval" />
       <Label text="AIRE" styleClass="auth-wm-aire" />
     </HBox>
@@ -32,22 +28,10 @@
         />
     <Region styleClass="auth-rule" />
     <!-- Feature list: 4 Labels each preceded by a small dot Label -->
-    <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 10 0 0 0;">
-      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
-      <Label text="Deterministic rule-matching" styleClass="auth-body" />
-    </HBox>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
-      <Label text="Semantic vectorization" styleClass="auth-body" />
-    </HBox>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
-      <Label text="Probabilistic match engine" styleClass="auth-body" />
-    </HBox>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-      <Label text="•" style="-fx-text-fill: -fx-accent; -fx-font-size: 16px;" />
-      <Label text="Multi-source consolidation" styleClass="auth-body" />
-    </HBox>
+    <Label text="• Deterministic rule-matching" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
+    <Label text="• Semantic vectorization" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
+    <Label text="• Probabilistic match engine" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
+    <Label text="• Multi-source consolidation" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
   </VBox>
 
   <!-- RIGHT PANEL -->
@@ -60,11 +44,10 @@
     <VBox maxWidth="360" spacing="26">
       <Label text="Sign in" styleClass="lf-title" />
       <Label text="Enter your credentials to continue." styleClass="lf-sub" />
-      <VBox spacing="7">
-        <Label text="WORKSPACE ID" styleClass="field-label" />
+      <VBox fx:id="loginForm" spacing="26"><VBox spacing="7"><Label text="WORKSPACE ID" styleClass="field-label" />
         <TextField
                     fx:id="workspaceIdField"
-                    promptText="WS-XXXX-XXXX"
+                    promptText="••••••••"
                     styleClass="underlined-field"
                 />
       </VBox>
@@ -76,13 +59,10 @@
                     styleClass="underlined-field"
                 />
       </VBox>
-      <Button
-                text="Authenticate"
-                maxWidth="Infinity"
-                onAction="#handleAuthenticate"
-                styleClass="btn-primary"
-            />
+      <Button text="Authenticate" maxWidth="Infinity" onAction="#handleAuthenticate" styleClass="btn-primary" /><Button text="Register User" maxWidth="Infinity" onAction="#handleRegister" styleClass="btn-secondary" /></VBox><VBox fx:id="createUserForm" spacing="26" managed="false" visible="false"><Button text="Create User" maxWidth="Infinity" onAction="#handleRegister" styleClass="btn-primary" /></VBox>
     </VBox>
   </VBox>
 
 </HBox>
+<Button text="✕" onAction="#handleClose" StackPane.alignment="TOP_RIGHT" style="-fx-background-color: transparent; -fx-font-size: 20px; -fx-text-fill: #666666; -fx-cursor: hand; -fx-padding: 10 20;" />
+</StackPane>

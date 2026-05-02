@@ -362,10 +362,10 @@ public class DataStore {
         }
     }
 
-    // ── UPDATE ───────────────────────────────────────────────────────────────
+    // â”€â”€ UPDATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
-     * UC7 / UC8 — Updates the status and justification of an existing match hypothesis.
+     * UC7 / UC8 â€” Updates the status and justification of an existing match hypothesis.
      * Called after a user approves, rejects, or force-reconciles a hypothesis.
      */
     public void updateHypothesisStatus(UUID hypothesisId,
@@ -387,7 +387,7 @@ public class DataStore {
     }
 
     /**
-     * UC1 — Updates the status of a reconciliation workspace (e.g. OPEN → COMPLETED).
+     * UC1 â€” Updates the status of a reconciliation workspace (e.g. OPEN â†’ COMPLETED).
      */
     public void updateWorkspaceStatus(UUID workspaceId,
                                       aval.common.enums.WorkspaceStatus status) throws SQLException {
@@ -405,7 +405,7 @@ public class DataStore {
         }
     }
 
-    // ── DELETE ───────────────────────────────────────────────────────────────
+    // â”€â”€ DELETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Deletes all financial datasets belonging to a workspace, then deletes the workspace itself.
@@ -446,7 +446,7 @@ public class DataStore {
         }
     }
 
-    // ── HISTORY ──────────────────────────────────────────────────────────────
+    // â”€â”€ HISTORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static class ReconciliationHistoryRow {
         public String date;
@@ -547,7 +547,7 @@ public class DataStore {
 
     public SystemUser findSystemUserById(UUID id) {
         String sql =
-            "SELECT user_id, username, role FROM system_user WHERE user_id = ?";
+            "SELECT user_id, full_name, cnic, username, role, location FROM app_user WHERE user_id = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -555,11 +555,7 @@ public class DataStore {
             pstmt.setObject(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new SystemUser(
-                        (UUID) rs.getObject("user_id"),
-                        rs.getString("username"),
-                        aval.common.enums.UserRole.valueOf(rs.getString("role"))
-                    );
+                    return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), aval.common.enums.UserRole.valueOf(rs.getString("role")), rs.getString("location"));
                 }
             }
         } catch (SQLException e) {
@@ -568,7 +564,7 @@ public class DataStore {
         return null;
     }
 
-    // ── READ LOOKUPS ─────────────────────────────────────────────────────────
+    // â”€â”€ READ LOOKUPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Fetches all client organizations ordered by display name.
@@ -600,7 +596,7 @@ public class DataStore {
      * Resolves a username to a SystemUser record used during authentication.
      */
     public SystemUser findSystemUserByUsername(String username) {
-        String sql = "SELECT user_id, username, role FROM system_user WHERE username = ?";
+        String sql = "SELECT user_id, full_name, cnic, username, role, location FROM app_user WHERE username = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -608,11 +604,7 @@ public class DataStore {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new SystemUser(
-                        (UUID) rs.getObject("user_id"),
-                        rs.getString("username"),
-                        UserRole.valueOf(rs.getString("role"))
-                    );
+                    return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), UserRole.valueOf(rs.getString("role")), rs.getString("location"));
                 }
             }
         } catch (SQLException e) {
@@ -635,7 +627,7 @@ public class DataStore {
         String passkey
     ) {
         String sql =
-            "SELECT user_id, username, role, password_hash FROM system_user WHERE username = ?";
+            "SELECT user_id, full_name, cnic, username, role, location, password_hash FROM app_user WHERE username = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -645,11 +637,7 @@ public class DataStore {
                 if (rs.next()) {
                     String storedHash = rs.getString("password_hash");
                     if (storedHash != null && BCrypt.checkpw(passkey, storedHash)) {
-                        return new SystemUser(
-                            (UUID) rs.getObject("user_id"),
-                            rs.getString("username"),
-                            UserRole.valueOf(rs.getString("role"))
-                        );
+                        return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), UserRole.valueOf(rs.getString("role")), rs.getString("location"));
                     }
                 }
             }
@@ -667,4 +655,38 @@ public class DataStore {
         }
         return null;
     }
+    public boolean isAnyUserRegistered() {
+        String sql = "SELECT COUNT(*) FROM app_user";
+        try (
+            java.sql.Connection conn = dataSource.getConnection();
+            java.sql.PreparedStatement pstmt = conn.prepareStatement(sql);
+            java.sql.ResultSet rs = pstmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (java.sql.SQLException e) {
+            System.err.println("Failed to check user: " + e.getMessage());
+        }
+        return false;
+    }
+    public void registerUser(String fullName, String cnic, String username, aval.common.enums.UserRole role, String location, String passwordHash) {
+        String sql = "INSERT INTO app_user (user_id, full_name, cnic, username, role, location, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (
+            java.sql.Connection conn = dataSource.getConnection();
+            java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.setObject(1, java.util.UUID.randomUUID());
+            pstmt.setString(2, fullName);
+            pstmt.setString(3, cnic);
+            pstmt.setString(4, username);
+            pstmt.setString(5, role.name());
+            pstmt.setString(6, location);
+            pstmt.setString(7, passwordHash);
+            pstmt.executeUpdate();
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException("Failed to register user: " + e.getMessage(), e);
+        }
+    }
 }
+
