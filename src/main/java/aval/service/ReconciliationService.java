@@ -20,6 +20,10 @@ import java.util.List;
 //@gof:    N/A
 public class ReconciliationService {
 
+    // Issue 5 Fix: Stable system user UUID for audit trail consistency
+    private static final java.util.UUID SYSTEM_USER_ID =
+        java.util.UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private final VectorizationEngine vectorizationEngine;
     private final MatchingEngine matchingEngine;
     private final DataStore dataStore;
@@ -54,7 +58,7 @@ public class ReconciliationService {
             .getAutoConfirmThreshold();
         List<ReconciliationRecord> autoRecords = new ArrayList<>();
         SystemUser systemUser = new SystemUser(
-            java.util.UUID.randomUUID(),
+            SYSTEM_USER_ID,
             "System (Auto-Reconcile)",
             "00000-0000000-0",
             "system_auto",

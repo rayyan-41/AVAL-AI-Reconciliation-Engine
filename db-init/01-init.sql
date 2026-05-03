@@ -87,5 +87,11 @@ CREATE TABLE raw_transactions (
     source_dataset_id UUID REFERENCES financial_dataset(dataset_id)
 );
 
+-- Issue 5 Fix: Seed stable system user for auto-reconciliation audit trail
+INSERT INTO app_user (user_id, full_name, cnic, username, role, location, password_hash)
+VALUES ('00000000-0000-0000-0000-000000000001',
+        'System (Auto-Reconcile)', '00000-0000000-0',
+        'system_auto', 'ADMIN', 'System', 'N/A')
+ON CONFLICT DO NOTHING;
 
 

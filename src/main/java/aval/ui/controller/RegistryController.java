@@ -19,6 +19,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -189,7 +190,19 @@ public class RegistryController {
                 workspace = existing.get();
             } else {
                 workspace = new ReconciliationWorkspace(UUID.randomUUID(), client, new MatchingConfig());
-                ds.saveReconciliationWorkspace(workspace);
+                try {
+                    ds.saveReconciliationWorkspace(workspace);
+                } catch (RuntimeException e) {
+                    System.err.println("[REGISTRY] Failed to persist workspace: " + e.getMessage());
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Database Error");
+                    alert.setHeaderText("Could not create workspace");
+                    alert.setContentText(
+                        "Failed to save workspace to the database. Please check your database " +
+                        "connection and try again.\n\nDetail: " + e.getMessage());
+                    alert.showAndWait();
+                    return;  // CRITICAL: stop navigation — do not proceed without a persisted workspace
+                }
             }
         } else {
             workspace = new ReconciliationWorkspace(UUID.randomUUID(), client, new MatchingConfig());
