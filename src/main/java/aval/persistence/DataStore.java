@@ -362,6 +362,110 @@ public class DataStore {
         }
     }
 
+    /**
+     * Issue 4 Fix: Transactionally saves dataset and raw transactions together.
+     * If either operation fails, the entire transaction is rolled back.
+     */
+    public void saveDatasetWithTransactions(FinancialDataset dataset, UUID workspaceId) {
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                saveFinancialDatasetWithConn(conn, dataset, workspaceId);
+                saveRawTransactionsWithConn(conn, dataset.getRawTransactions());
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException("Ingestion transaction failed — rolled back.", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveFinancialDatasetWithConn(Connection conn, FinancialDataset dataset, UUID workspaceId) throws SQLException {
+        String sql = "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) " +
+                     "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (dataset_id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setObject(1, dataset.getDatasetId());
+            pstmt.setObject(2, workspaceId);
+            pstmt.setString(3, dataset.getFilePath());
+            pstmt.setString(4, dataset.getSourceType().name());
+            pstmt.setString(5, dataset.getStatus().name());
+            pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
+            pstmt.executeUpdate();
+        }
+    }
+
+    private void saveRawTransactionsWithConn(Connection conn, List<RawTransaction> rawTransactions) throws SQLException {
+        if (rawTransactions == null || rawTransactions.isEmpty()) return;
+        String sql = "INSERT INTO raw_transactions (transaction_id, raw_date, raw_amount, narrative, transaction_type, source_dataset_id) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (RawTransaction tx : rawTransactions) {
+                pstmt.setObject(1, tx.getTransactionId());
+                pstmt.setString(2, tx.getRawDate());
+                pstmt.setString(3, tx.getRawAmount());
+                pstmt.setString(4, tx.getNarrative());
+                pstmt.setString(5, tx.getTransactionType().name());
+                pstmt.setObject(6, tx.getSourceDataset().getDatasetId());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        }
+    }
+
+    /**
+     * Issue 4 Fix: Transactionally saves match hypotheses and reconciliation records together.
+     * If either operation fails, the entire transaction is rolled back.
+     */
+    public void saveMatchingResults(List<MatchHypothesis> hypotheses, List<ReconciliationRecord> records) {
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                saveMatchHypothesesWithConn(conn, hypotheses);
+                if (records != null && !records.isEmpty()) {
+                    saveReconciliationRecordsWithConn(conn, records);
+                }
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException("Matching results transaction failed — rolled back.", e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveMatchHypothesesWithConn(Connection conn, List<MatchHypothesis> hypotheses) throws SQLException {
+        String sql = "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (MatchHypothesis h : hypotheses) {
+                pstmt.setObject(1, h.getHypothesisId());
+                pstmt.setObject(2, h.getLedgerTransaction() != null ? h.getLedgerTransaction().getTransactionId() : null);
+                pstmt.setObject(3, h.getBankTransaction() != null ? h.getBankTransaction().getTransactionId() : null);
+                pstmt.setDouble(4, h.getConfidenceScore());
+                pstmt.setString(5, h.getMatchType() != null ? h.getMatchType().name() : null);
+                pstmt.setString(6, h.getStatus() != null ? h.getStatus().name() : null);
+                pstmt.setString(7, h.getJustification());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        }
+    }
+
+    private void saveReconciliationRecordsWithConn(Connection conn, List<ReconciliationRecord> records) throws SQLException {
+        String sql = "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (ReconciliationRecord r : records) {
+                pstmt.setObject(1, r.getRecordId());
+                pstmt.setObject(2, r.getHypothesis() != null ? r.getHypothesis().getHypothesisId() : null);
+                pstmt.setObject(3, r.getConfirmingUser() != null ? r.getConfirmingUser().getUserId() : null);
+                pstmt.setTimestamp(4, r.getReconciledAt() != null ? java.sql.Timestamp.valueOf(r.getReconciledAt()) : null);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        }
+    }
+
     // â”€â”€ UPDATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**

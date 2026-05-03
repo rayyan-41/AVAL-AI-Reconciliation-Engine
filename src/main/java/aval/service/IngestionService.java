@@ -51,8 +51,7 @@ public class IngestionService {
                 System.err.println("[INGESTION] WARNING: Parser returned 0 transactions! File may be empty or unreadable format.");
             }
 
-            this.dataStore.saveFinancialDataset(dataset, workspaceId);
-            this.dataStore.saveRawTransactions(dataset.getRawTransactions());
+            this.dataStore.saveDatasetWithTransactions(dataset, workspaceId);
             return dataset;
         }
 

@@ -77,11 +77,7 @@ public class ReconciliationService {
         }
 
         // 2. Persist suggested matches for human review
-        dataStore.saveMatchHypotheses(candidates);
-
-        if (!autoRecords.isEmpty()) {
-            dataStore.saveReconciliationRecords(autoRecords);
-        }
+        dataStore.saveMatchingResults(candidates, autoRecords);
 
         return new ReconciliationResult(candidates, autoRecords);
     }
