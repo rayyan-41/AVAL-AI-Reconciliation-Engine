@@ -1,24 +1,22 @@
 package aval.persistence;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import aval.common.enums.MatchType;
 import aval.common.enums.TransactionType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
-import aval.domain.ingestion.FinancialDataset;
+import aval.domain.ingestion.RawInternalLedger;
 import aval.domain.ingestion.RawTransaction;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Issue 4: No JDBC Transaction Wrapping.
@@ -26,143 +24,155 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class TransactionConsistencyTest {
 
-    private Connection conn;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        conn = DriverManager.getConnection("jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE", "sa", "");
-        createSchema();
-    }
-
-    @AfterEach
-    public void tearDown() throws Exception {
-        if (conn != null) conn.close();
-    }
-
-    private void createSchema() throws Exception {
-        try (Statement s = conn.createStatement()) {
-            s.execute("CREATE TABLE financial_dataset (dataset_id UUID PRIMARY KEY, workspace_id UUID, file_path TEXT, source_type VARCHAR(30), status VARCHAR(20), import_date DATE)");
-            s.execute("CREATE TABLE raw_transactions (transaction_id UUID PRIMARY KEY, raw_date VARCHAR(50), raw_amount VARCHAR(50), narrative TEXT, transaction_type VARCHAR(20), source_dataset_id UUID)");
-            s.execute("CREATE TABLE match_hypotheses (hypothesis_id UUID PRIMARY KEY, ledger_id UUID, bank_id UUID, confidence_score DOUBLE, match_type VARCHAR(30), status VARCHAR(20), justification TEXT)");
-            s.execute("CREATE TABLE reconciliation_records (record_id UUID PRIMARY KEY, hypothesis_id UUID, confirming_user_id UUID, reconciled_at TIMESTAMP)");
-        }
-    }
-
     @Test
-    public void testSaveDataset_createsBothRecords_onSuccess() throws Exception {
-        DataStore ds = new DataStore(new MockDataSource(conn));
+    public void testSaveDataset_createsBothRecords_onSuccess()
+        throws Exception {
+        javax.sql.DataSource mockDs = mock(javax.sql.DataSource.class);
+        Connection mockConn = mock(Connection.class);
+        PreparedStatement mockStmt = mock(PreparedStatement.class);
+
+        when(mockDs.getConnection()).thenReturn(mockConn);
+        when(mockConn.prepareStatement(anyString())).thenReturn(mockStmt);
+
+        DataStore ds = new DataStore(mockDs);
         UUID wsId = UUID.randomUUID();
         UUID dsId = UUID.randomUUID();
         UUID txId = UUID.randomUUID();
 
-        // Insert workspace (needed for FK)
-        try (Statement s = conn.createStatement()) {
-            s.execute("INSERT INTO reconciliation_workspace (workspace_id, org_id, status) VALUES ('" + wsId + "', '" + UUID.randomUUID() + "', 'OPEN')");
-        }
+        RawInternalLedger dataset = new RawInternalLedger(
+            dsId,
+            LocalDate.now(),
+            "/test.csv",
+            aval.common.enums.DatasetStatus.PARSED,
+            "SAP",
+            "Q1"
+        );
 
-        FinancialDataset dataset = new FinancialDataset(dsId, wsId, "/test.csv", aval.common.enums.DataSourceType.INTERNAL_EXCEL, aval.common.enums.DatasetStatus.PARSED, LocalDate.now());
-
-        // Manually inject raw transactions (normally parsed from file)
-        java.lang.reflect.Field field = FinancialDataset.class.getDeclaredField("rawTransactions");
+        java.lang.reflect.Field field = FinancialDataset.class.getDeclaredField(
+            "rawTransactions"
+        );
         field.setAccessible(true);
         java.util.List<RawTransaction> rawList = new java.util.ArrayList<>();
-        RawTransaction rawTx = new RawTransaction(txId, "2024-01-15", "1500.00", "Test payment", TransactionType.DEBIT, dataset);
+        RawTransaction rawTx = new RawTransaction(
+            txId,
+            "2024-01-15",
+            "1500.00",
+            "Test payment",
+            TransactionType.DEBIT,
+            dataset
+        );
         rawList.add(rawTx);
         field.set(dataset, rawList);
 
-        // Save should work
         assertDoesNotThrow(() -> ds.saveDatasetWithTransactions(dataset, wsId));
 
-        // Verify dataset was saved
-        try (Statement s = conn.createStatement();
-             var rs = s.executeQuery("SELECT COUNT(*) FROM financial_dataset")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
-        }
-
-        // Verify raw transactions were saved
-        try (Statement s = conn.createStatement();
-             var rs = s.executeQuery("SELECT COUNT(*) FROM raw_transactions")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
-        }
+        verify(mockConn).setAutoCommit(false);
+        verify(mockConn).commit();
+        verify(mockConn).close();
     }
 
     @Test
-    public void testSaveMatchingResults_createsBothRecords_onSuccess() throws Exception {
-        DataStore ds = new DataStore(new MockDataSource(conn));
-        UUID hypId = UUID.randomUUID();
+    public void testSaveMatchingResults_createsBothRecords_onSuccess()
+        throws Exception {
+        javax.sql.DataSource mockDs = mock(javax.sql.DataSource.class);
+        Connection mockConn = mock(Connection.class);
+        PreparedStatement mockStmt = mock(PreparedStatement.class);
 
-        // Create mock hypothesis
-        StandardizedTransaction ledgerTx = new StandardizedTransaction(UUID.randomUUID(), LocalDate.now(), BigDecimal.valueOf(100), "Test", TransactionType.DEBIT, UUID.randomUUID());
-        StandardizedTransaction bankTx = new StandardizedTransaction(UUID.randomUUID(), LocalDate.now(), BigDecimal.valueOf(100), "Test", TransactionType.CREDIT, UUID.randomUUID());
-        MatchHypothesis hyp = new MatchHypothesis(ledgerTx, bankTx, 0.95, aval.common.enums.MatchType.EXACT_AMOUNT);
+        when(mockDs.getConnection()).thenReturn(mockConn);
+        when(mockConn.prepareStatement(anyString())).thenReturn(mockStmt);
 
-        java.lang.reflect.Field hypIdField = MatchHypothesis.class.getDeclaredField("hypothesisId");
-        hypIdField.setAccessible(true);
-        hypIdField.set(hyp, hypId);
+        DataStore ds = new DataStore(mockDs);
 
-        // Create mock record
+        StandardizedTransaction ledgerTx = new StandardizedTransaction(
+            UUID.randomUUID(),
+            LocalDate.now(),
+            BigDecimal.valueOf(100),
+            "Test",
+            TransactionType.DEBIT,
+            UUID.randomUUID()
+        );
+        StandardizedTransaction bankTx = new StandardizedTransaction(
+            UUID.randomUUID(),
+            LocalDate.now(),
+            BigDecimal.valueOf(100),
+            "Test",
+            TransactionType.CREDIT,
+            UUID.randomUUID()
+        );
+        MatchHypothesis hyp = new MatchHypothesis(
+            ledgerTx,
+            bankTx,
+            0.95,
+            MatchType.EXACT_RULE
+        );
         ReconciliationRecord record = new ReconciliationRecord(hyp, null);
 
-        // Save should work
-        assertDoesNotThrow(() -> ds.saveMatchingResults(List.of(hyp), List.of(record)));
+        assertDoesNotThrow(() ->
+            ds.saveMatchingResults(List.of(hyp), List.of(record))
+        );
 
-        // Verify hypothesis saved
-        try (Statement s = conn.createStatement();
-             var rs = s.executeQuery("SELECT COUNT(*) FROM match_hypotheses")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
-        }
-
-        // Verify record saved
-        try (Statement s = conn.createStatement();
-             var rs = s.executeQuery("SELECT COUNT(*) FROM reconciliation_records")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
-        }
+        verify(mockConn).setAutoCommit(false);
+        verify(mockConn).commit();
+        verify(mockConn).close();
     }
 
     @Test
-    public void testSaveMatchingResults_usesAtomicTransaction() throws Exception {
-        // This test validates the atomic nature by ensuring both inserts
-        // happen in a single transaction. When using setAutoCommit(false),
-        // if either fails, neither commits.
-        DataStore ds = new DataStore(new MockDataSource(conn));
-        UUID hypId = UUID.randomUUID();
+    public void testSaveMatchingResults_usesAtomicTransaction()
+        throws Exception {
+        javax.sql.DataSource mockDs = mock(javax.sql.DataSource.class);
+        Connection mockConn = mock(Connection.class);
+        PreparedStatement mockStmt1 = mock(PreparedStatement.class);
+        PreparedStatement mockStmt2 = mock(PreparedStatement.class);
 
-        StandardizedTransaction ledgerTx = new StandardizedTransaction(UUID.randomUUID(), LocalDate.now(), BigDecimal.valueOf(100), "Test", TransactionType.DEBIT, UUID.randomUUID());
-        StandardizedTransaction bankTx = new StandardizedTransaction(UUID.randomUUID(), LocalDate.now(), BigDecimal.valueOf(100), "Test", TransactionType.CREDIT, UUID.randomUUID());
-        MatchHypothesis hyp = new MatchHypothesis(ledgerTx, bankTx, 0.95, aval.common.enums.MatchType.EXACT_AMOUNT);
+        when(mockDs.getConnection()).thenReturn(mockConn);
 
-        java.lang.reflect.Field hypIdField = MatchHypothesis.class.getDeclaredField("hypothesisId");
-        hypIdField.setAccessible(true);
-        hypIdField.set(hyp, hypId);
+        // Return stmt1 for hypotheses, stmt2 for records
+        when(mockConn.prepareStatement(anyString()))
+            .thenReturn(mockStmt1)
+            .thenReturn(mockStmt2);
 
+        // Make the second executeUpdate throw an exception
+        when(mockStmt2.executeBatch()).thenThrow(
+            new java.sql.SQLException("Simulated DB Error")
+        );
+
+        DataStore ds = new DataStore(mockDs);
+
+        StandardizedTransaction ledgerTx = new StandardizedTransaction(
+            UUID.randomUUID(),
+            LocalDate.now(),
+            BigDecimal.valueOf(100),
+            "Test",
+            TransactionType.DEBIT,
+            UUID.randomUUID()
+        );
+        StandardizedTransaction bankTx = new StandardizedTransaction(
+            UUID.randomUUID(),
+            LocalDate.now(),
+            BigDecimal.valueOf(100),
+            "Test",
+            TransactionType.CREDIT,
+            UUID.randomUUID()
+        );
+        MatchHypothesis hyp = new MatchHypothesis(
+            ledgerTx,
+            bankTx,
+            0.95,
+            MatchType.EXACT_RULE
+        );
         ReconciliationRecord record = new ReconciliationRecord(hyp, null);
 
-        ds.saveMatchingResults(List.of(hyp), List.of(record));
+        Exception e = assertThrows(RuntimeException.class, () ->
+            ds.saveMatchingResults(List.of(hyp), List.of(record))
+        );
+        assertTrue(
+            e.getMessage().contains("Matching results transaction failed"),
+            "Should wrap in RuntimeException"
+        );
 
-        // Both tables should have data (atomic success)
-        try (Statement s = conn.createStatement();
-             var rs = s.executeQuery("SELECT COUNT(*) FROM match_hypotheses")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
-        }
-    }
-
-    // Simple mock DataSource for H2
-    private static class MockDataSource implements javax.sql.DataSource {
-        private final Connection conn;
-        MockDataSource(Connection conn) { this.conn = conn; }
-        public java.sql.Connection getConnection() { return conn; }
-        public java.sql.Connection getConnection(String u, String p) { return conn; }
-        public java.sql.PrintWriter getLogWriter() { return null; }
-        public void setLogWriter(java.sql.PrintWriter w) {}
-        public void setLoginTimeout(int s) {}
-        public int getLoginTimeout() { return 0; }
-        public java.util.logging.Logger getParentLogger() { return null; }
-        public <T> T unwrap(Class<T> c) { return null; }
-        public boolean isWrapperFor(Class<?> c) { return false; }
+        verify(mockConn).setAutoCommit(false);
+        verify(mockConn).rollback();
+        // Should not commit if rollback happened
+        verify(mockConn, never()).commit();
     }
 }

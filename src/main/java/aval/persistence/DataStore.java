@@ -2,8 +2,8 @@
 //Use Cases: All
 package aval.persistence;
 
-import aval.common.enums.UserRole;
 import aval.common.enums.TransactionType;
+import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
@@ -160,7 +160,13 @@ public class DataStore {
             pstmt.setString(2, org.getName());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save client organization '" + org.getName() + "': " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save client organization '" +
+                    org.getName() +
+                    "': " +
+                    e.getMessage(),
+                e
+            );
         }
     }
 
@@ -182,7 +188,9 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("findClientOrganizationById failed: " + e.getMessage());
+            System.err.println(
+                "findClientOrganizationById failed: " + e.getMessage()
+            );
         }
         return null;
     }
@@ -204,7 +212,10 @@ public class DataStore {
             pstmt.setString(3, workspace.getStatus().name());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save reconciliation workspace: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save reconciliation workspace: " + e.getMessage(),
+                e
+            );
         }
     }
 
@@ -228,7 +239,9 @@ public class DataStore {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("findReconciliationWorkspaceById failed: " + e.getMessage());
+            System.err.println(
+                "findReconciliationWorkspaceById failed: " + e.getMessage()
+            );
         }
         return null;
     }
@@ -257,7 +270,13 @@ public class DataStore {
             pstmt.setDate(6, java.sql.Date.valueOf(dataset.getImportDate()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save financial dataset '" + dataset.getFilePath() + "': " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save financial dataset '" +
+                    dataset.getFilePath() +
+                    "': " +
+                    e.getMessage(),
+                e
+            );
         }
     }
 
@@ -279,7 +298,10 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save raw transactions: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save raw transactions: " + e.getMessage(),
+                e
+            );
         }
     }
 
@@ -325,7 +347,10 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save match hypotheses: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save match hypotheses: " + e.getMessage(),
+                e
+            );
         }
     }
 
@@ -360,7 +385,10 @@ public class DataStore {
             }
             pstmt.executeBatch();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save reconciliation records: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to save reconciliation records: " + e.getMessage(),
+                e
+            );
         }
     }
 
@@ -368,7 +396,10 @@ public class DataStore {
      * Issue 4 Fix: Transactionally saves dataset and raw transactions together.
      * If either operation fails, the entire transaction is rolled back.
      */
-    public void saveDatasetWithTransactions(FinancialDataset dataset, UUID workspaceId) {
+    public void saveDatasetWithTransactions(
+        FinancialDataset dataset,
+        UUID workspaceId
+    ) {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -377,16 +408,24 @@ public class DataStore {
                 conn.commit();
             } catch (Exception e) {
                 conn.rollback();
-                throw new RuntimeException("Ingestion transaction failed — rolled back.", e);
+                throw new RuntimeException(
+                    "Ingestion transaction failed — rolled back.",
+                    e
+                );
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void saveFinancialDatasetWithConn(Connection conn, FinancialDataset dataset, UUID workspaceId) throws SQLException {
-        String sql = "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) " +
-                     "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (dataset_id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id";
+    private void saveFinancialDatasetWithConn(
+        Connection conn,
+        FinancialDataset dataset,
+        UUID workspaceId
+    ) throws SQLException {
+        String sql =
+            "INSERT INTO financial_dataset (dataset_id, workspace_id, file_path, source_type, status, import_date) " +
+            "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (dataset_id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setObject(1, dataset.getDatasetId());
             pstmt.setObject(2, workspaceId);
@@ -398,9 +437,13 @@ public class DataStore {
         }
     }
 
-    private void saveRawTransactionsWithConn(Connection conn, List<RawTransaction> rawTransactions) throws SQLException {
+    private void saveRawTransactionsWithConn(
+        Connection conn,
+        List<RawTransaction> rawTransactions
+    ) throws SQLException {
         if (rawTransactions == null || rawTransactions.isEmpty()) return;
-        String sql = "INSERT INTO raw_transactions (transaction_id, raw_date, raw_amount, narrative, transaction_type, source_dataset_id) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql =
+            "INSERT INTO raw_transactions (transaction_id, raw_date, raw_amount, narrative, transaction_type, source_dataset_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (RawTransaction tx : rawTransactions) {
                 pstmt.setObject(1, tx.getTransactionId());
@@ -419,7 +462,10 @@ public class DataStore {
      * Issue 4 Fix: Transactionally saves match hypotheses and reconciliation records together.
      * If either operation fails, the entire transaction is rolled back.
      */
-    public void saveMatchingResults(List<MatchHypothesis> hypotheses, List<ReconciliationRecord> records) {
+    public void saveMatchingResults(
+        List<MatchHypothesis> hypotheses,
+        List<ReconciliationRecord> records
+    ) {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -430,23 +476,46 @@ public class DataStore {
                 conn.commit();
             } catch (Exception e) {
                 conn.rollback();
-                throw new RuntimeException("Matching results transaction failed — rolled back.", e);
+                throw new RuntimeException(
+                    "Matching results transaction failed — rolled back.",
+                    e
+                );
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void saveMatchHypothesesWithConn(Connection conn, List<MatchHypothesis> hypotheses) throws SQLException {
-        String sql = "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
+    private void saveMatchHypothesesWithConn(
+        Connection conn,
+        List<MatchHypothesis> hypotheses
+    ) throws SQLException {
+        String sql =
+            "INSERT INTO match_hypotheses (hypothesis_id, ledger_id, bank_id, confidence_score, match_type, status, justification) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (hypothesis_id) DO UPDATE SET status = EXCLUDED.status, justification = EXCLUDED.justification";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (MatchHypothesis h : hypotheses) {
                 pstmt.setObject(1, h.getHypothesisId());
-                pstmt.setObject(2, h.getLedgerTransaction() != null ? h.getLedgerTransaction().getTransactionId() : null);
-                pstmt.setObject(3, h.getBankTransaction() != null ? h.getBankTransaction().getTransactionId() : null);
+                pstmt.setObject(
+                    2,
+                    h.getLedgerTransaction() != null
+                        ? h.getLedgerTransaction().getTransactionId()
+                        : null
+                );
+                pstmt.setObject(
+                    3,
+                    h.getBankTransaction() != null
+                        ? h.getBankTransaction().getTransactionId()
+                        : null
+                );
                 pstmt.setDouble(4, h.getConfidenceScore());
-                pstmt.setString(5, h.getMatchType() != null ? h.getMatchType().name() : null);
-                pstmt.setString(6, h.getStatus() != null ? h.getStatus().name() : null);
+                pstmt.setString(
+                    5,
+                    h.getMatchType() != null ? h.getMatchType().name() : null
+                );
+                pstmt.setString(
+                    6,
+                    h.getStatus() != null ? h.getStatus().name() : null
+                );
                 pstmt.setString(7, h.getJustification());
                 pstmt.addBatch();
             }
@@ -454,14 +523,33 @@ public class DataStore {
         }
     }
 
-    private void saveReconciliationRecordsWithConn(Connection conn, List<ReconciliationRecord> records) throws SQLException {
-        String sql = "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
+    private void saveReconciliationRecordsWithConn(
+        Connection conn,
+        List<ReconciliationRecord> records
+    ) throws SQLException {
+        String sql =
+            "INSERT INTO reconciliation_records (record_id, hypothesis_id, confirming_user_id, reconciled_at) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (ReconciliationRecord r : records) {
                 pstmt.setObject(1, r.getRecordId());
-                pstmt.setObject(2, r.getHypothesis() != null ? r.getHypothesis().getHypothesisId() : null);
-                pstmt.setObject(3, r.getConfirmingUser() != null ? r.getConfirmingUser().getUserId() : null);
-                pstmt.setTimestamp(4, r.getReconciledAt() != null ? java.sql.Timestamp.valueOf(r.getReconciledAt()) : null);
+                pstmt.setObject(
+                    2,
+                    r.getHypothesis() != null
+                        ? r.getHypothesis().getHypothesisId()
+                        : null
+                );
+                pstmt.setObject(
+                    3,
+                    r.getConfirmingUser() != null
+                        ? r.getConfirmingUser().getUserId()
+                        : null
+                );
+                pstmt.setTimestamp(
+                    4,
+                    r.getReconciledAt() != null
+                        ? java.sql.Timestamp.valueOf(r.getReconciledAt())
+                        : null
+                );
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
@@ -474,10 +562,13 @@ public class DataStore {
      * UC7 / UC8 â€” Updates the status and justification of an existing match hypothesis.
      * Called after a user approves, rejects, or force-reconciles a hypothesis.
      */
-    public void updateHypothesisStatus(UUID hypothesisId,
-                                       aval.common.enums.HypothesisStatus status,
-                                       String justification) throws SQLException {
-        String sql = "UPDATE match_hypotheses SET status = ?, justification = ? WHERE hypothesis_id = ?";
+    public void updateHypothesisStatus(
+        UUID hypothesisId,
+        aval.common.enums.HypothesisStatus status,
+        String justification
+    ) throws SQLException {
+        String sql =
+            "UPDATE match_hypotheses SET status = ?, justification = ? WHERE hypothesis_id = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -487,7 +578,10 @@ public class DataStore {
             pstmt.setObject(3, hypothesisId);
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
-                throw new SQLException("updateHypothesisStatus: no row found for hypothesis_id = " + hypothesisId);
+                throw new SQLException(
+                    "updateHypothesisStatus: no row found for hypothesis_id = " +
+                        hypothesisId
+                );
             }
         }
     }
@@ -495,9 +589,12 @@ public class DataStore {
     /**
      * UC1 â€” Updates the status of a reconciliation workspace (e.g. OPEN â†’ COMPLETED).
      */
-    public void updateWorkspaceStatus(UUID workspaceId,
-                                      aval.common.enums.WorkspaceStatus status) throws SQLException {
-        String sql = "UPDATE reconciliation_workspace SET status = ? WHERE workspace_id = ?";
+    public void updateWorkspaceStatus(
+        UUID workspaceId,
+        aval.common.enums.WorkspaceStatus status
+    ) throws SQLException {
+        String sql =
+            "UPDATE reconciliation_workspace SET status = ? WHERE workspace_id = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -506,7 +603,10 @@ public class DataStore {
             pstmt.setObject(2, workspaceId);
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
-                throw new SQLException("updateWorkspaceStatus: no row found for workspace_id = " + workspaceId);
+                throw new SQLException(
+                    "updateWorkspaceStatus: no row found for workspace_id = " +
+                        workspaceId
+                );
             }
         }
     }
@@ -517,9 +617,12 @@ public class DataStore {
      * Deletes all financial datasets belonging to a workspace, then deletes the workspace itself.
      * Child datasets are removed first to respect foreign-key constraints.
      */
-    public void deleteReconciliationWorkspace(UUID workspaceId) throws SQLException {
-        String deleteDatasets  = "DELETE FROM financial_dataset WHERE workspace_id = ?";
-        String deleteWorkspace = "DELETE FROM reconciliation_workspace WHERE workspace_id = ?";
+    public void deleteReconciliationWorkspace(UUID workspaceId)
+        throws SQLException {
+        String deleteDatasets =
+            "DELETE FROM financial_dataset WHERE workspace_id = ?";
+        String deleteWorkspace =
+            "DELETE FROM reconciliation_workspace WHERE workspace_id = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement ds = conn.prepareStatement(deleteDatasets);
@@ -530,7 +633,10 @@ public class DataStore {
             ws.setObject(1, workspaceId);
             int rows = ws.executeUpdate();
             if (rows == 0) {
-                throw new SQLException("deleteReconciliationWorkspace: no workspace found for id = " + workspaceId);
+                throw new SQLException(
+                    "deleteReconciliationWorkspace: no workspace found for id = " +
+                        workspaceId
+                );
             }
         }
     }
@@ -547,7 +653,10 @@ public class DataStore {
             pstmt.setObject(1, datasetId);
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
-                throw new SQLException("deleteFinancialDataset: no dataset found for id = " + datasetId);
+                throw new SQLException(
+                    "deleteFinancialDataset: no dataset found for id = " +
+                        datasetId
+                );
             }
         }
     }
@@ -555,6 +664,7 @@ public class DataStore {
     // â”€â”€ HISTORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static class ReconciliationHistoryRow {
+
         public String date;
         public String period;
         public String txns;
@@ -563,8 +673,15 @@ public class DataStore {
         public String anomalies;
         public String status;
 
-        public ReconciliationHistoryRow(String date, String period, String txns,
-                                       String matched, String rate, String anomalies, String status) {
+        public ReconciliationHistoryRow(
+            String date,
+            String period,
+            String txns,
+            String matched,
+            String rate,
+            String anomalies,
+            String status
+        ) {
             this.date = date;
             this.period = period;
             this.txns = txns;
@@ -575,7 +692,9 @@ public class DataStore {
         }
     }
 
-    public List<ReconciliationHistoryRow> getReconciliationHistoryForOrg(UUID orgId) {
+    public List<ReconciliationHistoryRow> getReconciliationHistoryForOrg(
+        UUID orgId
+    ) {
         List<ReconciliationHistoryRow> rows = new ArrayList<>();
         String sql =
             "SELECT " +
@@ -607,19 +726,23 @@ public class DataStore {
                     long matched = rs.getLong("matched_hyp");
                     double rateVal = rs.getDouble("rate");
                     long anom = total - matched;
-                    rows.add(new ReconciliationHistoryRow(
-                        rs.getString("rec_date"),
-                        rs.getString("rec_date").substring(0, 7),
-                        String.valueOf(total),
-                        String.valueOf(matched),
-                        String.format("%.1f%%", rateVal),
-                        String.valueOf(anom),
-                        rs.getString("status")
-                    ));
+                    rows.add(
+                        new ReconciliationHistoryRow(
+                            rs.getString("rec_date"),
+                            rs.getString("rec_date").substring(0, 7),
+                            String.valueOf(total),
+                            String.valueOf(matched),
+                            String.format("%.1f%%", rateVal),
+                            String.valueOf(anom),
+                            rs.getString("status")
+                        )
+                    );
                 }
             }
         } catch (SQLException e) {
-            System.err.println("getReconciliationHistoryForOrg failed: " + e.getMessage());
+            System.err.println(
+                "getReconciliationHistoryForOrg failed: " + e.getMessage()
+            );
         }
         return rows;
     }
@@ -646,7 +769,9 @@ public class DataStore {
                 );
             }
         } catch (SQLException e) {
-            System.err.println("getReconciliationHistory failed: " + e.getMessage());
+            System.err.println(
+                "getReconciliationHistory failed: " + e.getMessage()
+            );
         }
         return results;
     }
@@ -661,7 +786,16 @@ public class DataStore {
             pstmt.setObject(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), aval.common.enums.UserRole.valueOf(rs.getString("role")), rs.getString("location"));
+                    return new SystemUser(
+                        (UUID) rs.getObject("user_id"),
+                        rs.getString("full_name"),
+                        rs.getString("cnic"),
+                        rs.getString("username"),
+                        aval.common.enums.UserRole.valueOf(
+                            rs.getString("role")
+                        ),
+                        rs.getString("location")
+                    );
                 }
             }
         } catch (SQLException e) {
@@ -677,7 +811,8 @@ public class DataStore {
      */
     public List<ClientOrganization> findAllClients() {
         List<ClientOrganization> clients = new ArrayList<>();
-        String sql = "SELECT org_id, name FROM client_organization ORDER BY name";
+        String sql =
+            "SELECT org_id, name FROM client_organization ORDER BY name";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -702,7 +837,8 @@ public class DataStore {
      * Resolves a username to a SystemUser record used during authentication.
      */
     public SystemUser findSystemUserByUsername(String username) {
-        String sql = "SELECT user_id, full_name, cnic, username, role, location FROM app_user WHERE username = ?";
+        String sql =
+            "SELECT user_id, full_name, cnic, username, role, location FROM app_user WHERE username = ?";
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -710,7 +846,14 @@ public class DataStore {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), UserRole.valueOf(rs.getString("role")), rs.getString("location"));
+                    return new SystemUser(
+                        (UUID) rs.getObject("user_id"),
+                        rs.getString("full_name"),
+                        rs.getString("cnic"),
+                        rs.getString("username"),
+                        UserRole.valueOf(rs.getString("role")),
+                        rs.getString("location")
+                    );
                 }
             }
         } catch (SQLException e) {
@@ -721,7 +864,7 @@ public class DataStore {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException(
                 "findSystemUserByUsername failed due to invalid role mapping: " +
-                e.getMessage(),
+                    e.getMessage(),
                 e
             );
         }
@@ -742,8 +885,18 @@ public class DataStore {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String storedHash = rs.getString("password_hash");
-                    if (storedHash != null && BCrypt.checkpw(passkey, storedHash)) {
-                        return new SystemUser((UUID) rs.getObject("user_id"), rs.getString("full_name"), rs.getString("cnic"), rs.getString("username"), UserRole.valueOf(rs.getString("role")), rs.getString("location"));
+                    if (
+                        storedHash != null &&
+                        BCrypt.checkpw(passkey, storedHash)
+                    ) {
+                        return new SystemUser(
+                            (UUID) rs.getObject("user_id"),
+                            rs.getString("full_name"),
+                            rs.getString("cnic"),
+                            rs.getString("username"),
+                            UserRole.valueOf(rs.getString("role")),
+                            rs.getString("location")
+                        );
                     }
                 }
             }
@@ -755,12 +908,13 @@ public class DataStore {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException(
                 "findSystemUserByCredentials failed due to invalid role mapping: " +
-                e.getMessage(),
+                    e.getMessage(),
                 e
             );
         }
         return null;
     }
+
     public boolean isAnyUserRegistered() {
         String sql = "SELECT COUNT(*) FROM app_user";
         try (
@@ -776,8 +930,17 @@ public class DataStore {
         }
         return false;
     }
-    public void registerUser(String fullName, String cnic, String username, aval.common.enums.UserRole role, String location, String passwordHash) {
-        String sql = "INSERT INTO app_user (user_id, full_name, cnic, username, role, location, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    public void registerUser(
+        String fullName,
+        String cnic,
+        String username,
+        aval.common.enums.UserRole role,
+        String location,
+        String passwordHash
+    ) {
+        String sql =
+            "INSERT INTO app_user (user_id, full_name, cnic, username, role, location, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (
             java.sql.Connection conn = dataSource.getConnection();
             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -791,31 +954,45 @@ public class DataStore {
             pstmt.setString(7, passwordHash);
             pstmt.executeUpdate();
         } catch (java.sql.SQLException e) {
-            throw new RuntimeException("Failed to register user: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to register user: " + e.getMessage(),
+                e
+            );
         }
     }
 
     /**
      * Issue 1 Fix: Retrieves the latest workspace for a client org.
      */
-    public java.util.Optional<ReconciliationWorkspace> findLatestWorkspaceForClient(java.util.UUID clientId) {
-        String sql = "SELECT workspace_id, status FROM reconciliation_workspace"
-                   + " WHERE org_id = ? ORDER BY created_at DESC LIMIT 1";
-        try (Connection c = dataSource.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    public java.util.Optional<
+        ReconciliationWorkspace
+    > findLatestWorkspaceForClient(java.util.UUID clientId) {
+        String sql =
+            "SELECT workspace_id, status FROM reconciliation_workspace" +
+            " WHERE org_id = ? ORDER BY created_at DESC LIMIT 1";
+        try (
+            Connection c = dataSource.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)
+        ) {
             ps.setObject(1, clientId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
+                java.util.UUID wsId = (java.util.UUID) rs.getObject(
+                    "workspace_id"
+                );
                 ClientOrganization org = findClientOrganizationById(clientId);
                 ReconciliationWorkspace ws = new ReconciliationWorkspace(
-                    (java.util.UUID) rs.getObject("workspace_id"),
+                    wsId,
                     org,
                     null
                 );
                 return java.util.Optional.of(ws);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("findLatestWorkspaceForClient failed: " + e.getMessage(), e);
+            throw new RuntimeException(
+                "findLatestWorkspaceForClient failed: " + e.getMessage(),
+                e
+            );
         }
         return java.util.Optional.empty();
     }
@@ -823,28 +1000,39 @@ public class DataStore {
     /**
      * Issue 1 Fix: Retrieves ledger transactions for a workspace.
      */
-    public List<StandardizedTransaction> getLedgerTransactionsForWorkspace(java.util.UUID workspaceId) {
-        String sql = "SELECT sl.transaction_id, sl.value_date, sl.amount, sl.narrative, sl.transaction_type, sl.source_dataset_id"
-                   + " FROM standardized_ledger sl"
-                   + " JOIN financial_dataset fd ON sl.source_dataset_id = fd.dataset_id"
-                   + " WHERE fd.workspace_id = ?";
+    public List<StandardizedTransaction> getLedgerTransactionsForWorkspace(
+        java.util.UUID workspaceId
+    ) {
+        String sql =
+            "SELECT sl.transaction_id, sl.value_date, sl.amount, sl.narrative, sl.transaction_type, sl.source_dataset_id" +
+            " FROM standardized_ledger sl" +
+            " JOIN financial_dataset fd ON sl.source_dataset_id = fd.dataset_id" +
+            " WHERE fd.workspace_id = ?";
         List<StandardizedTransaction> result = new ArrayList<>();
-        try (Connection c = dataSource.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (
+            Connection c = dataSource.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)
+        ) {
             ps.setObject(1, workspaceId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                result.add(new StandardizedTransaction(
-                    (java.util.UUID) rs.getObject("transaction_id"),
-                    rs.getDate("value_date").toLocalDate(),
-                    rs.getBigDecimal("amount"),
-                    rs.getString("narrative"),
-                    TransactionType.valueOf(rs.getString("transaction_type")),
-                    (java.util.UUID) rs.getObject("source_dataset_id")
-                ));
+                result.add(
+                    new StandardizedTransaction(
+                        (java.util.UUID) rs.getObject("transaction_id"),
+                        rs.getDate("value_date").toLocalDate(),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("narrative"),
+                        TransactionType.valueOf(
+                            rs.getString("transaction_type")
+                        ),
+                        (java.util.UUID) rs.getObject("source_dataset_id")
+                    )
+                );
             }
         } catch (SQLException e) {
-            System.err.println("getLedgerTransactionsForWorkspace failed: " + e.getMessage());
+            System.err.println(
+                "getLedgerTransactionsForWorkspace failed: " + e.getMessage()
+            );
         }
         return result;
     }
@@ -852,30 +1040,40 @@ public class DataStore {
     /**
      * Issue 1 Fix: Retrieves bank transactions for a workspace.
      */
-    public List<StandardizedTransaction> getBankTransactionsForWorkspace(java.util.UUID workspaceId) {
-        String sql = "SELECT sb.transaction_id, sb.value_date, sb.amount, sb.narrative, sb.transaction_type, sb.source_dataset_id"
-                   + " FROM standardized_bank sb"
-                   + " JOIN financial_dataset fd ON sb.source_dataset_id = fd.dataset_id"
-                   + " WHERE fd.workspace_id = ?";
+    public List<StandardizedTransaction> getBankTransactionsForWorkspace(
+        java.util.UUID workspaceId
+    ) {
+        String sql =
+            "SELECT sb.transaction_id, sb.value_date, sb.amount, sb.narrative, sb.transaction_type, sb.source_dataset_id" +
+            " FROM standardized_bank sb" +
+            " JOIN financial_dataset fd ON sb.source_dataset_id = fd.dataset_id" +
+            " WHERE fd.workspace_id = ?";
         List<StandardizedTransaction> result = new ArrayList<>();
-        try (Connection c = dataSource.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (
+            Connection c = dataSource.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)
+        ) {
             ps.setObject(1, workspaceId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                result.add(new StandardizedTransaction(
-                    (java.util.UUID) rs.getObject("transaction_id"),
-                    rs.getDate("value_date").toLocalDate(),
-                    rs.getBigDecimal("amount"),
-                    rs.getString("narrative"),
-                    TransactionType.valueOf(rs.getString("transaction_type")),
-                    (java.util.UUID) rs.getObject("source_dataset_id")
-                ));
+                result.add(
+                    new StandardizedTransaction(
+                        (java.util.UUID) rs.getObject("transaction_id"),
+                        rs.getDate("value_date").toLocalDate(),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("narrative"),
+                        TransactionType.valueOf(
+                            rs.getString("transaction_type")
+                        ),
+                        (java.util.UUID) rs.getObject("source_dataset_id")
+                    )
+                );
             }
         } catch (SQLException e) {
-            System.err.println("getBankTransactionsForWorkspace failed: " + e.getMessage());
+            System.err.println(
+                "getBankTransactionsForWorkspace failed: " + e.getMessage()
+            );
         }
         return result;
     }
 }
-

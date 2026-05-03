@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for Issue 2: MainUIContext Thread-Unsafe Singleton + State Leak.
@@ -26,8 +28,9 @@ public class MainUIContextTest {
         Thread[] threads = new Thread[10];
 
         for (int i = 0; i < 10; i++) {
+            final int index = i;
             threads[i] = new Thread(() -> {
-                instances[i] = MainUIContext.getInstance();
+                instances[index] = MainUIContext.getInstance();
             });
             threads[i].start();
         }
@@ -53,7 +56,7 @@ public class MainUIContextTest {
                 BigDecimal.valueOf(100), "Test", aval.common.enums.TransactionType.CREDIT, UUID.randomUUID())
         ));
         ctx.setPendingHypotheses(List.of(
-            new MatchHypothesis(null, null, 0.85)
+            new MatchHypothesis(null, null, 0.85, aval.common.enums.MatchType.AI_PROBABILISTIC)
         ));
         ctx.setAllHypotheses(List.of());
         ctx.setUnmatchedLedger(List.of());
@@ -106,7 +109,7 @@ public class MainUIContextTest {
     @Test
     public void testWorkspaceControllerTypedSetter() {
         MainUIContext ctx = MainUIContext.getInstance();
-        IWorkspaceController mock = () -> {};
+        IWorkspaceController mock = mock(IWorkspaceController.class);
         ctx.setWorkspaceController(mock);
         assertSame(mock, ctx.getWorkspaceController());
     }

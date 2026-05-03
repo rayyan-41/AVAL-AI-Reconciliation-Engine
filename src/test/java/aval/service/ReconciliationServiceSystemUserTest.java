@@ -1,5 +1,8 @@
 package aval.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
 import aval.common.enums.MatchType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.StandardizedTransaction;
@@ -9,14 +12,11 @@ import aval.domain.core.ReconciliationWorkspace;
 import aval.engine.RuleBasedMatchingEngine;
 import aval.engine.VectorizationEngine;
 import aval.persistence.DataStore;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Issue 5: Fake System User UUID.
@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ReconciliationServiceSystemUserTest {
 
-    private static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID SYSTEM_USER_ID = UUID.fromString(
+        "00000000-0000-0000-0000-000000000001"
+    );
 
     @Test
     public void testRunMatching_usesStableSystemUserId() throws Exception {
@@ -70,25 +72,40 @@ public class ReconciliationServiceSystemUserTest {
 
         // Verify the auto-confirmed record uses the stable system user ID
         var autoRecords = result.getAutoReconciledRecords();
-        assertFalse(autoRecords.isEmpty(), "Should have auto-reconciled records at high threshold");
+        assertFalse(
+            autoRecords.isEmpty(),
+            "Should have auto-reconciled records at high threshold"
+        );
 
         UUID confirmingId = autoRecords.get(0).getConfirmingUser().getUserId();
-        assertEquals(SYSTEM_USER_ID, confirmingId,
-            "Auto-reconciled records must use the stable system user UUID");
+        assertEquals(
+            SYSTEM_USER_ID,
+            confirmingId,
+            "Auto-reconciled records must use the stable system user UUID"
+        );
     }
 
     @Test
     public void testSystemUserConstant_matchesExpectedValue() {
         // The constant should be the well-known system user UUID
-        assertEquals("00000000-0000-0000-0000-000000000001", SYSTEM_USER_ID.toString());
+        assertEquals(
+            "00000000-0000-0000-0000-000000000001",
+            SYSTEM_USER_ID.toString()
+        );
     }
 
     @Test
     public void testRunMatching_producesDifferentUserIdThanRandom() {
         // Verify that the system user ID is NOT a random UUID
         UUID randomUUID = UUID.randomUUID();
-        assertNotEquals(SYSTEM_USER_ID, randomUUID,
-            "System user UUID must be stable (not random)");
-        assertNotEquals("00000000-0000-0000-0000-000000000001", randomUUID.toString());
+        assertNotEquals(
+            SYSTEM_USER_ID,
+            randomUUID,
+            "System user UUID must be stable (not random)"
+        );
+        assertNotEquals(
+            "00000000-0000-0000-0000-000000000001",
+            randomUUID.toString()
+        );
     }
 }

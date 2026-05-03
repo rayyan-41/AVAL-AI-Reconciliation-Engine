@@ -62,4 +62,16 @@ public class LangChain4jVectorizationEngine implements VectorizationEngine {
             transaction.getNarrative()
         );
     }
+
+    @Override
+    public boolean healthCheck() {
+        try {
+            // Attempt a minimal embedding to verify Ollama is reachable
+            embeddingModel.embed("health check");
+            return true;
+        } catch (Exception e) {
+            System.err.println("[healthCheck] Ollama unreachable: " + e.getMessage());
+            return false;
+        }
+    }
 }

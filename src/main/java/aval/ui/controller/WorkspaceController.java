@@ -20,7 +20,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-public class WorkspaceController {
+public class WorkspaceController implements IWorkspaceController {
 
     //-------------- Attributes ----------------------//
     @FXML

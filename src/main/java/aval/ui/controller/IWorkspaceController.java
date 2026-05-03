@@ -10,4 +10,9 @@ public interface IWorkspaceController {
      * Unlocks the manual check tab after reconciliation completes.
      */
     void unlockManualCheck();
+
+    /**
+     * Unlocks the report tab after manual check completes.
+     */
+    void unlockReport();
 }

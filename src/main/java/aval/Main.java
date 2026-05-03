@@ -167,7 +167,6 @@ public class Main extends Application {
                     requireProperty(appConfig, "mail.smtp.password"),
                     requireProperty(appConfig, "mail.from")
                 );
-                MainUIContext context = MainUIContext.getInstance();
                 context.setDataStore(dataStore);
                 context.setIngestionService(ingestionService);
                 context.setReconciliationService(reconciliationService);

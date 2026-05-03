@@ -14,11 +14,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -40,13 +40,13 @@ public class ManualCheckController {
     @FXML private HBox mcCompleteBar;
 
     //-------------- Attributes ----------------------//
-    private WorkspaceController workspaceController;
+    private IWorkspaceController workspaceController;
     private ObservableList<MatchHypothesis> hypothesesList;
     private int resolved = 0;
     private boolean anomaliesDismissed = true;
 
     //-------------- Methods ----------------------//
-    public void setWorkspaceController(WorkspaceController wc) { this.workspaceController = wc; }
+    public void setWorkspaceController(IWorkspaceController wc) { this.workspaceController = wc; }
 
     @FXML
     public void initialize() {
