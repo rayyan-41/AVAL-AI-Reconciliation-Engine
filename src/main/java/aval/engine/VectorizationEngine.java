@@ -25,4 +25,11 @@ public interface VectorizationEngine {
     List<SemanticEmbedding> vectorizeBatch(
         List<StandardizedTransaction> transactions
     );
+
+    /**
+     * Issue 6 Fix: Checks if the Ollama backend is reachable.
+     * Call this at startup to prevent silent failures mid-pipeline.
+     * @return true if Ollama responds, false if unavailable or timed out.
+     */
+    boolean healthCheck();
 }

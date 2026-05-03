@@ -17,9 +17,11 @@ import java.util.List;
 //@gof:    Factory Method
 public class IngestionService {
 
+    //-------------- Attributes ----------------------//
     private DataStore dataStore;
     private aval.engine.VectorizationEngine vectorizationEngine;
 
+    //-------------- Methods ----------------------//
     public IngestionService(
         DataStore dataStore,
         aval.engine.VectorizationEngine vectorizationEngine

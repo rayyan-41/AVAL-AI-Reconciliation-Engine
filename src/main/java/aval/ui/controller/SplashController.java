@@ -21,6 +21,7 @@ public class SplashController {
         "Ready.",
     };
 
+    //-------------- Attributes ----------------------//
     @FXML
     private ProgressBar progressBar;
 

@@ -18,6 +18,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -38,14 +39,14 @@ public class ManualCheckController {
     @FXML private ListView<String> anomalyList;
     @FXML private HBox mcCompleteBar;
 
+    //-------------- Attributes ----------------------//
     private WorkspaceController workspaceController;
     private ObservableList<MatchHypothesis> hypothesesList;
     private int resolved = 0;
     private boolean anomaliesDismissed = true;
 
-    public void setWorkspaceController(WorkspaceController wc) {
-        this.workspaceController = wc;
-    }
+    //-------------- Methods ----------------------//
+    public void setWorkspaceController(WorkspaceController wc) { this.workspaceController = wc; }
 
     @FXML
     public void initialize() {
@@ -204,12 +205,13 @@ public class ManualCheckController {
         }
         ReconciliationService svc = ctx.getReconciliationService();
         if (svc == null) {
-            mcSub.setText(
-                "Manual review persistence unavailable: reconciliation service not initialized."
-            );
-            System.err.println(
-                "Manual review persistence unavailable: reconciliation service not initialized."
-            );
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Cannot Save Review");
+            alert.setHeaderText("Reconciliation service is not available");
+            alert.setContentText(
+                "Your decision could not be saved because the reconciliation service " +
+                "is not initialized. Please restart the application and try again.");
+            alert.showAndWait();
             return;
         }
 
@@ -238,12 +240,17 @@ public class ManualCheckController {
                 return null;
             }
         };
-        persistTask.setOnFailed(e ->
-            System.err.println(
-                "Failed to persist manual decision: " +
-                    persistTask.getException().getMessage()
-            )
-        );
+        persistTask.setOnFailed(e -> {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Save Failed");
+                alert.setHeaderText("Could not save your decision");
+                alert.setContentText(
+                    "Error: " + persistTask.getException().getMessage() +
+                    "\n\nYour decision was NOT persisted. Please try again.");
+                alert.showAndWait();
+            });
+        });
         Thread thread = new Thread(persistTask);
         thread.setDaemon(true);
         thread.start();

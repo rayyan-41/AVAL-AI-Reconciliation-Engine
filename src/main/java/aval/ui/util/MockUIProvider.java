@@ -18,6 +18,7 @@ import java.util.UUID;
  */
 public class MockUIProvider {
 
+    //-------------- Attributes ----------------------//
     private static final Random random = new Random();
 
     public static List<ClientOrganization> getMockClients(int count) {

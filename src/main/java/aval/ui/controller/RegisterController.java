@@ -17,6 +17,7 @@ import javafx.scene.input.MouseEvent;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class RegisterController {
+    //-------------- Attributes ----------------------//
     @FXML private HBox rootNode;
     private double xOffset = 0;
     private double yOffset = 0;

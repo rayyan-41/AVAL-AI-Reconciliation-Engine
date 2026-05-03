@@ -28,6 +28,7 @@ import javafx.util.Duration;
 
 public class ReportController {
 
+    //-------------- Attributes ----------------------//
     @FXML
     private Label rptTitle;
 
@@ -366,6 +367,7 @@ public class ReportController {
         );
     }
 
+    //-------------- Methods ----------------------//
     private VBox makeStatCard(
         String label,
         String value,

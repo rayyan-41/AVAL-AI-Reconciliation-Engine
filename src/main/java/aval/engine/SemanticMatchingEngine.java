@@ -16,10 +16,12 @@ import java.util.List;
 //@gof:    Strategy
 public class SemanticMatchingEngine implements MatchingEngine {
 
+    //-------------- Attributes ----------------------//
     private final VectorizationEngine vectorizationEngine;
     private final DataStore dataStore;
     private final MatchingConfig matchingConfig;
 
+    //-------------- Methods ----------------------//
     public SemanticMatchingEngine(
         VectorizationEngine vectorizationEngine,
         DataStore dataStore,

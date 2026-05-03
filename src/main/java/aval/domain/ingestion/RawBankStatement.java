@@ -20,6 +20,7 @@ public class RawBankStatement extends FinancialDataset {
     private LocalDate statementPeriodStart;
     private LocalDate statementPeriodEnd;
 
+    //-------------- Methods ----------------------//
     //Constructor
     public RawBankStatement(
         UUID datasetId,
@@ -39,9 +40,7 @@ public class RawBankStatement extends FinancialDataset {
     }
 
     @Override
-    public DataSourceType getSourceType() {
-        return DataSourceType.EXTERNAL_PDF;
-    }
+    public DataSourceType getSourceType() { return DataSourceType.EXTERNAL_PDF; }
 
     @Override
     public boolean validate() {

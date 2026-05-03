@@ -19,6 +19,7 @@ public class RawTransaction {
     private TransactionType transactionType;
     private FinancialDataset sourceDataset;
 
+    //-------------- Methods ----------------------//
     //Constructor
     public RawTransaction(
         UUID transactionId,

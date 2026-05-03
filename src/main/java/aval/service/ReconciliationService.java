@@ -20,14 +20,15 @@ import java.util.List;
 //@gof:    N/A
 public class ReconciliationService {
 
-    // Issue 5 Fix: Stable system user UUID for audit trail consistency
     private static final java.util.UUID SYSTEM_USER_ID =
         java.util.UUID.fromString("00000000-0000-0000-0000-000000000001");
 
+    //-------------- Attributes ----------------------//
     private final VectorizationEngine vectorizationEngine;
     private final MatchingEngine matchingEngine;
     private final DataStore dataStore;
 
+    //-------------- Methods ----------------------//
     public ReconciliationService(
         VectorizationEngine vectorizationEngine,
         MatchingEngine matchingEngine,

@@ -45,8 +45,7 @@ public class LangChain4jVectorizationEngine implements VectorizationEngine {
         List<StandardizedTransaction> transactions
     ) {
         List<SemanticEmbedding> embeddings = new ArrayList<>();
-        // In a real production system, you'd batch this to the model.
-        // For simplicity and since local Ollama models handle single requests well, we iterate.
+    
         for (StandardizedTransaction tx : transactions) {
             embeddings.add(vectorize(tx));
         }

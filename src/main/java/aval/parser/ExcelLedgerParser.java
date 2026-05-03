@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.*;
 //@gof:    Template Method
 public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
 
+    //-------------- Attributes ----------------------//
     private static final Set<String> DATE_HEADERS = Set.of("date", "transaction date", "posting date", "value date", "trans date");
     private static final Set<String> AMOUNT_HEADERS = Set.of("amount", "debit", "credit", "value", "sum", "total");
     private static final Set<String> DESC_HEADERS = Set.of("description", "narrative", "details", "memo", "particulars", "vendor", "merchant", "category", "reference", "desc");
@@ -391,10 +392,9 @@ public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
         return new java.io.File(filePath).exists() && filePath.endsWith(".xlsx");
     }
 
+    //-------------- Methods ----------------------//
     @Override
-    public String getSupportedFormat() {
-        return "XLSX";
-    }
+    public String getSupportedFormat() { return "XLSX"; }
 
     @Override
     public List<String[]> extractRawRows(String filePath) {

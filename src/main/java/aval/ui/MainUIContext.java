@@ -26,14 +26,12 @@ import javafx.scene.Scene;
 public class MainUIContext {
 
     //-------------- Attributes ----------------------//
-    // Issue 2 Fix: Thread-safe singleton via eager initialization
     private static final MainUIContext instance = new MainUIContext();
     private final BooleanProperty darkModeActive = new SimpleBooleanProperty(
         false
     );
     private ClientOrganization activeClient;
     private volatile List<MatchHypothesis> pendingHypotheses;
-    // Issue 2 Fix: Typed interface instead of Object
     private volatile IWorkspaceController workspaceController;
     private volatile SystemUser currentUser;
     private volatile ReconciliationWorkspace activeWorkspace;
@@ -65,7 +63,6 @@ public class MainUIContext {
         return instance;
     }
 
-    //Issue 2 Fix: Clear all session-scoped fields when exiting a workspace
     public synchronized void clearSession() {
         this.activeWorkspace = null;
         this.standardizedLedgerTransactions = null;
@@ -79,17 +76,13 @@ public class MainUIContext {
         this.anomalies = null;
     }
 
-    //Issue 2 Fix: Track vectorization availability
     private volatile boolean vectorizationAvailable = true;
 
     //Getters
     public BooleanProperty darkModeActiveProperty() { return darkModeActive; }
     public boolean isDarkModeActive() { return darkModeActive.get(); }
     public ClientOrganization getActiveClient() { return activeClient; }
-    public List<MatchHypothesis> getPendingHypotheses() {
-        return pendingHypotheses != null ? pendingHypotheses : Collections.emptyList();
-    }
-    // Issue 2 Fix: Typed setter
+    public List<MatchHypothesis> getPendingHypotheses() { return pendingHypotheses != null ? pendingHypotheses : Collections.emptyList(); }
     public IWorkspaceController getWorkspaceController() { return workspaceController; }
     public SystemUser getCurrentUser() { return currentUser; }
     public ReconciliationWorkspace getActiveWorkspace() { return activeWorkspace; }
@@ -99,29 +92,17 @@ public class MainUIContext {
     public EmailService getEmailService() { return emailService; }
     public AnomalyDetectionEngine getAnomalyDetectionEngine() { return anomalyDetectionEngine; }
     public DataStore getDataStore() { return dataStore; }
-    public List<StandardizedTransaction> getStandardizedLedgerTransactions() {
-        return standardizedLedgerTransactions != null ? standardizedLedgerTransactions : Collections.emptyList();
-    }
-    public List<StandardizedTransaction> getStandardizedBankTransactions() {
-        return standardizedBankTransactions != null ? standardizedBankTransactions : Collections.emptyList();
-    }
-    public List<MatchHypothesis> getAllHypotheses() {
-        return allHypotheses != null ? allHypotheses : Collections.emptyList();
-    }
+    public List<StandardizedTransaction> getStandardizedLedgerTransactions() { return standardizedLedgerTransactions != null ? standardizedLedgerTransactions : Collections.emptyList(); }
+    public List<StandardizedTransaction> getStandardizedBankTransactions() { return standardizedBankTransactions != null ? standardizedBankTransactions : Collections.emptyList(); }
+    public List<MatchHypothesis> getAllHypotheses() { return allHypotheses != null ? allHypotheses : Collections.emptyList(); }
     public List<ReconciliationRecord> getReconciledRecords() {
         synchronized (reconciledRecords) {
             return new ArrayList<>(reconciledRecords);
         }
     }
-    public List<StandardizedTransaction> getUnmatchedLedger() {
-        return unmatchedLedger != null ? unmatchedLedger : Collections.emptyList();
-    }
-    public List<StandardizedTransaction> getUnmatchedBank() {
-        return unmatchedBank != null ? unmatchedBank : Collections.emptyList();
-    }
-    public List<String> getAnomalies() {
-        return anomalies != null ? anomalies : Collections.emptyList();
-    }
+    public List<StandardizedTransaction> getUnmatchedLedger() { return unmatchedLedger != null ? unmatchedLedger : Collections.emptyList(); }
+    public List<StandardizedTransaction> getUnmatchedBank() { return unmatchedBank != null ? unmatchedBank : Collections.emptyList(); }
+    public List<String> getAnomalies() { return anomalies != null ? anomalies : Collections.emptyList(); }
     public boolean isVectorizationAvailable() { return vectorizationAvailable; }
 
     //Setters

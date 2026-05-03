@@ -46,10 +46,10 @@ public class ReconciliationWorkspace {
     public ClientOrganization getClientOrganization() { return clientOrganization; }
     public MatchingConfig getMatchingConfig() { return matchingConfig; }
     public List<FinancialDataset> getDatasets() { return datasets; }
-    public List<MatchHypothesis> getHypotheses() {  return hypotheses; }
-    public List<ReconciliationRecord> getRecords() { return records;}
+    public List<MatchHypothesis> getHypotheses() { return hypotheses; }
+    public List<ReconciliationRecord> getRecords() { return records; }
     public WorkspaceStatus getStatus() { return status; }
     //Setters
-    public void setStatus(WorkspaceStatus status) { this.status = status;}
+    public void setStatus(WorkspaceStatus status) { this.status = status; }
 
 }

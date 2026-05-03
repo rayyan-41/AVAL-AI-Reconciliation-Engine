@@ -19,12 +19,14 @@ import javax.mail.internet.MimeMultipart;
  */
 public class EmailService {
 
+    //-------------- Attributes ----------------------//
     private final String host;
     private final int port;
     private final String username;
     private final String password;
     private final String fromAddress;
 
+    //-------------- Methods ----------------------//
     public EmailService(
         String host,
         int port,

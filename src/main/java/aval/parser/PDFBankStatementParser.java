@@ -23,6 +23,7 @@ public class PDFBankStatementParser
     implements DocumentParser<RawBankStatement>
 {
 
+    //-------------- Methods ----------------------//
     public PDFBankStatementParser(
         String pageParsingStrategy,
         List<String> tableDetectionHeuristics
@@ -114,9 +115,7 @@ public class PDFBankStatementParser
     }
 
     @Override
-    public String getSupportedFormat() {
-        return "PDF";
-    }
+    public String getSupportedFormat() { return "PDF"; }
 
     @Override
     public List<String[]> extractRawRows(String filePath) {

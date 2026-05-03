@@ -28,6 +28,7 @@ import org.mindrot.jbcrypt.BCrypt;
 //@gof:    Repository / DAO
 public class DataStore {
 
+    //-------------- Attributes ----------------------//
     private final DataSource dataSource;
 
     public DataStore(DataSource dataSource) {
@@ -37,6 +38,7 @@ public class DataStore {
     /**
      * Saves a standardized ledger (internal) transaction along with its semantic embedding to pgvector.
      */
+    //-------------- Methods ----------------------//
     public void saveStandardizedLedgerTransaction(
         StandardizedTransaction tx,
         SemanticEmbedding embedding

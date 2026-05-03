@@ -19,6 +19,7 @@ import java.util.List;
 
 public class AuthController {
 
+    //-------------- Attributes ----------------------//
     @FXML
     private HBox rootNode;
 

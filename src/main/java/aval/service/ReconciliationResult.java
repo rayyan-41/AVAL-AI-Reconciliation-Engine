@@ -10,9 +10,11 @@ import java.util.List;
  */
 public class ReconciliationResult {
 
+    //-------------- Attributes ----------------------//
     private final List<MatchHypothesis> hypotheses;
     private final List<ReconciliationRecord> autoReconciledRecords;
 
+    //-------------- Methods ----------------------//
     public ReconciliationResult(
         List<MatchHypothesis> hypotheses,
         List<ReconciliationRecord> autoReconciledRecords
@@ -21,11 +23,7 @@ public class ReconciliationResult {
         this.autoReconciledRecords = autoReconciledRecords;
     }
 
-    public List<MatchHypothesis> getHypotheses() {
-        return hypotheses;
-    }
+    public List<MatchHypothesis> getHypotheses() { return hypotheses; }
 
-    public List<ReconciliationRecord> getAutoReconciledRecords() {
-        return autoReconciledRecords;
-    }
+    public List<ReconciliationRecord> getAutoReconciledRecords() { return autoReconciledRecords; }
 }

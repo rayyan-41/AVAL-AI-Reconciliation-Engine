@@ -4,7 +4,12 @@
       "Bash(./mvnw.cmd compile *)",
       "Bash(Remove-Item *)",
       "Bash(./mvnw.cmd clean *)",
-      "Bash(javac -cp \"target/classes;$\\(cat cp.txt\\)\" -d target/test-classes src/test/java/aval/parser/PdfTextExtractTest.java)"
+      "Bash(javac -cp \"target/classes;$\\(cat cp.txt\\)\" -d target/test-classes src/test/java/aval/parser/PdfTextExtractTest.java)",
+      "PowerShell(Get-Command *)",
+      "PowerShell($env:Path -split ';' | Where-Object { $_ -match 'maven|gradle|java' } | Select-Object -First 5)",
+      "Bash(where.exe mvn *)",
+      "Read(//c/Program Files/**)",
+      "Bash(mvn test *)"
     ]
   }
 }

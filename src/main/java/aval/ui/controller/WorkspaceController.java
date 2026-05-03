@@ -22,6 +22,7 @@ import javafx.stage.Stage;
 
 public class WorkspaceController {
 
+    //-------------- Attributes ----------------------//
     @FXML
     private Label wsCompanyName;
 

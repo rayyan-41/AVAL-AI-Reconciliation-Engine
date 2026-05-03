@@ -35,6 +35,7 @@ public class ReportService {
      * Generates a comprehensive CSV report detailing reconciled transactions,
      * along with unmatched transactions from both the internal ledger and the bank statement.
      */
+    //-------------- Methods ----------------------//
     public void generateReconciliationReport(
         List<ReconciliationRecord> reconciledRecords,
         List<StandardizedTransaction> unmatchedLedger,

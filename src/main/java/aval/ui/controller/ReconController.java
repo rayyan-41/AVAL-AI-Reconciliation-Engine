@@ -50,6 +50,7 @@ import javafx.util.Duration;
 
 public class ReconController {
 
+    //-------------- Attributes ----------------------//
     @FXML
     private HBox actionBar;
 
@@ -141,20 +142,22 @@ public class ReconController {
     public void initialize() {
         // Set dynamic period based on current date
         java.time.LocalDate now = java.time.LocalDate.now();
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM yyyy");
+        java.time.format.DateTimeFormatter formatter =
+            java.time.format.DateTimeFormatter.ofPattern("MMM yyyy");
         periodLabel.setText("Reconciliation Period: " + now.format(formatter));
 
         setupDropZone();
         setupLedgerTable();
 
-        // Issue 1 Fix: Load existing transactions from DB if workspace already has data
         MainUIContext ctx = MainUIContext.getInstance();
         DataStore ds = ctx.getDataStore();
         ReconciliationWorkspace ws = ctx.getActiveWorkspace();
         if (ds != null && ws != null) {
             UUID wsId = ws.getWorkspaceId();
-            List<StandardizedTransaction> ledger = ds.getLedgerTransactionsForWorkspace(wsId);
-            List<StandardizedTransaction> bank = ds.getBankTransactionsForWorkspace(wsId);
+            List<StandardizedTransaction> ledger =
+                ds.getLedgerTransactionsForWorkspace(wsId);
+            List<StandardizedTransaction> bank =
+                ds.getBankTransactionsForWorkspace(wsId);
             if (!ledger.isEmpty()) {
                 ctx.setStandardizedLedgerTransactions(ledger);
                 populateLedgerTable(ledger);
@@ -171,6 +174,16 @@ public class ReconController {
             }
         } else {
             showBankState("dropzone");
+        }
+
+        if (!ctx.isVectorizationAvailable()) {
+            dropZonePane.setDisable(true);
+            ledgerStatus.setText(
+                "Ollama unavailable — start service to enable ingestion"
+            );
+            ledgerStatus.getStyleClass().setAll("badge", "badge-review");
+            bankStatus.setText("Ollama unavailable");
+            bankStatus.getStyleClass().setAll("badge", "badge-review");
         }
         updateReconButtonState();
     }
@@ -232,6 +245,7 @@ public class ReconController {
         populateLedgerTable(List.of());
     }
 
+    //-------------- Methods ----------------------//
     public void populateLedgerTable(
         List<StandardizedTransaction> transactions
     ) {
@@ -340,7 +354,10 @@ public class ReconController {
 
         task.setOnFailed(e ->
             Platform.runLater(() -> {
-                String errMsg = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                String errMsg =
+                    task.getException() != null
+                        ? task.getException().getMessage()
+                        : "Unknown error";
                 System.err.println("[LEDGER ERROR] " + errMsg);
                 task.getException().printStackTrace();
                 MainUIContext.getInstance().setStandardizedLedgerTransactions(
@@ -421,7 +438,10 @@ public class ReconController {
 
         task.setOnFailed(e ->
             Platform.runLater(() -> {
-                String errMsg = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                String errMsg =
+                    task.getException() != null
+                        ? task.getException().getMessage()
+                        : "Unknown error";
                 System.err.println("[BANK STATEMENT ERROR] " + errMsg);
                 task.getException().printStackTrace();
                 MainUIContext.getInstance().setStandardizedBankTransactions(
@@ -552,7 +572,8 @@ public class ReconController {
             Platform.runLater(() -> {
                 ReconciliationResult result = task.getValue();
                 List<MatchHypothesis> all = result.getHypotheses();
-                List<ReconciliationRecord> autoRecords = result.getAutoReconciledRecords();
+                List<ReconciliationRecord> autoRecords =
+                    result.getAutoReconciledRecords();
                 MainUIContext ctx = MainUIContext.getInstance();
                 ctx.setAllHypotheses(all);
 
@@ -646,14 +667,35 @@ public class ReconController {
 
     private void updateReconButtonState() {
         MainUIContext ctx = MainUIContext.getInstance();
-        boolean ready =
-            ctx.getStandardizedLedgerTransactions() != null &&
-            ctx.getStandardizedBankTransactions() != null;
+        List<StandardizedTransaction> ledger =
+            ctx.getStandardizedLedgerTransactions();
+        List<StandardizedTransaction> bank =
+            ctx.getStandardizedBankTransactions();
+        boolean ledgerReady = ledger != null && !ledger.isEmpty();
+        boolean bankReady = bank != null && !bank.isEmpty();
+        boolean ready = ledgerReady && bankReady;
         btnRecon.setDisable(!ready);
-        reconHint.setText(
-            ready
-                ? "Both datasets loaded. Ready to reconcile."
-                : "Load both datasets to proceed."
-        );
+
+        if (!ledgerReady && !bankReady) {
+            reconHint.setText(
+                "Load both the ledger and bank statement to proceed."
+            );
+        } else if (!ledgerReady) {
+            reconHint.setText(
+                "Ledger not loaded or contains no valid transactions."
+            );
+        } else if (!bankReady) {
+            reconHint.setText(
+                "Bank statement not loaded or contains no valid transactions."
+            );
+        } else {
+            reconHint.setText(
+                "Ready to reconcile " +
+                    ledger.size() +
+                    " ledger and " +
+                    bank.size() +
+                    " bank transactions."
+            );
+        }
     }
 }

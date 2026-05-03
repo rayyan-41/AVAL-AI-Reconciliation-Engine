@@ -15,9 +15,11 @@ import java.util.UUID;
 //@gof:    N/A
 public class RawInternalLedger extends FinancialDataset {
 
+    //-------------- Attributes ----------------------//
     private String accountingSystem;
     private String fiscalPeriod;
 
+    //-------------- Methods ----------------------//
     public RawInternalLedger(
         UUID datasetId,
         LocalDate importDate,
@@ -32,9 +34,7 @@ public class RawInternalLedger extends FinancialDataset {
     }
 
     @Override
-    public DataSourceType getSourceType() {
-        return DataSourceType.INTERNAL_EXCEL;
-    }
+    public DataSourceType getSourceType() { return DataSourceType.INTERNAL_EXCEL; }
 
     @Override
     public boolean validate() {

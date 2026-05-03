@@ -42,6 +42,7 @@ public class RegistryController {
     @FXML private TableColumn<ClientOrganization, String> statusCol;
     @FXML private TableColumn<ClientOrganization, Void> arrowCol;
 
+    //-------------- Attributes ----------------------//
     private ObservableList<ClientOrganization> allClients;
     private FilteredList<ClientOrganization> filtered;
 

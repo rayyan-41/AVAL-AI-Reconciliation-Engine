@@ -24,19 +24,11 @@ public class MatchingConfig {
     //----------- Methods ------------//
 
     //Getters
-    public Double getAutoConfirmThreshold() {
-        return this.autoConfirmThreshold;
-    }
+    public Double getAutoConfirmThreshold() { return this.autoConfirmThreshold; }
 
-    public Double getReviewFloor() {
-        return this.reviewFloor;
-    }
+    public Double getReviewFloor() { return this.reviewFloor; }
 
-    public Integer getRuleBasedDateToleranceDays() {
-        return this.ruleBasedDateToleranceDays;
-    }
+    public Integer getRuleBasedDateToleranceDays() { return this.ruleBasedDateToleranceDays; }
 
-    public Integer getSemanticMaxCandidates() {
-        return this.semanticMaxCandidates;
-    }
+    public Integer getSemanticMaxCandidates() { return this.semanticMaxCandidates; }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 //@gof:    Strategy
 public class RuleBasedMatchingEngine implements MatchingEngine {
 
+    //-------------- Attributes ----------------------//
     private final MatchingConfig matchingConfig;
     private static final double EXACT_MATCH_CONFIDENCE = 1.0;
 
@@ -22,6 +23,7 @@ public class RuleBasedMatchingEngine implements MatchingEngine {
         this.matchingConfig = matchingConfig;
     }
 
+    //-------------- Methods ----------------------//
     @Override
     public List<MatchHypothesis> generateHypotheses(
         List<StandardizedTransaction> ledgerTransactions,

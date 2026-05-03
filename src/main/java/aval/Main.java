@@ -7,12 +7,12 @@ package aval;
 
 import aval.domain.core.MatchingConfig;
 import aval.engine.AnomalyDetectionEngine;
+import aval.engine.HybridMatchingEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.MatchingEngine;
 import aval.engine.RuleBasedMatchingEngine;
 import aval.engine.SemanticMatchingEngine;
 import aval.engine.VectorizationEngine;
-import aval.engine.HybridMatchingEngine;
 import aval.persistence.DataStore;
 import aval.service.EmailService;
 import aval.service.IngestionService;
@@ -124,7 +124,20 @@ public class Main extends Application {
                         requireProperty(appConfig, "ollama.baseUrl"),
                         requireProperty(appConfig, "ollama.model")
                     );
-                MatchingEngine ruleEngine = new RuleBasedMatchingEngine(matchingConfig);
+
+                MainUIContext context = MainUIContext.getInstance();
+                if (!vectorizationEngine.healthCheck()) {
+                    System.err.println(
+                        "[STARTUP] Ollama is not reachable. Ingestion will be unavailable."
+                    );
+                    context.setVectorizationAvailable(false);
+                } else {
+                    context.setVectorizationAvailable(true);
+                }
+
+                MatchingEngine ruleEngine = new RuleBasedMatchingEngine(
+                    matchingConfig
+                );
                 MatchingEngine semanticEngine = new SemanticMatchingEngine(
                     vectorizationEngine,
                     dataStore,
@@ -147,7 +160,9 @@ public class Main extends Application {
 
                 EmailService emailService = new EmailService(
                     requireProperty(appConfig, "mail.smtp.host"),
-                    Integer.parseInt(requireProperty(appConfig, "mail.smtp.port")),
+                    Integer.parseInt(
+                        requireProperty(appConfig, "mail.smtp.port")
+                    ),
                     requireProperty(appConfig, "mail.smtp.username"),
                     requireProperty(appConfig, "mail.smtp.password"),
                     requireProperty(appConfig, "mail.from")

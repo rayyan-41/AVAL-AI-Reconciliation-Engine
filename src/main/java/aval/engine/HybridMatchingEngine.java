@@ -15,9 +15,11 @@ import java.util.UUID;
  */
 public class HybridMatchingEngine implements MatchingEngine {
 
+    //-------------- Attributes ----------------------//
     private final MatchingEngine ruleBasedEngine;
     private final MatchingEngine semanticEngine;
 
+    //-------------- Methods ----------------------//
     public HybridMatchingEngine(
         MatchingEngine ruleBasedEngine,
         MatchingEngine semanticEngine
