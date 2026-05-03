@@ -10,6 +10,7 @@ import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.domain.ingestion.FinancialDataset;
 import aval.engine.AnomalyDetectionEngine;
+import aval.persistence.DataStore;
 import aval.service.IngestionService;
 import aval.service.ReconciliationResult;
 import aval.service.ReconciliationService;
@@ -145,7 +146,32 @@ public class ReconController {
 
         setupDropZone();
         setupLedgerTable();
-        showBankState("dropzone");
+
+        // Issue 1 Fix: Load existing transactions from DB if workspace already has data
+        MainUIContext ctx = MainUIContext.getInstance();
+        DataStore ds = ctx.getDataStore();
+        ReconciliationWorkspace ws = ctx.getActiveWorkspace();
+        if (ds != null && ws != null) {
+            UUID wsId = ws.getWorkspaceId();
+            List<StandardizedTransaction> ledger = ds.getLedgerTransactionsForWorkspace(wsId);
+            List<StandardizedTransaction> bank = ds.getBankTransactionsForWorkspace(wsId);
+            if (!ledger.isEmpty()) {
+                ctx.setStandardizedLedgerTransactions(ledger);
+                populateLedgerTable(ledger);
+                ledgerStatus.setText("Loaded — " + ledger.size() + " records");
+                ledgerStatus.getStyleClass().setAll("badge", "badge-active");
+            }
+            if (!bank.isEmpty()) {
+                ctx.setStandardizedBankTransactions(bank);
+                showBankState("ingested");
+                bankStatus.setText("Ingested — " + bank.size() + " records");
+                bankStatus.getStyleClass().setAll("badge", "badge-active");
+            } else {
+                showBankState("dropzone");
+            }
+        } else {
+            showBankState("dropzone");
+        }
         updateReconButtonState();
     }
 

@@ -688,5 +688,88 @@ public class DataStore {
             throw new RuntimeException("Failed to register user: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Issue 1 Fix: Retrieves the latest workspace for a client org.
+     */
+    public java.util.Optional<ReconciliationWorkspace> findLatestWorkspaceForClient(java.util.UUID clientId) {
+        String sql = "SELECT workspace_id, status FROM reconciliation_workspace"
+                   + " WHERE org_id = ? ORDER BY created_at DESC LIMIT 1";
+        try (Connection c = dataSource.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setObject(1, clientId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                ClientOrganization org = findClientOrganizationById(clientId);
+                ReconciliationWorkspace ws = new ReconciliationWorkspace(
+                    (java.util.UUID) rs.getObject("workspace_id"),
+                    org,
+                    null
+                );
+                return java.util.Optional.of(ws);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("findLatestWorkspaceForClient failed: " + e.getMessage(), e);
+        }
+        return java.util.Optional.empty();
+    }
+
+    /**
+     * Issue 1 Fix: Retrieves ledger transactions for a workspace.
+     */
+    public List<StandardizedTransaction> getLedgerTransactionsForWorkspace(java.util.UUID workspaceId) {
+        String sql = "SELECT sl.transaction_id, sl.value_date, sl.amount, sl.narrative, sl.transaction_type, sl.source_dataset_id"
+                   + " FROM standardized_ledger sl"
+                   + " JOIN financial_dataset fd ON sl.source_dataset_id = fd.dataset_id"
+                   + " WHERE fd.workspace_id = ?";
+        List<StandardizedTransaction> result = new ArrayList<>();
+        try (Connection c = dataSource.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setObject(1, workspaceId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                result.add(new StandardizedTransaction(
+                    (java.util.UUID) rs.getObject("transaction_id"),
+                    rs.getDate("value_date").toLocalDate(),
+                    rs.getBigDecimal("amount"),
+                    rs.getString("narrative"),
+                    TransactionType.valueOf(rs.getString("transaction_type")),
+                    (java.util.UUID) rs.getObject("source_dataset_id")
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("getLedgerTransactionsForWorkspace failed: " + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * Issue 1 Fix: Retrieves bank transactions for a workspace.
+     */
+    public List<StandardizedTransaction> getBankTransactionsForWorkspace(java.util.UUID workspaceId) {
+        String sql = "SELECT sb.transaction_id, sb.value_date, sb.amount, sb.narrative, sb.transaction_type, sb.source_dataset_id"
+                   + " FROM standardized_bank sb"
+                   + " JOIN financial_dataset fd ON sb.source_dataset_id = fd.dataset_id"
+                   + " WHERE fd.workspace_id = ?";
+        List<StandardizedTransaction> result = new ArrayList<>();
+        try (Connection c = dataSource.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setObject(1, workspaceId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                result.add(new StandardizedTransaction(
+                    (java.util.UUID) rs.getObject("transaction_id"),
+                    rs.getDate("value_date").toLocalDate(),
+                    rs.getBigDecimal("amount"),
+                    rs.getString("narrative"),
+                    TransactionType.valueOf(rs.getString("transaction_type")),
+                    (java.util.UUID) rs.getObject("source_dataset_id")
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("getBankTransactionsForWorkspace failed: " + e.getMessage());
+        }
+        return result;
+    }
 }
 

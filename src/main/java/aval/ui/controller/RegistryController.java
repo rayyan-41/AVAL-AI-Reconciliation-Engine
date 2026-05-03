@@ -182,20 +182,17 @@ public class RegistryController {
     private void openWorkspace(ClientOrganization client) {
         DataStore ds = MainUIContext.getInstance().getDataStore();
 
-        ReconciliationWorkspace workspace = new ReconciliationWorkspace(
-            UUID.randomUUID(),
-            client,
-            new MatchingConfig()
-        );
+        ReconciliationWorkspace workspace;
         if (ds != null) {
-            try {
+            java.util.Optional<ReconciliationWorkspace> existing = ds.findLatestWorkspaceForClient(client.getOrgId());
+            if (existing.isPresent()) {
+                workspace = existing.get();
+            } else {
+                workspace = new ReconciliationWorkspace(UUID.randomUUID(), client, new MatchingConfig());
                 ds.saveReconciliationWorkspace(workspace);
-            } catch (RuntimeException e) {
-                System.err.println(
-                    "Failed to persist workspace. Continuing in local mode: " +
-                    e.getMessage()
-                );
             }
+        } else {
+            workspace = new ReconciliationWorkspace(UUID.randomUUID(), client, new MatchingConfig());
         }
 
         MainUIContext ctx = MainUIContext.getInstance();
