@@ -34,6 +34,7 @@ import javafx.stage.Stage;
 public class RegistryController {
 
     @FXML private TextField searchField;
+    @FXML private Label userLabel;
     @FXML private TableView<ClientOrganization> clientTable;
     @FXML private TableColumn<ClientOrganization, String> nameCol;
     @FXML private TableColumn<ClientOrganization, String> industryCol;
@@ -44,6 +45,12 @@ public class RegistryController {
     private FilteredList<ClientOrganization> filtered;
 
     public void initialize() {
+        // Set user label from current user
+        var currentUser = MainUIContext.getInstance().getCurrentUser();
+        if (currentUser != null && userLabel != null) {
+            userLabel.setText("Signed in as " + currentUser.getFullName());
+        }
+
         allClients = FXCollections.observableArrayList();
         filtered = new FilteredList<>(allClients, p -> true);
 
@@ -164,7 +171,7 @@ public class RegistryController {
 
     @FXML
     private void handleRowClick(MouseEvent e) {
-        if (e.getClickCount() >= 1) {
+        if (e.getClickCount() == 2) {
             ClientOrganization selected = clientTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 openWorkspace(selected);

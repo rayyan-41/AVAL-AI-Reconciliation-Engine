@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw.cmd compile *)",
+      "Bash(Remove-Item *)",
+      "Bash(./mvnw.cmd clean *)",
+      "Bash(javac -cp \"target/classes;$\\(cat cp.txt\\)\" -d target/test-classes src/test/java/aval/parser/PdfTextExtractTest.java)"
+    ]
+  }
+}

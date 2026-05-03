@@ -51,9 +51,9 @@ public class PDFBankStatementParser
             String text = stripper.getText(document);
             String[] lines = text.split("\\r?\\n");
 
-            // Look for a line starting with a date like MM/DD/YYYY or similar
+            // Look for a date like MM/DD/YYYY or similar anywhere in the line
             Pattern datePattern = Pattern.compile(
-                "^(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})"
+                "(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})"
             );
             Pattern amountPattern = Pattern.compile("([\\d,]+\\.\\d{2})");
 

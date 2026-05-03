@@ -10,8 +10,11 @@ import aval.engine.AnomalyDetectionEngine;
 import aval.engine.LangChain4jVectorizationEngine;
 import aval.engine.MatchingEngine;
 import aval.engine.RuleBasedMatchingEngine;
+import aval.engine.SemanticMatchingEngine;
 import aval.engine.VectorizationEngine;
+import aval.engine.HybridMatchingEngine;
 import aval.persistence.DataStore;
+import aval.service.EmailService;
 import aval.service.IngestionService;
 import aval.service.ReconciliationService;
 import aval.service.ReportService;
@@ -83,14 +86,10 @@ public class Main extends Application {
 
             // Load fonts before any Scene is created
             Font.loadFont(
-                getClass().getResourceAsStream("/aval/ui/fonts/Jura-Bold.ttf"),
-                72
-            );
-            Font.loadFont(
                 getClass().getResourceAsStream(
-                    "/aval/ui/fonts/Jura-SemiBold.ttf"
+                    "/aval/ui/fonts/Jura-VariableFont_wght.ttf"
                 ),
-                18
+                72
             );
 
             DataStore dataStore = null;
@@ -125,8 +124,15 @@ public class Main extends Application {
                         requireProperty(appConfig, "ollama.baseUrl"),
                         requireProperty(appConfig, "ollama.model")
                     );
-                MatchingEngine matchingEngine = new RuleBasedMatchingEngine(
+                MatchingEngine ruleEngine = new RuleBasedMatchingEngine(matchingConfig);
+                MatchingEngine semanticEngine = new SemanticMatchingEngine(
+                    vectorizationEngine,
+                    dataStore,
                     matchingConfig
+                );
+                MatchingEngine matchingEngine = new HybridMatchingEngine(
+                    ruleEngine,
+                    semanticEngine
                 );
 
                 ingestionService = new IngestionService(
@@ -138,6 +144,21 @@ public class Main extends Application {
                     matchingEngine,
                     dataStore
                 );
+
+                EmailService emailService = new EmailService(
+                    requireProperty(appConfig, "mail.smtp.host"),
+                    Integer.parseInt(requireProperty(appConfig, "mail.smtp.port")),
+                    requireProperty(appConfig, "mail.smtp.username"),
+                    requireProperty(appConfig, "mail.smtp.password"),
+                    requireProperty(appConfig, "mail.from")
+                );
+                MainUIContext context = MainUIContext.getInstance();
+                context.setDataStore(dataStore);
+                context.setIngestionService(ingestionService);
+                context.setReconciliationService(reconciliationService);
+                context.setReportService(new ReportService());
+                context.setAnomalyDetectionEngine(new AnomalyDetectionEngine());
+                context.setEmailService(emailService);
             } catch (Exception e) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Database Unavailable");
@@ -157,17 +178,6 @@ public class Main extends Application {
                     new Thread(finalDataSource::close)
                 );
             }
-
-            ReportService reportService = new ReportService();
-            AnomalyDetectionEngine anomalyDetectionEngine =
-                new AnomalyDetectionEngine();
-
-            MainUIContext context = MainUIContext.getInstance();
-            context.setDataStore(dataStore);
-            context.setIngestionService(ingestionService);
-            context.setReconciliationService(reconciliationService);
-            context.setReportService(reportService);
-            context.setAnomalyDetectionEngine(anomalyDetectionEngine);
 
             System.out.println("[BOOT] Displaying Splash Screen...");
             FXMLLoader splashLoader = new FXMLLoader(

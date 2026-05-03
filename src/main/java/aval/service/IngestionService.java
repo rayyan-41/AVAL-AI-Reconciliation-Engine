@@ -33,24 +33,44 @@ public class IngestionService {
         String filePath,
         DataSourceType sourceType
     ) {
+        System.out.println("[INGESTION] ingestFile called - sourceType: " + sourceType + ", path: " + filePath);
+
         DocumentParser<? extends FinancialDataset> parser = createParser(
             sourceType
         );
 
-        if (parser.validate(filePath)) {
+        boolean isValid = parser.validate(filePath);
+        System.out.println("[INGESTION] Validation result: " + isValid);
+
+        if (isValid) {
             FinancialDataset dataset = parser.parse(filePath);
+            System.out.println("[INGESTION] Parsed dataset has " + dataset.getRawTransactions().size() + " raw transactions");
+
+            // Check if dataset has any transactions
+            if (dataset.getRawTransactions().isEmpty()) {
+                System.err.println("[INGESTION] WARNING: Parser returned 0 transactions! File may be empty or unreadable format.");
+            }
+
             this.dataStore.saveFinancialDataset(dataset, workspaceId);
             this.dataStore.saveRawTransactions(dataset.getRawTransactions());
             return dataset;
         }
+
+        System.err.println("[INGESTION] FAILED: File validation failed for: " + filePath);
         return null;
     }
 
     public List<StandardizedTransaction> standardize(FinancialDataset dataset) {
         List<StandardizedTransaction> standardizedList = new ArrayList<>();
 
+        System.out.println("[INGESTION] Standardize called with " + dataset.getRawTransactions().size() + " raw transactions");
+
+        int skipped = 0;
+        int processed = 0;
+
         for (aval.domain.ingestion.RawTransaction raw : dataset.getRawTransactions()) {
             if (!raw.hasValidAmount()) {
+                skipped++;
                 continue; // Skip invalid or empty amounts
             }
 
@@ -69,6 +89,7 @@ public class IngestionService {
                 dataset.getDatasetId()
             );
             standardizedList.add(std);
+            processed++;
 
             try {
                 aval.domain.ai.SemanticEmbedding embedding =
@@ -95,6 +116,8 @@ public class IngestionService {
                 );
             }
         }
+
+        System.out.println("[INGESTION] Standardize complete: processed=" + processed + ", skipped (invalid amount)=" + skipped);
 
         dataset.getStandardizedTransactions().addAll(standardizedList);
         dataset.markAsStandardized();

@@ -3,6 +3,7 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 <StackPane
     prefWidth="800"
     prefHeight="500"
@@ -16,10 +17,18 @@
   <VBox
         StackPane.alignment="TOP_LEFT"
         style="-fx-padding: 130 0 0 60;"
-        spacing="-8"
+        spacing="15"
     >
-    <Label text="AVAL" styleClass="splash-aval" />
-    <Label text="AIRE" styleClass="splash-aire" />
+      <VBox alignment="TOP_LEFT" spacing="2">
+          <Label text="AIRE" styleClass="splash-aval" />
+          <Label text="V1.00.2" styleClass="splash-aire" />
+      </VBox>
+
+      <Label
+            text="Intelligent Reconciliation&#10;For Modern Finance."
+            styleClass="splash-heading"
+            wrapText="true"
+        />
   </VBox>
 
   <!-- Bottom-left log label -->

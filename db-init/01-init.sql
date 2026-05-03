@@ -1,4 +1,4 @@
-﻿-- AVAL AI Reconciliation Engine - Database Initialization
+-- AVAL AI Reconciliation Engine - Database Initialization
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- 1. Standardized Ledger Transactions
@@ -45,8 +45,11 @@ CREATE TABLE reconciliation_records (
 -- 5. System Users
 CREATE TABLE app_user (
     user_id UUID PRIMARY KEY,
+    full_name VARCHAR(100),
+    cnic VARCHAR(20),
     username VARCHAR(50) UNIQUE NOT NULL,
     role VARCHAR(20) NOT NULL,
+    location VARCHAR(50),
     password_hash VARCHAR(255) NOT NULL DEFAULT ''
 );
 

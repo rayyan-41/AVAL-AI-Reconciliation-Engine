@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -12,15 +13,17 @@
 <HBox prefWidth="1200" prefHeight="800" fx:id="rootNode">
   <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
     <HBox styleClass="auth-wordmark" alignment="BOTTOM_LEFT">
-      <Label text="AVAL" styleClass="auth-wm-aval" />
-      <Label text="AIRE" styleClass="auth-wm-aire" />
+      <Label text="AIRE" styleClass="auth-wm-aval" />
+      <Label text="V1.00.2" styleClass="auth-wm-aire" />
     </HBox>
     <Label text="Create a new account&#10;to access the system." styleClass="auth-heading" wrapText="true" />
+    <Region styleClass="auth-rule" />
+    <Label text="Access is restricted to certified system officers and financial officers authorized to use this reconciliation platform." styleClass="auth-body" wrapText="true" />
   </VBox>
   <VBox styleClass="auth-right" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="0">
     <VBox maxWidth="360" spacing="15">
       <Label text="Register User" styleClass="lf-title" />
-      
+
       <VBox spacing="5">
         <Label text="NAME" styleClass="field-label" />
         <TextField fx:id="nameField" promptText="••••••••" styleClass="underlined-field" />
@@ -45,11 +48,7 @@
         <Label text="LOCATION" styleClass="field-label" />
         <ComboBox fx:id="locationComboBox" promptText="••••••••" maxWidth="Infinity" />
       </VBox>
-      <VBox spacing="5">
-        <Label text="REGISTRATION KEY" styleClass="field-label" />
-        <PasswordField fx:id="keyField" promptText="••••••••" styleClass="underlined-field" />
-      </VBox>
-      
+
       <VBox spacing="10">
         <Button text="Create User" maxWidth="Infinity" onAction="#handleCreateUser" styleClass="btn-primary" />
         <Button text="Back to Login" maxWidth="Infinity" onAction="#handleBack" styleClass="btn-secondary" />

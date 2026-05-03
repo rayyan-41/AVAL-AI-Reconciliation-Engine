@@ -14,10 +14,10 @@
 
   <!-- Topbar -->
   <HBox styleClass="reg-topbar" alignment="CENTER_LEFT">
-    <Label text="AVAL" styleClass="reg-wm-aval" />
-    <Label text="AIRE" styleClass="reg-wm-aire" />
+    <Label text="AIRE" styleClass="reg-wm-aval" />
+    <Label text="V1.00.2" styleClass="reg-wm-aire" />
     <Region HBox.hgrow="ALWAYS" />
-    <Label text="Signed in as Aryan" styleClass="tb-user" />
+    <Label fx:id="userLabel" styleClass="tb-user" />
     <Button text="Sign out" onAction="#handleSignOut" styleClass="btn-ghost" />
   </HBox>
 

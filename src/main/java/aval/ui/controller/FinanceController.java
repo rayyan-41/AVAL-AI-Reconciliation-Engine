@@ -51,10 +51,10 @@ public class FinanceController {
 
         // Stat cards
         statRow.getChildren().addAll(
-            makeStatCard("Ledger Transactions", "248",   "Current period",        "0d0d0d"),
-            makeStatCard("Last Match Rate",     "98.0%", "September 2024",        "1a5c2a"),
-            makeStatCard("Pending Review",      "5",     "Awaiting confirmation", "92400e"),
-            makeStatCard("Flagged Anomalies",   "2",     "Requires investigation","800020")
+            makeStatCard("Ledger Transactions", "—",     "Load data to begin",    "0d0d0d"),
+            makeStatCard("Last Match Rate",     "—",     "Run reconciliation",    "1a5c2a"),
+            makeStatCard("Pending Review",      "—",     "Awaiting reconciliation","92400e"),
+            makeStatCard("Flagged Anomalies",   "—",     "No data yet",           "800020")
         );
 
         // Metadata grids
@@ -157,13 +157,20 @@ public class FinanceController {
         ldgGrid.setHgap(30);
         ldgGrid.setVgap(12);
 
-        ldgGrid.add(makeGridLabel("Source file", true), 0, 0); ldgGrid.add(makeGridLabel("ledger_export_Q3.xlsx", false), 1, 0);
-        ldgGrid.add(makeGridLabel("Period", true), 0, 1); ldgGrid.add(makeGridLabel("Sep 1 - Sep 30, 2024", false), 1, 1);
-        ldgGrid.add(makeGridLabel("Total Records", true), 0, 2); ldgGrid.add(makeGridLabel("248 entries", false), 1, 2);
-        ldgGrid.add(makeGridLabel("Debits", true), 0, 3); ldgGrid.add(makeGridLabel("$142,500.00", false), 1, 3);
-        ldgGrid.add(makeGridLabel("Credits", true), 0, 4); ldgGrid.add(makeGridLabel("$150,100.00", false), 1, 4);
-        ldgGrid.add(makeGridLabel("Net", true), 0, 5); ldgGrid.add(makeGridLabel("+$7,600.00", false), 1, 5);
-        ldgGrid.add(makeGridLabel("Updated", true), 0, 6); ldgGrid.add(makeGridLabel("Today, 08:30 AM", false), 1, 6);
+        // Dynamic date for current period
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter periodFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM d");
+        String periodStart = now.withDayOfMonth(1).format(periodFormatter);
+        String periodEnd = now.format(periodFormatter);
+        String currentYear = String.valueOf(now.getYear());
+
+        ldgGrid.add(makeGridLabel("Source file", true), 0, 0); ldgGrid.add(makeGridLabel("—", false), 1, 0);
+        ldgGrid.add(makeGridLabel("Period", true), 0, 1); ldgGrid.add(makeGridLabel(periodStart + " - " + periodEnd + ", " + currentYear, false), 1, 1);
+        ldgGrid.add(makeGridLabel("Total Records", true), 0, 2); ldgGrid.add(makeGridLabel("—", false), 1, 2);
+        ldgGrid.add(makeGridLabel("Debits", true), 0, 3); ldgGrid.add(makeGridLabel("—", false), 1, 3);
+        ldgGrid.add(makeGridLabel("Credits", true), 0, 4); ldgGrid.add(makeGridLabel("—", false), 1, 4);
+        ldgGrid.add(makeGridLabel("Net", true), 0, 5); ldgGrid.add(makeGridLabel("—", false), 1, 5);
+        ldgGrid.add(makeGridLabel("Updated", true), 0, 6); ldgGrid.add(makeGridLabel("—", false), 1, 6);
     }
 
     private Label makeGridLabel(String text, boolean isKey) {

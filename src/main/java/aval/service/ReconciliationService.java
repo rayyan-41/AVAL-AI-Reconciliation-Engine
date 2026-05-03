@@ -38,7 +38,7 @@ public class ReconciliationService {
      * UC6 — Run Probabilistic Matching Engine
      * Orchestrates the generation of match candidates using the injected engine strategy.
      */
-    public List<MatchHypothesis> runMatching(
+    public ReconciliationResult runMatching(
         ReconciliationWorkspace workspace,
         List<StandardizedTransaction> ledgerTransactions,
         List<StandardizedTransaction> bankTransactions
@@ -52,7 +52,6 @@ public class ReconciliationService {
         double threshold = workspace
             .getMatchingConfig()
             .getAutoConfirmThreshold();
-        List<MatchHypothesis> reviewQueue = new ArrayList<>();
         List<ReconciliationRecord> autoRecords = new ArrayList<>();
         SystemUser systemUser = new SystemUser(
             java.util.UUID.randomUUID(),
@@ -74,7 +73,6 @@ public class ReconciliationService {
                 );
             } else {
                 hypothesis.setStatus(HypothesisStatus.PENDING_REVIEW);
-                reviewQueue.add(hypothesis);
             }
         }
 
@@ -85,7 +83,7 @@ public class ReconciliationService {
             dataStore.saveReconciliationRecords(autoRecords);
         }
 
-        return candidates;
+        return new ReconciliationResult(candidates, autoRecords);
     }
 
     /**
@@ -183,7 +181,8 @@ public class ReconciliationService {
         List<StandardizedTransaction> primary = multipleDatasets.get(0);
         for (int i = 1; i < multipleDatasets.size(); i++) {
             List<StandardizedTransaction> secondary = multipleDatasets.get(i);
-            consolidated.addAll(runMatching(workspace, primary, secondary));
+            ReconciliationResult result = runMatching(workspace, primary, secondary);
+            consolidated.addAll(result.getHypotheses());
         }
         return consolidated;
     }

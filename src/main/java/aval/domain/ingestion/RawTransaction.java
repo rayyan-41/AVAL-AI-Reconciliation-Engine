@@ -61,7 +61,7 @@ public class RawTransaction {
         }
         try {
             // Test parsing after cleaning commas and common symbols
-            String cleaned = this.rawAmount.replaceAll("[^\\d.-]", "");
+            String cleaned = this.rawAmount.replaceAll("[^\\d.,-]", "").replace(",", "");
             new BigDecimal(cleaned);
             return true;
         } catch (NumberFormatException e) {
@@ -75,7 +75,7 @@ public class RawTransaction {
             return BigDecimal.ZERO;
         }
         // Remove everything except numbers, decimals, and negative signs
-        String cleaned = this.rawAmount.replaceAll("[^\\d.-]", "");
+        String cleaned = this.rawAmount.replaceAll("[^\\d.,-]", "").replace(",", "");
         return new BigDecimal(cleaned);
     }
 

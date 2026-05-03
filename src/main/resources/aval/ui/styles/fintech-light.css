@@ -28,18 +28,28 @@
 }
 
 .splash-aval {
-    -fx-font-family: "Jura";
+    -fx-font-family: "Jura Light";
     -fx-font-size: 72px;
     -fx-font-weight: bold;
     -fx-text-fill: #c0001a;
+    -fx-stroke: #c0001a;
+    -fx-stroke-width: 2.5px;
+    -fx-translate-y: -12px;
 }
 
 .splash-aire {
     -fx-font-family: "Segoe UI";
-    -fx-font-size: 26px;
+    -fx-font-size: 36px;
     -fx-font-weight: 300;
     -fx-text-fill: #2a2a2a;
-    -fx-padding: 0 0 0 5;
+    -fx-translate-y: -12px;
+}
+
+.splash-heading {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-translate-y: -6px;
 }
 
 .splash-log {
@@ -61,25 +71,32 @@
     -fx-background-color: -fx-bg-subtle;
     -fx-border-color: transparent -fx-border transparent transparent;
     -fx-padding: 80 68 80 68;
+    -fx-pref-width: 600;
+    -fx-max-width: 600;
 }
 
 .auth-wordmark {
-    -fx-alignment: BOTTOM_LEFT;
+    -fx-alignment: CENTER_LEFT;
+    -fx-translate-x: -4;
+    -fx-translate-y: -4;
+    -fx-padding: 0 0 20 0;
 }
 
 .auth-wm-aval {
-    -fx-font-family: "Jura";
-    -fx-font-size: 36px;
+    -fx-font-family: "Jura Light";
+    -fx-font-size: 42px;
     -fx-font-weight: bold;
-    -fx-text-fill: -fx-accent;
+    -fx-text-fill: #c0001a;
+    -fx-stroke: #c0001a;
 }
 
 .auth-wm-aire {
     -fx-font-family: "Segoe UI";
-    -fx-font-size: 17px;
+    -fx-font-size: 21px;
     -fx-font-weight: 300;
-    -fx-text-fill: -fx-text-muted;
-    -fx-padding: 0 0 4 4;
+    -fx-text-fill: #2a2a2a;
+    -fx-padding: 0 0 0 6;
+    -fx-translate-y: 7;
 }
 
 .auth-heading {
@@ -102,11 +119,13 @@
     -fx-background-color: -fx-accent;
     -fx-min-width: 36;
     -fx-max-width: 36;
-    -fx-padding: 28 0 28 0;
+    -fx-padding: 50 0 28 0;
 }
 
 .auth-right {
     -fx-background-color: -fx-bg;
+    -fx-pref-width: 600;
+    -fx-max-width: 600;
 }
 
 .lf-title {
@@ -163,15 +182,13 @@
     -fx-max-height: 60px;
 }
 .reg-wm-aval {
-    -fx-font-family: "Jura";
+    -fx-font-family: "Jura Light";
     -fx-font-size: 24px;
-    -fx-font-weight: bold;
     -fx-text-fill: -fx-accent;
 }
 .reg-wm-aire {
     -fx-font-family: "Segoe UI";
     -fx-font-size: 14px;
-    -fx-font-weight: 300;
     -fx-text-fill: -fx-text-muted;
     -fx-padding: 0 0 4 4;
 }

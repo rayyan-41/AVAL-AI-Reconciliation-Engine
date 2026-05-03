@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
 import javafx.scene.layout.HBox;
 import javafx.scene.input.MouseEvent;
@@ -27,7 +28,6 @@ public class RegisterController {
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> roleComboBox;
     @FXML private ComboBox<String> locationComboBox;
-    @FXML private PasswordField keyField;
 
     @FXML
     public void initialize() {
@@ -48,13 +48,6 @@ public class RegisterController {
 
     @FXML
     private void handleCreateUser() {
-        String key = keyField.getText();
-        if (!"0767@AVAL".equals(key) && !"0581@AVAL".equals(key)) {
-            keyField.setStyle("-fx-border-color: transparent transparent #991b1b transparent;");
-            return;
-        }
-        keyField.setStyle("");
-
         String name = nameField.getText().trim();
         String cnic = cnicField.getText().trim();
         String username = usernameField.getText().trim();
@@ -63,7 +56,7 @@ public class RegisterController {
         String location = locationComboBox.getValue();
 
         if (name.isBlank() || cnic.isBlank() || username.isBlank() || password.isBlank() || roleSelection == null || location == null) {
-            return; // Add proper styling/feedback if needed
+            return;
         }
 
         UserRole role = "Finance Officer".equals(roleSelection) ? UserRole.ACCOUNTANT : UserRole.ADMIN;
@@ -72,7 +65,22 @@ public class RegisterController {
         DataStore ds = MainUIContext.getInstance().getDataStore();
         if (ds != null) {
             ds.registerUser(name, cnic, username, role, location, hashedPassword);
-            navigateTo("Auth.fxml");
+
+            Tooltip tooltip = new Tooltip(name + " has been granted access to all authorized workspaces.");
+            tooltip.setStyle("-fx-background-color: #f0faf2; -fx-text-fill: #1a5c2a; -fx-font-size: 14px; -fx-padding: 10;");
+            tooltip.show(nameField.getScene().getWindow());
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                javafx.application.Platform.runLater(() -> {
+                    tooltip.hide();
+                    navigateTo("Auth.fxml");
+                });
+            }).start();
         }
     }
 

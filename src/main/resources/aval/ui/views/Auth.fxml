@@ -7,62 +7,111 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.Region?>
-<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="aval.ui.controller.AuthController">
+<StackPane
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="aval.ui.controller.AuthController"
+>
 <HBox prefWidth="1200" prefHeight="800" fx:id="rootNode">
 
   <!-- LEFT PANEL -->
   <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
-    <HBox styleClass="auth-wordmark" alignment="BOTTOM_LEFT">
-      <Label text="AVAL" styleClass="auth-wm-aval" />
-      <Label text="AIRE" styleClass="auth-wm-aire" />
+    <HBox styleClass="auth-wordmark" alignment="CENTER_LEFT" spacing="4">
+      <Label text="AIRE" styleClass="auth-wm-aval" />
+      <Label text="V1.00.2" styleClass="auth-wm-aire" />
     </HBox>
     <Label
-            text="Intelligent reconciliation&#10;for modern finance."
-            styleClass="auth-heading"
-            wrapText="true"
-        />
+                text="Intelligent Reconciliation&#10;For Modern Finance."
+                styleClass="auth-heading"
+                wrapText="true"
+            />
     <Label
-            text="AVAL AIRE combines deterministic rule-matching with AI..."
-            styleClass="auth-body"
-            wrapText="true"
-        />
+                text="An Ollama powered financial reconciliation platform for SMEs."
+                styleClass="auth-body"
+                wrapText="true"
+            />
     <Region styleClass="auth-rule" />
-    <!-- Feature list: 4 Labels each preceded by a small dot Label -->
-    <Label text="• Deterministic rule-matching" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
-    <Label text="• Semantic vectorization" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
-    <Label text="• Probabilistic match engine" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
-    <Label text="• Multi-source consolidation" styleClass="auth-body" style="-fx-padding: 5 0 5 0;" />
+    <Label
+                text="• Deterministic Rule-Matching"
+                styleClass="auth-body"
+                style="-fx-padding: 5 0 5 0;"
+            />
+    <Label
+                text="• Semantic Vectorization of Database"
+                styleClass="auth-body"
+                style="-fx-padding: 5 0 5 0;"
+            />
+    <Label
+                text="• Ollama Vector Embeddings"
+                styleClass="auth-body"
+                style="-fx-padding: 5 0 5 0;"
+            />
+    <Label
+                text="• Multi-Source Consolidation"
+                styleClass="auth-body"
+                style="-fx-padding: 5 0 5 0;"
+            />
   </VBox>
 
   <!-- RIGHT PANEL -->
   <VBox
-        styleClass="auth-right"
-        HBox.hgrow="ALWAYS"
-        alignment="CENTER"
-        spacing="0"
-    >
+            styleClass="auth-right"
+            HBox.hgrow="ALWAYS"
+            alignment="CENTER"
+            spacing="0"
+        >
     <VBox maxWidth="360" spacing="26">
       <Label text="Sign in" styleClass="lf-title" />
       <Label text="Enter your credentials to continue." styleClass="lf-sub" />
-      <VBox fx:id="loginForm" spacing="26"><VBox spacing="7"><Label text="WORKSPACE ID" styleClass="field-label" />
-        <TextField
-                    fx:id="workspaceIdField"
-                    promptText="••••••••"
-                    styleClass="underlined-field"
-                />
+      <VBox fx:id="loginForm" spacing="26">
+        <VBox spacing="7">
+          <Label text="WORKSPACE ID" styleClass="field-label" /><TextField
+                            fx:id="workspaceIdField"
+                            promptText="••••••••"
+                            styleClass="underlined-field"
+                        />
       </VBox>
       <VBox spacing="7">
         <Label text="PASSKEY" styleClass="field-label" />
         <PasswordField
-                    fx:id="passkeyField"
-                    promptText="••••••••"
-                    styleClass="underlined-field"
-                />
-      </VBox>
-      <Button text="Authenticate" maxWidth="Infinity" onAction="#handleAuthenticate" styleClass="btn-primary" /><Button text="Register User" maxWidth="Infinity" onAction="#handleRegister" styleClass="btn-secondary" /></VBox><VBox fx:id="createUserForm" spacing="26" managed="false" visible="false"><Button text="Create User" maxWidth="Infinity" onAction="#handleRegister" styleClass="btn-primary" /></VBox>
+                            fx:id="passkeyField"
+                            promptText="••••••••"
+                            styleClass="underlined-field"
+                        />
+        </VBox>
+        <Button
+                        text="Authenticate"
+                        maxWidth="Infinity"
+                        onAction="#handleAuthenticate"
+                        styleClass="btn-primary"
+                    /><Button
+                        text="Register User"
+                        maxWidth="Infinity"
+                        onAction="#handleRegister"
+                        styleClass="btn-secondary"
+                    />
+        </VBox>
+        <VBox
+                    fx:id="createUserForm"
+                    spacing="26"
+                    managed="false"
+                    visible="false"
+                >
+                        <Button
+                        text="Create User"
+                        maxWidth="Infinity"
+                        onAction="#handleRegister"
+                        styleClass="btn-primary"
+                    />
+                    </VBox>
     </VBox>
   </VBox>
 
 </HBox>
-<Button text="✕" onAction="#handleClose" StackPane.alignment="TOP_RIGHT" style="-fx-background-color: transparent; -fx-font-size: 20px; -fx-text-fill: #666666; -fx-cursor: hand; -fx-padding: 10 20;" />
+<Button
+        text="✕"
+        onAction="#handleClose"
+        StackPane.alignment="TOP_RIGHT"
+        style="-fx-background-color: transparent; -fx-font-size: 20px; -fx-text-fill: #666666; -fx-cursor: hand; -fx-padding: 10 20;"
+    />
 </StackPane>

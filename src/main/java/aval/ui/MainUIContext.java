@@ -102,6 +102,7 @@ public class MainUIContext {
     public void setReconciliationService(ReconciliationService reconciliationService) { this.reconciliationService = reconciliationService; }
     public void setReportService(ReportService reportService) { this.reportService = reportService; }
     public void setAnomalyDetectionEngine(AnomalyDetectionEngine anomalyDetectionEngine) { this.anomalyDetectionEngine = anomalyDetectionEngine; }
+    public void setEmailService(EmailService emailService) { this.emailService = emailService; }
     public void setDataStore(DataStore dataStore) { this.dataStore = dataStore; }
     public void setStandardizedLedgerTransactions(List<StandardizedTransaction> standardizedLedgerTransactions) { this.standardizedLedgerTransactions = standardizedLedgerTransactions; }
     public void setStandardizedBankTransactions(List<StandardizedTransaction> standardizedBankTransactions) { this.standardizedBankTransactions = standardizedBankTransactions; }
@@ -127,14 +128,12 @@ public class MainUIContext {
     }
 
     /**
-     * Applies the current theme to the provided scene.
+     * Applies the light theme to the provided scene.
      * @param scene The JavaFX scene to style.
      */
     public void applyTheme(Scene scene) {
         scene.getStylesheets().clear();
-        String path = isDarkModeActive()
-            ? "/aval/ui/styles/fintech-dark.css"
-            : "/aval/ui/styles/fintech-light.css";
+        String path = "/aval/ui/styles/fintech-light.css";
         var resource = getClass().getResource(path);
         if (resource != null) {
             scene.getStylesheets().add(resource.toExternalForm());

@@ -10,18 +10,27 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.layout.HBox;
-import javafx.scene.input.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuthController {
-    @FXML private HBox rootNode;
+
+    @FXML
+    private HBox rootNode;
+
     private double xOffset = 0;
     private double yOffset = 0;
-    @FXML private void handleClose() { System.exit(0); }
 
-        @FXML
+    @FXML
+    private void handleClose() {
+        System.exit(0);
+    }
+
+    @FXML
     private TextField workspaceIdField;
 
     @FXML
@@ -124,7 +133,9 @@ public class AuthController {
                 "-fx-border-color: transparent transparent #991b1b transparent;"
             );
             Throwable failure = authTask.getException();
-            System.err.println("Authentication failed: " + failure.getMessage());
+            System.err.println(
+                "Authentication failed: " + failure.getMessage()
+            );
         });
 
         Thread authThread = new Thread(authTask);
@@ -134,27 +145,31 @@ public class AuthController {
 
     private void navigateTo(String fxml) {
         try {
-            Stage currentStage = (Stage) workspaceIdField.getScene().getWindow();
+            Stage currentStage = (Stage) workspaceIdField
+                .getScene()
+                .getWindow();
+
+            // Create fresh loader each time to avoid node reuse issues
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/aval/ui/views/" + fxml)
             );
             Parent root = loader.load();
-            Scene newScene = new Scene(root);
 
-            // Reapply existing stylesheets from the old scene if any
-            newScene
-                .getStylesheets()
-                .addAll(workspaceIdField.getScene().getStylesheets());
+            List<String> oldStyles = new ArrayList<>(workspaceIdField.getScene().getStylesheets());
 
             if (fxml.equals("Registry.fxml")) {
                 Stage newStage = new Stage();
                 newStage.setTitle("AVAL AIRE");
                 newStage.initStyle(javafx.stage.StageStyle.DECORATED);
-                newStage.setScene(new javafx.scene.Scene(root, 1200, 800));
+                Scene newScene = new Scene(root, 1200, 800);
+                newScene.getStylesheets().addAll(oldStyles);
+                newStage.setScene(newScene);
                 newStage.centerOnScreen();
                 newStage.show();
                 currentStage.close();
             } else {
+                Scene newScene = new Scene(root);
+                newScene.getStylesheets().addAll(oldStyles);
                 currentStage.setScene(newScene);
                 currentStage.centerOnScreen();
             }
@@ -168,4 +183,3 @@ public class AuthController {
         }
     }
 }
-

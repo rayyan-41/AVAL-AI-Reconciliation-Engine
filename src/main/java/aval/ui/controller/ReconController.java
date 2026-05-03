@@ -11,6 +11,7 @@ import aval.domain.core.ReconciliationWorkspace;
 import aval.domain.ingestion.FinancialDataset;
 import aval.engine.AnomalyDetectionEngine;
 import aval.service.IngestionService;
+import aval.service.ReconciliationResult;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
 import java.io.File;
@@ -137,7 +138,10 @@ public class ReconController {
     );
 
     public void initialize() {
-        periodLabel.setText("Reconciliation Period: Sep 2024");
+        // Set dynamic period based on current date
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM yyyy");
+        periodLabel.setText("Reconciliation Period: " + now.format(formatter));
 
         setupDropZone();
         setupLedgerTable();
@@ -310,10 +314,13 @@ public class ReconController {
 
         task.setOnFailed(e ->
             Platform.runLater(() -> {
+                String errMsg = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                System.err.println("[LEDGER ERROR] " + errMsg);
+                task.getException().printStackTrace();
                 MainUIContext.getInstance().setStandardizedLedgerTransactions(
                     null
                 );
-                ledgerStatus.setText("Error");
+                ledgerStatus.setText("Error: " + errMsg);
                 ledgerStatus.getStyleClass().setAll("badge", "badge-review");
                 updateReconButtonState();
             })
@@ -388,11 +395,14 @@ public class ReconController {
 
         task.setOnFailed(e ->
             Platform.runLater(() -> {
+                String errMsg = task.getException() != null ? task.getException().getMessage() : "Unknown error";
+                System.err.println("[BANK STATEMENT ERROR] " + errMsg);
+                task.getException().printStackTrace();
                 MainUIContext.getInstance().setStandardizedBankTransactions(
                     null
                 );
                 showBankState("dropzone");
-                bankStatus.setText("Parse Error");
+                bankStatus.setText("Parse Error: " + errMsg);
                 bankStatus.getStyleClass().setAll("badge", "badge-review");
                 updateReconButtonState();
             })
@@ -487,9 +497,9 @@ public class ReconController {
     }
 
     private void finishReconciliation() {
-        Task<List<MatchHypothesis>> task = new Task<>() {
+        Task<ReconciliationResult> task = new Task<>() {
             @Override
-            protected List<MatchHypothesis> call() {
+            protected ReconciliationResult call() {
                 MainUIContext ctx = MainUIContext.getInstance();
                 ReconciliationService svc = ctx.getReconciliationService();
                 ReconciliationWorkspace ws = ctx.getActiveWorkspace();
@@ -514,7 +524,9 @@ public class ReconController {
 
         task.setOnSucceeded(e ->
             Platform.runLater(() -> {
-                List<MatchHypothesis> all = task.getValue();
+                ReconciliationResult result = task.getValue();
+                List<MatchHypothesis> all = result.getHypotheses();
+                List<ReconciliationRecord> autoRecords = result.getAutoReconciledRecords();
                 MainUIContext ctx = MainUIContext.getInstance();
                 ctx.setAllHypotheses(all);
 
@@ -532,21 +544,7 @@ public class ReconController {
                     .collect(Collectors.toList());
                 ctx.setPendingHypotheses(pending);
 
-                SystemUser systemBot = new SystemUser(
-                    UUID.randomUUID(),
-                    "System (Auto-Reconcile)",
-                    "00000-0000000-0",
-                    "system_bot",
-                    UserRole.ADMIN,
-                    "System"
-                );
-                List<ReconciliationRecord> autoRecords = all
-                    .stream()
-                    .filter(
-                        h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED
-                    )
-                    .map(h -> new ReconciliationRecord(h, systemBot))
-                    .collect(Collectors.toList());
+                // Use the auto-reconciled records from the service (already persisted to DB)
                 ctx.setReconciledRecords(new ArrayList<>(autoRecords));
 
                 Set<UUID> matchedLedgerIds = all
