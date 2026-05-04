@@ -8,6 +8,7 @@ import aval.domain.SystemUser;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.core.MatchingConfig;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.engine.MatchingEngine;
 import aval.engine.VectorizationEngine;
@@ -54,9 +55,10 @@ public class ReconciliationService {
             bankTransactions
         );
 
-        double threshold = workspace
-            .getMatchingConfig()
-            .getAutoConfirmThreshold();
+        MatchingConfig config = workspace.getMatchingConfig();
+        double threshold = config != null
+            ? config.getAutoConfirmThreshold()
+            : new MatchingConfig().getAutoConfirmThreshold();
         List<ReconciliationRecord> autoRecords = new ArrayList<>();
         SystemUser systemUser = new SystemUser(
             SYSTEM_USER_ID,

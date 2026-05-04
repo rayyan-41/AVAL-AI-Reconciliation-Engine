@@ -8,6 +8,7 @@ import aval.common.enums.TransactionType;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.ingestion.FinancialDataset;
 import aval.domain.ingestion.RawInternalLedger;
 import aval.domain.ingestion.RawTransaction;
 import java.math.BigDecimal;

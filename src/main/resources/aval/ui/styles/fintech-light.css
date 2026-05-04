@@ -446,6 +446,7 @@
     -fx-border-color: transparent;
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 0 16 0 16;
+    -fx-text-fill: -fx-text-primary;
 }
 
 /* --- Phase 6: Reconciliation Workspace --- */

@@ -33,7 +33,9 @@ public class ReconciliationWorkspace {
         this.workspaceId = workspaceId;
         this.status = WorkspaceStatus.OPEN; // UC1 creates workspaces in OPEN state
         this.clientOrganization = clientOrganization;
-        this.matchingConfig = matchingConfig;
+        this.matchingConfig = matchingConfig != null
+            ? matchingConfig
+            : new MatchingConfig();
         this.datasets = new ArrayList<>();
         this.hypotheses = new ArrayList<>();
         this.records = new ArrayList<>();

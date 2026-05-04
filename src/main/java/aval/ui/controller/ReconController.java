@@ -82,6 +82,12 @@ public class ReconController {
     private Label ledgerStatus;
 
     @FXML
+    private Label ledgerMetaPrimary;
+
+    @FXML
+    private Label ledgerMetaSecondary;
+
+    @FXML
     private StackPane bankPanel;
 
     @FXML
@@ -148,6 +154,7 @@ public class ReconController {
 
         setupDropZone();
         setupLedgerTable();
+        setLedgerMetaEmpty();
 
         MainUIContext ctx = MainUIContext.getInstance();
         DataStore ds = ctx.getDataStore();
@@ -163,6 +170,7 @@ public class ReconController {
                 populateLedgerTable(ledger);
                 ledgerStatus.setText("Loaded — " + ledger.size() + " records");
                 ledgerStatus.getStyleClass().setAll("badge", "badge-active");
+                setLedgerMetaLoaded(ledger.size());
             }
             if (!bank.isEmpty()) {
                 ctx.setStandardizedBankTransactions(bank);
@@ -189,6 +197,8 @@ public class ReconController {
     }
 
     private void setupLedgerTable() {
+        ledgerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
         lDateCol.setCellValueFactory(cd ->
             new SimpleStringProperty(cd.getValue().getValueDate().toString())
         );
@@ -213,7 +223,7 @@ public class ReconController {
             boolean isDebit =
                 cd.getValue().getType() ==
                 aval.common.enums.TransactionType.DEBIT;
-            String prefix = isDebit ? "-" : "+";
+            String prefix = isDebit ? "+" : "-";
             return new SimpleStringProperty(
                 prefix + "$" + cd.getValue().getAmount().toString()
             );
@@ -310,6 +320,7 @@ public class ReconController {
         updateReconButtonState();
         ledgerStatus.setText("Loading...");
         ledgerStatus.getStyleClass().setAll("badge", "badge-pending");
+        setLedgerMetaLoading();
 
         Task<List<StandardizedTransaction>> task = new Task<>() {
             @Override
@@ -348,6 +359,7 @@ public class ReconController {
                 );
                 ledgerStatus.getStyleClass().setAll("badge", "badge-active");
                 populateLedgerTable(stdLedger);
+                setLedgerMetaLoaded(stdLedger.size());
                 updateReconButtonState();
             })
         );
@@ -365,6 +377,7 @@ public class ReconController {
                 );
                 ledgerStatus.setText("Error: " + errMsg);
                 ledgerStatus.getStyleClass().setAll("badge", "badge-review");
+                setLedgerMetaError(errMsg);
                 updateReconButtonState();
             })
         );
@@ -372,6 +385,30 @@ public class ReconController {
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
+    }
+
+    private void setLedgerMetaEmpty() {
+        ledgerMetaPrimary.setText("No records loaded");
+        ledgerMetaSecondary.setText("Select an .xlsx file to ingest");
+    }
+
+    private void setLedgerMetaLoading() {
+        ledgerMetaPrimary.setText("Loading ledger...");
+        ledgerMetaSecondary.setText("Parsing and standardizing records");
+    }
+
+    private void setLedgerMetaLoaded(int recordsCount) {
+        ledgerMetaPrimary.setText("Loaded " + recordsCount + " records");
+        ledgerMetaSecondary.setText("Displaying standardized ledger transactions");
+    }
+
+    private void setLedgerMetaError(String errorMessage) {
+        ledgerMetaPrimary.setText("Ledger load failed");
+        ledgerMetaSecondary.setText(
+            errorMessage != null && !errorMessage.isBlank()
+                ? errorMessage
+                : "Unknown error while ingesting ledger"
+        );
     }
 
     private void startIngestion(File f) {

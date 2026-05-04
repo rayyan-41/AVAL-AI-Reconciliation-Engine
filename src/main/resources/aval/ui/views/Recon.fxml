@@ -81,8 +81,8 @@
       </HBox>
       <VBox VBox.vgrow="ALWAYS" style="-fx-padding: 16;" spacing="12">
         <HBox fx:id="ledgerMetaBar" styleClass="lmb" alignment="CENTER_LEFT" spacing="16">
-            <Label text="No records loaded" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
-            <Label text="Select an .xlsx file to ingest" style="-fx-text-fill: -fx-text-muted;" />
+            <Label fx:id="ledgerMetaPrimary" text="No records loaded" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
+            <Label fx:id="ledgerMetaSecondary" text="Select an .xlsx file to ingest" style="-fx-text-fill: -fx-text-muted;" />
         </HBox>
         <TableView fx:id="ledgerTable" VBox.vgrow="ALWAYS" styleClass="data-table">
           <columns>
