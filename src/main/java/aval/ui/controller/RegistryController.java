@@ -146,6 +146,19 @@ public class RegistryController {
         });
 
         clientTable.setItems(filtered);
+        clientTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        nameCol
+            .prefWidthProperty()
+            .bind(clientTable.widthProperty().subtract(5).multiply(0.40));
+        industryCol
+            .prefWidthProperty()
+            .bind(clientTable.widthProperty().subtract(5).multiply(0.25));
+        statusCol
+            .prefWidthProperty()
+            .bind(clientTable.widthProperty().subtract(5).multiply(0.25));
+        arrowCol
+            .prefWidthProperty()
+            .bind(clientTable.widthProperty().subtract(5).multiply(0.10));
 
         DataStore ds = MainUIContext.getInstance().getDataStore();
         if (ds == null) {

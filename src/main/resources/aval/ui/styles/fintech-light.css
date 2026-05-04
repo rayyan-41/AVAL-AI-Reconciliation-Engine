@@ -164,7 +164,8 @@
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-padding: 12 20 12 20;
     -fx-cursor: hand;
 }
@@ -215,7 +216,8 @@
     -fx-text-fill: white;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-padding: 8 16 8 16;
     -fx-cursor: hand;
 }
@@ -226,7 +228,8 @@
     -fx-background-color: transparent;
     -fx-text-fill: -fx-text-muted;
     -fx-border-color: -fx-border;
-    -fx-border-radius: 4px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-font-size: 13px;
     -fx-padding: 6 12 6 12;
     -fx-cursor: hand;
@@ -252,22 +255,23 @@
     -fx-control-inner-background-alt: transparent;
 }
 .client-table .column-header-background {
-    -fx-background-color: -fx-bg-inset;
-    -fx-background-radius: 6px 6px 0 0;
+    -fx-background-color: #f7f8fa;
+    -fx-background-radius: 8px 8px 0 0;
 }
 .client-table .column-header {
-    -fx-background-color: transparent;
+    -fx-background-color: #f7f8fa;
     -fx-size: 40px;
     -fx-border-color: transparent transparent -fx-border transparent;
 }
 .client-table .column-header .label {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-text-muted;
+    -fx-text-transform: uppercase;
 }
 .client-table .table-row-cell {
     -fx-background-color: -fx-bg;
-    -fx-cell-size: 64px;
+    -fx-cell-size: 42px;
     -fx-border-color: transparent transparent -fx-border-subtle transparent;
 }
 .client-table .table-row-cell:hover {
@@ -336,8 +340,11 @@
     -fx-border-color: transparent transparent -fx-accent transparent;
     -fx-border-width: 0 0 2 0;
 }
-.ws-tab:hover:!selected {
+.ws-tab:hover {
     -fx-text-fill: -fx-text-primary;
+}
+.ws-tab:selected:hover {
+    -fx-text-fill: -fx-accent;
 }
 .ws-tab:disabled {
     -fx-opacity: 0.4;
@@ -346,8 +353,8 @@
 .btn-exit {
     -fx-background-color: transparent;
     -fx-border-color: -fx-border-strong;
-    -fx-border-radius: 4px;
-    -fx-background-radius: 4px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-text-fill: -fx-text-muted;
     -fx-font-size: 12px;
     -fx-padding: 5 14 5 14;
@@ -378,9 +385,10 @@
 }
 .stat-card {
     -fx-background-color: -fx-bg;
-    -fx-border-color: -fx-border;
+    -fx-border-color: transparent;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
     -fx-padding: 20 24 20 24;
 }
 .sc-label {
@@ -397,9 +405,10 @@
 }
 .fd-card {
     -fx-background-color: -fx-bg;
-    -fx-border-color: -fx-border;
+    -fx-border-color: transparent;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
     -fx-padding: 28 32 28 32;
 }
 .fdc-label {
@@ -417,29 +426,32 @@
 }
 .data-table {
     -fx-background-color: transparent;
-    -fx-border-color: -fx-border;
-    -fx-border-radius: 6px;
-    -fx-background-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
     -fx-control-inner-background: transparent;
     -fx-control-inner-background-alt: transparent;
     -fx-fixed-cell-size: 48px;
 }
 .data-table .column-header-background {
-    -fx-background-color: -fx-bg-inset;
-    -fx-background-radius: 6px 6px 0 0;
+    -fx-background-color: #f7f8fa;
+    -fx-background-radius: 8px 8px 0 0;
 }
 .data-table .column-header {
-    -fx-background-color: transparent;
+    -fx-background-color: #f7f8fa;
     -fx-size: 40px;
     -fx-border-color: transparent transparent -fx-border transparent;
 }
 .data-table .column-header .label {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-text-muted;
+    -fx-text-transform: uppercase;
 }
 .data-table .table-row-cell {
     -fx-background-color: -fx-bg;
+    -fx-cell-size: 42px;
     -fx-border-color: transparent transparent -fx-border-subtle transparent;
 }
 .data-table .table-cell {
@@ -462,7 +474,8 @@
     -fx-background-color: -fx-accent;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
 }
@@ -575,12 +588,15 @@
 }
 .mc-progress .track {
     -fx-background-color: -fx-bg-inset;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 999px;
 }
 .mc-progress .bar {
     -fx-background-color: -fx-accent;
     -fx-background-insets: 0;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 999px;
+}
+.mc-progress {
+    -fx-pref-height: 8px;
 }
 .mc-table {
     -fx-background-color: transparent;
@@ -605,7 +621,8 @@
     -fx-background-color: -fx-accent;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
 }
@@ -613,16 +630,16 @@
     -fx-background-color: -fx-green-bg;
     -fx-text-fill: -fx-green-text;
     -fx-border-color: -fx-green-border;
-    -fx-border-radius: 4px;
-    -fx-background-radius: 4px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-cursor: hand;
 }
 .btn-reject {
     -fx-background-color: -fx-accent-dim;
     -fx-text-fill: -fx-red-text;
     -fx-border-color: -fx-accent-dim;
-    -fx-border-radius: 4px;
-    -fx-background-radius: 4px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-cursor: hand;
 }
 
@@ -657,7 +674,8 @@
     -fx-background-color: -fx-accent;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-background-radius: 4px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-padding: 10 18 10 18;
     -fx-cursor: hand;
 }
@@ -668,8 +686,8 @@
     -fx-background-color: transparent;
     -fx-text-fill: -fx-text-muted;
     -fx-border-color: -fx-border-strong;
-    -fx-border-radius: 4px;
-    -fx-background-radius: 4px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-padding: 10 18 10 18;
     -fx-cursor: hand;
 }

@@ -10,22 +10,41 @@
   <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane">
     <VBox style="-fx-padding: 28 32 28 32;" spacing="20">
 
-      <Label fx:id="mcTitle" text="Manual Check" styleClass="mc-title" />
-      <Label fx:id="mcSub" styleClass="mc-sub" wrapText="true" />
-
-      <!-- Progress -->
-      <VBox spacing="6">
-        <HBox>
-          <Label text="Review progress" styleClass="mc-prog-label" />
-          <Region HBox.hgrow="ALWAYS" />
-          <Label fx:id="mcProgText" styleClass="mc-prog-label-r" />
-        </HBox>
-        <ProgressBar
-                    fx:id="mcProgressBar"
-                    maxWidth="Infinity"
-                    progress="0"
-                    styleClass="mc-progress"
+      <VBox styleClass="fd-card" spacing="12">
+        <HBox alignment="CENTER_LEFT" spacing="12">
+          <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label fx:id="mcTitle" text="Manual Check" styleClass="mc-title" />
+            <Label fx:id="mcSub" styleClass="mc-sub" wrapText="true" />
+          </VBox>
+          <HBox alignment="CENTER_RIGHT" spacing="10">
+            <Button
+                    fx:id="btnApproveAllPending"
+                    text="Approve All Pending"
+                    styleClass="btn-approve"
+                    onAction="#handleApproveAllPending"
                 />
+            <Button
+                    fx:id="btnRejectAllPending"
+                    text="Reject All Pending"
+                    styleClass="btn-reject"
+                    onAction="#handleRejectAllPending"
+                />
+          </HBox>
+        </HBox>
+
+        <VBox spacing="6">
+          <HBox>
+            <Label text="Review progress" styleClass="mc-prog-label" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="mcProgText" styleClass="mc-prog-label-r" />
+          </HBox>
+          <ProgressBar
+                      fx:id="mcProgressBar"
+                      maxWidth="Infinity"
+                      progress="0"
+                      styleClass="mc-progress"
+                  />
+        </VBox>
       </VBox>
 
       <!-- Table -->

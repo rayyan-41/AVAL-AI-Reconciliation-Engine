@@ -8,6 +8,7 @@ import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.animation.FadeTransition;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,6 +20,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class WorkspaceController implements IWorkspaceController {
 
@@ -51,6 +53,7 @@ public class WorkspaceController implements IWorkspaceController {
     private FinanceController financeController;
     private ManualCheckController manualCheckController;
     private ReportController reportController;
+    private Node activeView;
 
     public void initialize() {
         MainUIContext.getInstance().setWorkspaceController(this);
@@ -79,7 +82,11 @@ public class WorkspaceController implements IWorkspaceController {
         if (manualView != null) contentPane.getChildren().add(manualView);
         if (reportView != null) contentPane.getChildren().add(reportView);
 
-        if (financeView != null) showView(financeView);
+        contentPane.getChildren().forEach(n -> {
+            n.setVisible(false);
+            n.setManaged(false);
+            n.setOpacity(1.0);
+        });
 
         // ToggleGroup ensures only one tab is active
         ToggleGroup tg = new ToggleGroup();
@@ -88,6 +95,7 @@ public class WorkspaceController implements IWorkspaceController {
         tabManual.setToggleGroup(tg);
         tabReport.setToggleGroup(tg);
         tabFinance.setSelected(true);
+        showFinance();
     }
 
     private String getIndustryFromName(String name) {
@@ -179,13 +187,19 @@ public class WorkspaceController implements IWorkspaceController {
         if (financeController != null) {
             financeController.refreshStats();
         }
-        if (financeView != null) showView(financeView);
+        if (financeView != null) {
+            showView(financeView, () -> {
+                if (financeController != null) {
+                    financeController.playEntranceAnimations();
+                }
+            });
+        }
         tabFinance.setSelected(true);
     }
 
     @FXML
     public void showRecon() {
-        if (reconView != null) showView(reconView);
+        if (reconView != null) showView(reconView, null);
         tabRecon.setSelected(true);
     }
 
@@ -197,7 +211,7 @@ public class WorkspaceController implements IWorkspaceController {
             manualCheckController.setItems(hypotheses);
             manualCheckController.loadAnomalies();
         }
-        if (manualView != null) showView(manualView);
+        if (manualView != null) showView(manualView, null);
         tabManual.setSelected(true);
     }
 
@@ -213,13 +227,72 @@ public class WorkspaceController implements IWorkspaceController {
                 reportController.populateReport(hypotheses);
             }
         }
-        if (reportView != null) showView(reportView);
+        if (reportView != null) {
+            showView(reportView, () -> {
+                if (reportController != null) {
+                    reportController.playEntranceAnimations();
+                }
+            });
+        }
         tabReport.setSelected(true);
     }
 
     private void showView(Node view) {
-        contentPane.getChildren().forEach(n -> n.setVisible(false));
-        view.setVisible(true);
+        showView(view, null);
+    }
+
+    private void showView(Node view, Runnable onShown) {
+        if (view == null) {
+            return;
+        }
+        if (activeView == view) {
+            if (onShown != null) {
+                onShown.run();
+            }
+            return;
+        }
+
+        if (activeView == null) {
+            contentPane
+                .getChildren()
+                .forEach(n -> {
+                    boolean isTarget = n == view;
+                    n.setVisible(isTarget);
+                    n.setManaged(isTarget);
+                    n.setOpacity(1.0);
+                });
+            activeView = view;
+            if (onShown != null) {
+                onShown.run();
+            }
+            return;
+        }
+
+        Node previous = activeView;
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(250), previous);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+        fadeOut.setOnFinished(e -> {
+            previous.setVisible(false);
+            previous.setManaged(false);
+            previous.setOpacity(1.0);
+
+            view.setVisible(true);
+            view.setManaged(true);
+            view.setOpacity(0.0);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(250), view);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+            fadeIn.setOnFinished(e2 -> {
+                activeView = view;
+                if (onShown != null) {
+                    onShown.run();
+                }
+            });
+            fadeIn.play();
+        });
+        fadeOut.play();
     }
 
     @FXML

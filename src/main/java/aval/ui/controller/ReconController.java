@@ -15,6 +15,7 @@ import aval.service.IngestionService;
 import aval.service.ReconciliationResult;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
+import aval.ui.util.UIAnimationUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -153,6 +154,7 @@ public class ReconController {
         periodLabel.setText("Reconciliation Period: " + now.format(formatter));
 
         setupDropZone();
+        UIAnimationUtil.applyButtonPressFeedback(btnRecon);
         setupLedgerTable();
         setLedgerMetaEmpty();
 
@@ -197,7 +199,22 @@ public class ReconController {
     }
 
     private void setupLedgerTable() {
-        ledgerTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        ledgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        lDateCol
+            .prefWidthProperty()
+            .bind(ledgerTable.widthProperty().subtract(5).multiply(0.15));
+        lRefCol
+            .prefWidthProperty()
+            .bind(ledgerTable.widthProperty().subtract(5).multiply(0.15));
+        lNarrCol
+            .prefWidthProperty()
+            .bind(ledgerTable.widthProperty().subtract(5).multiply(0.40));
+        lTypeCol
+            .prefWidthProperty()
+            .bind(ledgerTable.widthProperty().subtract(5).multiply(0.12));
+        lAmtCol
+            .prefWidthProperty()
+            .bind(ledgerTable.widthProperty().subtract(5).multiply(0.18));
 
         lDateCol.setCellValueFactory(cd ->
             new SimpleStringProperty(cd.getValue().getValueDate().toString())
@@ -267,6 +284,18 @@ public class ReconController {
     }
 
     private void setupDropZone() {
+        dropZonePane.setOnDragEntered(e -> {
+            if (e.getDragboard().hasFiles()) {
+                UIAnimationUtil.activateDropZone(dropZonePane);
+            }
+            e.consume();
+        });
+
+        dropZonePane.setOnDragExited(e -> {
+            UIAnimationUtil.resetDropZone(dropZonePane);
+            e.consume();
+        });
+
         dropZonePane.setOnDragOver(e -> {
             if (e.getDragboard().hasFiles()) {
                 e.acceptTransferModes(TransferMode.COPY);
@@ -283,6 +312,7 @@ public class ReconController {
                 }
             }
             e.setDropCompleted(true);
+            UIAnimationUtil.resetDropZone(dropZonePane);
             e.consume();
         });
     }

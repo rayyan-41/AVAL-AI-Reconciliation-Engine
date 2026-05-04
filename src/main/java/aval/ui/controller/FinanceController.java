@@ -6,12 +6,14 @@ import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
 import aval.persistence.DataStore;
 import aval.ui.MainUIContext;
+import aval.ui.util.UIAnimationUtil;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -22,6 +24,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.util.Duration;
 
 public class FinanceController {
 
@@ -121,6 +124,7 @@ public class FinanceController {
     private VBox makeStatCard(String label, String value, String sub, String valColour) {
         VBox card = new VBox(8);
         card.getStyleClass().add("stat-card");
+        UIAnimationUtil.applyHoverLift(card);
         HBox.setHgrow(card, Priority.ALWAYS);
         Label lbl = new Label(label); lbl.getStyleClass().add("sc-label");
         Label val = new Label(value); val.getStyleClass().add("sc-value");
@@ -128,6 +132,39 @@ public class FinanceController {
         Label s   = new Label(sub);   s.getStyleClass().add("sc-sub");
         card.getChildren().addAll(lbl, val, s);
         return card;
+    }
+
+    public void playEntranceAnimations() {
+        List<Node> cards = new ArrayList<>(statRow.getChildren());
+        UIAnimationUtil.playStaggeredEntrance(
+            cards,
+            Duration.millis(400),
+            Duration.millis(150)
+        );
+
+        for (Node cardNode : cards) {
+            if (!(cardNode instanceof VBox card) || card.getChildren().size() < 2) {
+                continue;
+            }
+            Node valueNode = card.getChildren().get(1);
+            if (!(valueNode instanceof Label valueLabel)) {
+                continue;
+            }
+            String raw = valueLabel.getText();
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            String digits = raw.replaceAll("[^0-9.\\-]", "");
+            if (digits.isBlank()) {
+                continue;
+            }
+            try {
+                double target = Double.parseDouble(digits);
+                UIAnimationUtil.rollNumber(valueLabel, target, 0, "");
+            } catch (NumberFormatException ignored) {
+                // Skip labels that are not numeric.
+            }
+        }
     }
 
     private void populateCompanyGrid(ClientOrganization client) {
@@ -184,6 +221,29 @@ public class FinanceController {
     }
 
     private void setupHistoryTable() {
+        historyTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        hDateCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.12));
+        hPeriodCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.20));
+        hTxnsCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.12));
+        hMatchedCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.14));
+        hRateCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.12));
+        hAnomCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.12));
+        hStatusCol
+            .prefWidthProperty()
+            .bind(historyTable.widthProperty().subtract(5).multiply(0.18));
+
         hDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().date));
         hPeriodCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().period));
         hTxnsCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().txns));

@@ -7,15 +7,16 @@ import aval.domain.ai.StandardizedTransaction;
 import aval.domain.core.ClientOrganization;
 import aval.service.ReportService;
 import aval.ui.MainUIContext;
+import aval.ui.util.UIAnimationUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -78,6 +79,8 @@ public class ReportController {
     public void initialize() {
         updateHeader();
         setupLineageTable();
+        UIAnimationUtil.applyButtonPressFeedback(btnGenerate);
+        UIAnimationUtil.applyButtonPressFeedback(btnEmail);
 
         List<MatchHypothesis> existing =
             MainUIContext.getInstance().getAllHypotheses();
@@ -302,6 +305,29 @@ public class ReportController {
     }
 
     private void setupLineageTable() {
+        lineageTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        rlRefCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.12));
+        rlNarrCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.22));
+        rbRefCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.12));
+        rbNarrCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.22));
+        rTypeCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.10));
+        rConfCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.10));
+        rResCol
+            .prefWidthProperty()
+            .bind(lineageTable.widthProperty().subtract(5).multiply(0.12));
+
         rlRefCol.setCellValueFactory(data ->
             new SimpleStringProperty(
                 getRef(data.getValue().getLedgerTransaction())
@@ -376,6 +402,7 @@ public class ReportController {
     ) {
         VBox card = new VBox(8);
         card.getStyleClass().add("stat-card");
+        UIAnimationUtil.applyHoverLift(card);
         HBox.setHgrow(card, Priority.ALWAYS);
 
         Label lbl = new Label(label);
@@ -390,6 +417,47 @@ public class ReportController {
 
         card.getChildren().addAll(lbl, val, s);
         return card;
+    }
+
+    public void playEntranceAnimations() {
+        List<Node> cards = new ArrayList<>(rptStatRow.getChildren());
+        UIAnimationUtil.playStaggeredEntrance(
+            cards,
+            Duration.millis(400),
+            Duration.millis(150)
+        );
+
+        for (Node cardNode : cards) {
+            if (!(cardNode instanceof VBox card) || card.getChildren().size() < 2) {
+                continue;
+            }
+            Node valueNode = card.getChildren().get(1);
+            if (!(valueNode instanceof Label valueLabel)) {
+                continue;
+            }
+
+            String raw = valueLabel.getText();
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            boolean isPercent = raw.contains("%");
+            String digits = raw.replaceAll("[^0-9.\\-]", "");
+            if (digits.isBlank()) {
+                continue;
+            }
+            try {
+                double target = Double.parseDouble(digits);
+                int decimals = digits.contains(".") ? 1 : 0;
+                UIAnimationUtil.rollNumber(
+                    valueLabel,
+                    target,
+                    decimals,
+                    isPercent ? "%" : ""
+                );
+            } catch (NumberFormatException ignored) {
+                // Skip labels that are not numeric.
+            }
+        }
     }
 
     private void showFeedback(String text) {
