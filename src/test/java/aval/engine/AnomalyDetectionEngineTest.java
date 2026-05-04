@@ -163,6 +163,9 @@ public class AnomalyDetectionEngineTest {
 
     @Test
     void extremeOutlier_beyondThreeSigma_flagged() {
+        // The engine uses population σ: outlier is only flagged when sqrt(n-1) > 3,
+        // i.e. total data points must exceed 10.  Use 10 normals + 1 outlier = 11 pts.
+        // Dates stay on weekdays (Mon–Fri ×2 weeks) to avoid spurious WEEKEND flags.
         LocalDate date = nextMonday();
         List<String> anomalies = engine.identifyAnomalies(
             List.of(
@@ -170,7 +173,13 @@ public class AnomalyDetectionEngineTest {
                 tx(new BigDecimal("100.00"), date.plusDays(1)),
                 tx(new BigDecimal("100.00"), date.plusDays(2)),
                 tx(new BigDecimal("100.00"), date.plusDays(3)),
-                tx(new BigDecimal("1000000.00"), date.plusDays(4))   // massive outlier
+                tx(new BigDecimal("100.00"), date.plusDays(4)),    // Fri week 1
+                tx(new BigDecimal("100.00"), date.plusDays(7)),    // Mon week 2
+                tx(new BigDecimal("100.00"), date.plusDays(8)),
+                tx(new BigDecimal("100.00"), date.plusDays(9)),
+                tx(new BigDecimal("100.00"), date.plusDays(10)),
+                tx(new BigDecimal("100.00"), date.plusDays(11)),   // Fri week 2
+                tx(new BigDecimal("1000000.00"), date.plusDays(14)) // Mon week 3 — outlier
             ),
             Collections.emptyList()
         );
@@ -195,16 +204,24 @@ public class AnomalyDetectionEngineTest {
 
     @Test
     void outlier_includedInBothSources() {
+        // Same minimum-sample reasoning: need >= 11 points total.
+        // Split evenly across ledger (6) and bank (5) to exercise the combined-set path.
         LocalDate date = nextMonday();
-        // Use both ledger and bank to build the combined set
         List<String> anomalies = engine.identifyAnomalies(
             List.of(
                 tx(new BigDecimal("50.00"), date),
-                tx(new BigDecimal("50.00"), date.plusDays(1))
+                tx(new BigDecimal("50.00"), date.plusDays(1)),
+                tx(new BigDecimal("50.00"), date.plusDays(2)),
+                tx(new BigDecimal("50.00"), date.plusDays(3)),
+                tx(new BigDecimal("50.00"), date.plusDays(4)),    // Fri week 1
+                tx(new BigDecimal("50.00"), date.plusDays(7))     // Mon week 2
             ),
             List.of(
-                tx(new BigDecimal("50.00"), date.plusDays(2)),
-                tx(new BigDecimal("999999.00"), date.plusDays(3))   // outlier in bank
+                tx(new BigDecimal("50.00"), date.plusDays(8)),
+                tx(new BigDecimal("50.00"), date.plusDays(9)),
+                tx(new BigDecimal("50.00"), date.plusDays(10)),
+                tx(new BigDecimal("50.00"), date.plusDays(11)),   // Fri week 2
+                tx(new BigDecimal("999999.00"), date.plusDays(14)) // Mon week 3 — outlier in bank
             )
         );
         assertTrue(anomalies.stream().anyMatch(a -> a.startsWith("OUTLIER:")));
