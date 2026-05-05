@@ -109,11 +109,30 @@ public class ReconciliationServiceTest {
     }
 
     @Test
-    void runMatching_belowThreshold_remainsPendingReview() {
+    void runMatching_belowReviewFloor_isRejected() {
         MatchHypothesis hyp = new MatchHypothesis(
             ledgerTx(new BigDecimal("500.00"), LocalDate.now()),
             bankTx(new BigDecimal("500.00"), LocalDate.now()),
-            0.5, MatchType.AI_PROBABILISTIC    // below 0.95 threshold
+            0.5, MatchType.AI_PROBABILISTIC    // below 0.70 reviewFloor
+        );
+        when(mockMatchingEngine.generateHypotheses(anyList(), anyList())).thenReturn(List.of(hyp));
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
+
+        ReconciliationResult result = service.runMatching(workspace,
+            List.of(ledgerTx(new BigDecimal("500.00"), LocalDate.now())),
+            List.of(bankTx(new BigDecimal("500.00"), LocalDate.now()))
+        );
+
+        assertTrue(result.getAutoReconciledRecords().isEmpty());
+        assertEquals(HypothesisStatus.REJECTED, hyp.getStatus());
+    }
+
+    @Test
+    void runMatching_betweenReviewFloorAndThreshold_remainsPendingReview() {
+        MatchHypothesis hyp = new MatchHypothesis(
+            ledgerTx(new BigDecimal("500.00"), LocalDate.now()),
+            bankTx(new BigDecimal("500.00"), LocalDate.now()),
+            0.80, MatchType.AI_PROBABILISTIC    // between 0.70 reviewFloor and 0.95 threshold
         );
         when(mockMatchingEngine.generateHypotheses(anyList(), anyList())).thenReturn(List.of(hyp));
         doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());

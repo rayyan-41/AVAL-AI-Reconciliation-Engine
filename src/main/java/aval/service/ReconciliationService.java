@@ -59,6 +59,9 @@ public class ReconciliationService {
         double threshold = config != null
             ? config.getAutoConfirmThreshold()
             : new MatchingConfig().getAutoConfirmThreshold();
+        double reviewFloor = config != null
+            ? config.getReviewFloor()
+            : new MatchingConfig().getReviewFloor();
         List<ReconciliationRecord> autoRecords = new ArrayList<>();
         SystemUser systemUser = new SystemUser(
             SYSTEM_USER_ID,
@@ -77,6 +80,11 @@ public class ReconciliationService {
                 );
                 autoRecords.add(
                     new ReconciliationRecord(hypothesis, systemUser)
+                );
+            } else if (hypothesis.getConfidenceScore() < reviewFloor) {
+                hypothesis.setStatus(HypothesisStatus.REJECTED);
+                hypothesis.setJustification(
+                    "Auto-rejected: Score below review floor " + reviewFloor
                 );
             } else {
                 hypothesis.setStatus(HypothesisStatus.PENDING_REVIEW);

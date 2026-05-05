@@ -58,20 +58,21 @@ public class HybridMatchingEngineTest {
         LocalDate today = LocalDate.now();
         StandardizedTransaction matched   = tx(new BigDecimal("100.00"), today, TransactionType.DEBIT);
         StandardizedTransaction unmatched = tx(new BigDecimal("999.00"), today, TransactionType.DEBIT);
-        StandardizedTransaction bank      = tx(new BigDecimal("100.00"), today, TransactionType.CREDIT);
+        StandardizedTransaction bank1     = tx(new BigDecimal("100.00"), today, TransactionType.CREDIT);
+        StandardizedTransaction bank2     = tx(new BigDecimal("500.00"), today, TransactionType.CREDIT);
 
-        // Rule engine matches "matched" but not "unmatched"
-        MatchHypothesis ruleHyp = new MatchHypothesis(matched, bank, 1.0, MatchType.EXACT_RULE);
+        // Rule engine matches "matched" with "bank1" but not "unmatched"
+        MatchHypothesis ruleHyp = new MatchHypothesis(matched, bank1, 1.0, MatchType.EXACT_RULE);
         when(ruleEngine.generateHypotheses(anyList(), anyList())).thenReturn(List.of(ruleHyp));
         when(semanticEngine.generateHypotheses(anyList(), anyList())).thenReturn(Collections.emptyList());
 
         HybridMatchingEngine hybrid = new HybridMatchingEngine(ruleEngine, semanticEngine);
-        hybrid.generateHypotheses(List.of(matched, unmatched), List.of(bank));
+        hybrid.generateHypotheses(List.of(matched, unmatched), List.of(bank1, bank2));
 
-        // Semantic should be called with only the unmatched transaction
+        // Semantic should be called with only the unmatched ledger tx and unmatched bank tx (bank2)
         verify(semanticEngine).generateHypotheses(
             argThat(list -> list.size() == 1 && list.get(0).getTransactionId().equals(unmatched.getTransactionId())),
-            anyList()
+            argThat(list -> list.size() == 1 && list.get(0).getTransactionId().equals(bank2.getTransactionId()))
         );
     }
 
@@ -167,17 +168,18 @@ public class HybridMatchingEngineTest {
         StandardizedTransaction ledger = new StandardizedTransaction(
             ledgerId, LocalDate.now(), new BigDecimal("500.00"), "pay", TransactionType.DEBIT, UUID.randomUUID()
         );
+        StandardizedTransaction bank = tx(new BigDecimal("100.00"), LocalDate.now(), TransactionType.CREDIT);
 
         // Rule engine returns no hypotheses → all unmatched
         when(ruleEngine.generateHypotheses(anyList(), anyList())).thenReturn(Collections.emptyList());
         when(semanticEngine.generateHypotheses(anyList(), anyList())).thenReturn(Collections.emptyList());
 
         HybridMatchingEngine hybrid = new HybridMatchingEngine(ruleEngine, semanticEngine);
-        hybrid.generateHypotheses(List.of(ledger), Collections.emptyList());
+        hybrid.generateHypotheses(List.of(ledger), List.of(bank));
 
         verify(semanticEngine).generateHypotheses(
             argThat(list -> list.size() == 1 && list.get(0).getTransactionId().equals(ledgerId)),
-            anyList()
+            argThat(list -> list.size() == 1 && list.get(0).getTransactionId().equals(bank.getTransactionId()))
         );
     }
 }

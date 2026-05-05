@@ -10,7 +10,8 @@
       "Bash(where.exe mvn *)",
       "Read(//c/Program Files/**)",
       "Bash(mvn test *)",
-      "Bash(./mvnw compile *)"
+      "Bash(./mvnw compile *)",
+      "Bash(mvn compile *)"
     ]
   }
 }

@@ -53,14 +53,35 @@ public class LangChain4jVectorizationEngine implements VectorizationEngine {
     }
 
     private String buildTextToEmbed(StandardizedTransaction transaction) {
+        // Extract reference number from narrative if present (e.g., "Payment to Vendor | REF-12345678 | Invoice 999")
+        String narrative = transaction.getNarrative() != null ? transaction.getNarrative() : "";
+        String refNumber = extractReferenceNumber(narrative);
+
         // Combining relevant fields to give the LLM maximum context.
-        // e.g. "DEBIT | 150.00 | Office Supplies | Staples"
-        return String.format(
-            "%s | %s | %s",
-            transaction.getType(),
-            transaction.getAmount(),
-            transaction.getNarrative()
+        // Reference number is included first as it's the strongest matching signal per dataset README.
+        // e.g. "REF-12345678 | DEBIT | 150.00 | Office Supplies | Staples"
+        StringBuilder sb = new StringBuilder();
+        if (!refNumber.isEmpty()) {
+            sb.append(refNumber).append(" | ");
+        }
+        sb.append(transaction.getType()).append(" | ")
+          .append(transaction.getAmount()).append(" | ")
+          .append(narrative);
+        return sb.toString();
+    }
+
+    private String extractReferenceNumber(String text) {
+        if (text == null || text.isEmpty()) return "";
+        // Match common reference number patterns: REF-XXXXXXXX, TXN-XXXX, INV-XXXX, CHECK-XXXX
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+            "(REF-[A-Z0-9]{8,}|TXN-[A-Z0-9]{6,}|INV-[A-Z0-9]{4,}|CHECK-[A-Z0-9]{4,}|\\b[A-Z]{2,3}-[0-9]{4,}\\b)",
+            java.util.regex.Pattern.CASE_INSENSITIVE
         );
+        java.util.regex.Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group().toUpperCase();
+        }
+        return "";
     }
 
     @Override
