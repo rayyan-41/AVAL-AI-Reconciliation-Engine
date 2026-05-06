@@ -10,25 +10,22 @@
   <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="scroll-pane">
     <VBox style="-fx-padding: 28 32 28 32;" spacing="20">
 
+      <!-- Page Header -->
+      <VBox spacing="4">
+        <Label fx:id="mcTitle" text="Manual Check" styleClass="mc-title" />
+        <Label text="Complete the following sections to unlock the final reconciliation report." styleClass="mc-sub" wrapText="true" />
+      </VBox>
+
+      <!-- SECTION 1: AI Suggested Matches -->
       <VBox styleClass="fd-card" spacing="12">
         <HBox alignment="CENTER_LEFT" spacing="12">
           <VBox spacing="4" HBox.hgrow="ALWAYS">
-            <Label fx:id="mcTitle" text="Manual Check" styleClass="mc-title" />
+            <Label text="1. AI Suggested Matches" styleClass="section-heading" />
             <Label fx:id="mcSub" styleClass="mc-sub" wrapText="true" />
           </VBox>
           <HBox alignment="CENTER_RIGHT" spacing="10">
-            <Button
-                    fx:id="btnApproveAllPending"
-                    text="Approve All Pending"
-                    styleClass="btn-approve"
-                    onAction="#handleApproveAllPending"
-                />
-            <Button
-                    fx:id="btnRejectAllPending"
-                    text="Reject All Pending"
-                    styleClass="btn-reject"
-                    onAction="#handleRejectAllPending"
-                />
+            <Button fx:id="btnApproveAllPending" text="Approve All Pending" styleClass="btn-approve" onAction="#handleApproveAllPending" />
+            <Button fx:id="btnRejectAllPending" text="Reject All Pending" styleClass="btn-reject" onAction="#handleRejectAllPending" />
           </HBox>
         </HBox>
 
@@ -38,38 +35,42 @@
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="mcProgText" styleClass="mc-prog-label-r" />
           </HBox>
-          <ProgressBar
-                      fx:id="mcProgressBar"
-                      maxWidth="Infinity"
-                      progress="0"
-                      styleClass="mc-progress"
-                  />
+          <ProgressBar fx:id="mcProgressBar" maxWidth="Infinity" progress="0" styleClass="mc-progress" />
         </VBox>
+
+        <TableView fx:id="mcTable" styleClass="mc-table data-table" prefHeight="220">
+          <columns>
+            <TableColumn text="Confidence" fx:id="mcConfCol" prefWidth="90" />
+            <TableColumn text="Ledger Tx" fx:id="mcLedgerCol" prefWidth="200" />
+            <TableColumn text="Bank Tx" fx:id="mcBankCol" prefWidth="200" />
+            <TableColumn text="AI Justification" fx:id="mcJustCol" />
+            <TableColumn text="Action" fx:id="mcActionCol" prefWidth="160" />
+          </columns>
+        </TableView>
       </VBox>
 
-      <!-- Table -->
-      <TableView fx:id="mcTable" styleClass="mc-table data-table">
-        <columns>
-          <TableColumn text="Confidence" fx:id="mcConfCol" prefWidth="90" />
-          <TableColumn text="Ledger Tx" fx:id="mcLedgerCol" prefWidth="200" />
-          <TableColumn text="Bank Tx" fx:id="mcBankCol" prefWidth="200" />
-          <TableColumn text="AI Justification" fx:id="mcJustCol" />
-          <TableColumn text="Action" fx:id="mcActionCol" prefWidth="160" />
-        </columns>
-      </TableView>
+      <!-- SECTION 2: Anomaly Review Panel -->
+      <VBox fx:id="anomalyPane" spacing="12" styleClass="fd-card"
+            visible="false" managed="false">
+        <Label text="2. Detected Anomalies" styleClass="section-heading" />
+        <Label text="Review and dismiss each flagged anomaly item to enable report generation."
+               styleClass="mc-sub" wrapText="true" />
+        <ListView fx:id="anomalyList" prefHeight="150" styleClass="data-table" />
+        <Button text="Dismiss All Anomalies" onAction="#handleDismissAnomalies" styleClass="btn-ghost" />
+      </VBox>
 
-      <!-- UC8: Force Manual Reconciliation Panel -->
+      <!-- SECTION 3: UC8 Force Manual Reconciliation Panel -->
       <VBox fx:id="forceMatchPane" spacing="12" styleClass="fd-card"
-            visible="true" managed="true">
+            visible="false" managed="false">
 
-        <Label text="Unmatched Transactions" styleClass="section-heading" />
-        <Label text="Select one entry from each list and provide a justification to force-link them."
+        <Label text="3. 1-to-1 Force Linking (Unmatched Transactions)" styleClass="section-heading" />
+        <Label text="Select one orphaned entry from each list and provide a justification to force-link them."
                styleClass="mc-sub" wrapText="true" />
 
-        <HBox spacing="16" alignment="TOP_LEFT">
+        <HBox spacing="16" alignment="TOP_LEFT" maxWidth="Infinity">
 
           <!-- Unmatched Ledger -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
             <Label text="Unmatched Ledger" styleClass="mc-prog-label" />
             <TableView fx:id="unmatchedLedgerTable" styleClass="data-table" prefHeight="180">
               <columns>
@@ -81,7 +82,7 @@
           </VBox>
 
           <!-- Unmatched Bank -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
             <Label text="Unmatched Bank" styleClass="mc-prog-label" />
             <TableView fx:id="unmatchedBankTable" styleClass="data-table" prefHeight="180">
               <columns>
@@ -110,18 +111,18 @@
 
       </VBox>
 
-      <!-- UC9: Multi-Source Consolidation Panel -->
+      <!-- SECTION 4: UC9 Multi-Source Consolidation Panel -->
       <VBox fx:id="consolidationPane" spacing="12" styleClass="fd-card"
             visible="false" managed="false">
 
-        <Label text="Multi-Source Consolidation" styleClass="section-heading" />
+        <Label text="4. Multi-Source Consolidation (N-to-1)" styleClass="section-heading" />
         <Label text="Select a single bank transaction and the ledger entries whose amounts sum to it."
                styleClass="mc-sub" wrapText="true" />
 
-        <HBox spacing="16" alignment="TOP_LEFT">
+        <HBox spacing="16" alignment="TOP_LEFT" maxWidth="Infinity">
 
           <!-- Bank target picker -->
-          <VBox spacing="6" minWidth="280">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
             <Label text="Target Bank Transaction" styleClass="mc-prog-label" />
             <TableView fx:id="consolidationBankTable" styleClass="data-table" prefHeight="160">
               <columns>
@@ -133,7 +134,7 @@
           </VBox>
 
           <!-- Ledger multi-select -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
             <Label text="Ledger Entries to Consolidate (multi-select)" styleClass="mc-prog-label" />
             <TableView fx:id="consolidationLedgerTable" styleClass="data-table" prefHeight="160">
               <columns>
@@ -161,32 +162,6 @@
         <Label fx:id="consolidationFeedback" styleClass="mc-sub" visible="false" managed="false"
                wrapText="true" />
 
-      </VBox>
-
-      <!-- Anomaly Review Panel -->
-      <VBox
-            fx:id="anomalyPane"
-            spacing="8"
-            style="-fx-padding: 0 0 20 0;"
-            visible="false"
-            managed="false"
-        >
-        <Label text="Detected Anomalies" styleClass="section-heading" />
-        <Label
-                text="Review and dismiss each flagged item to enable report generation."
-                styleClass="mc-sub"
-                wrapText="true"
-            />
-        <ListView
-                fx:id="anomalyList"
-                prefHeight="180"
-                styleClass="data-table"
-            />
-        <Button
-                text="Dismiss All Anomalies"
-                onAction="#handleDismissAnomalies"
-                styleClass="btn-ghost"
-            />
       </VBox>
 
     </VBox>

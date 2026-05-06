@@ -66,16 +66,26 @@ public class HybridMatchingEngine implements MatchingEngine {
             List<MatchHypothesis> semanticResults =
                 semanticEngine.generateHypotheses(unmatchedLedger, unmatchedBank);
 
+            // Sort by confidence score descending to ensure highest confidence matches are processed first
+            semanticResults.sort((h1, h2) -> Double.compare(h2.getConfidenceScore(), h1.getConfidenceScore()));
+
             Set<UUID> usedBankIds = new HashSet<>(matchedBankIds);
+            Set<UUID> usedLedgerIds = new HashSet<>(matchedLedgerIds);
             for (MatchHypothesis h : semanticResults) {
                 UUID bankId = h.getBankTransaction() != null
                     ? h.getBankTransaction().getTransactionId()
                     : null;
-                if (bankId != null && usedBankIds.contains(bankId)) {
+                UUID ledgerId = h.getLedgerTransaction() != null
+                    ? h.getLedgerTransaction().getTransactionId()
+                    : null;
+
+                if ((bankId != null && usedBankIds.contains(bankId)) || 
+                    (ledgerId != null && usedLedgerIds.contains(ledgerId))) {
                     h.setStatus(aval.common.enums.HypothesisStatus.REJECTED);
-                    h.setJustification("Auto-rejected: Bank transaction already matched by rule-based or higher-confidence hypothesis");
+                    h.setJustification("Auto-rejected: Transaction already matched by rule-based or higher-confidence hypothesis");
                 } else {
                     usedBankIds.add(bankId);
+                    usedLedgerIds.add(ledgerId);
                     allResults.add(h);
                 }
             }

@@ -240,7 +240,7 @@ public class ManualCheckController {
             anomalyList.setCellFactory(lv -> new ListCell<>() {
                 @Override protected void updateItem(Anomaly item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (empty || item == null) { setText(null); return; }
+                    if (empty || item == null) { setText(null); setStyle(""); return; }
                     String badge = switch (item.getCategory()) {
                         case DUPLICATE              -> "⚠ DUPLICATE";
                         case OUTLIER                -> "📈 OUTLIER";
@@ -248,6 +248,7 @@ public class ManualCheckController {
                         case CONSOLIDATION_VARIANCE -> "∑ VARIANCE";
                     };
                     setText(badge + "  —  " + item.getDescription());
+                    setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold;");
                 }
             });
             anomalyPane.setVisible(true);

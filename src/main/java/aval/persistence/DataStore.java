@@ -101,7 +101,7 @@ public class DataStore {
             "SELECT transaction_id, value_date, amount, narrative, transaction_type, source_dataset_id, " +
             "(embedding <=> ?::vector) as distance " +
             "FROM standardized_bank " +
-            "ORDER BY distance " +
+            "ORDER BY distance, transaction_id " +
             "LIMIT ?";
 
         List<Object[]> results = new ArrayList<>();
@@ -1047,7 +1047,8 @@ public class DataStore {
             "SELECT sb.transaction_id, sb.value_date, sb.amount, sb.narrative, sb.transaction_type, sb.source_dataset_id" +
             " FROM standardized_bank sb" +
             " JOIN financial_dataset fd ON sb.source_dataset_id = fd.dataset_id" +
-            " WHERE fd.workspace_id = ?";
+            " WHERE fd.workspace_id = ?" +
+            " ORDER BY sb.transaction_id";
         List<StandardizedTransaction> result = new ArrayList<>();
         try (
             Connection c = dataSource.getConnection();
