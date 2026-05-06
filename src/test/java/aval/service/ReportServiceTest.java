@@ -4,6 +4,7 @@ import aval.common.enums.MatchType;
 import aval.common.enums.TransactionType;
 import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
+import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
@@ -214,12 +215,13 @@ public class ReportServiceTest {
     @Test
     void generateReport_withUnresolvedAnomalies_throwsUnresolvedItemsException(@TempDir Path tempDir) {
         Path out = tempDir.resolve("report/blocked2.csv");
+        StandardizedTransaction tx = ledgerTx(new BigDecimal("100.00"));
         assertThrows(ReportService.UnresolvedItemsException.class, () ->
             reportService.generateReconciliationReport(
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                null, List.of("OUTLIER: suspicious transaction"),
+                null, List.of(new Anomaly(Anomaly.Category.OUTLIER, "suspicious transaction", tx, null)),
                 out.toString()
             )
         );

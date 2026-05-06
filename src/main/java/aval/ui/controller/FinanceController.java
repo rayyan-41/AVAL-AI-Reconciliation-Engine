@@ -110,7 +110,7 @@ public class FinanceController {
             .stream()
             .filter(h -> h.getStatus() == HypothesisStatus.PENDING_REVIEW)
             .count();
-        List<String> anomalies = MainUIContext.getInstance().getAnomalies();
+        List<aval.domain.ai.Anomaly> anomalies = MainUIContext.getInstance().getAnomalies();
         long anomN = anomalies != null ? anomalies.size() : 0;
 
         statRow.getChildren().setAll(

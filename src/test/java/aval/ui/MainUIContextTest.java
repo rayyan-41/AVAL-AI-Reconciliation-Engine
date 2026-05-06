@@ -1,5 +1,6 @@
 package aval.ui;
 
+import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
@@ -61,7 +62,7 @@ public class MainUIContextTest {
         ctx.setAllHypotheses(List.of());
         ctx.setUnmatchedLedger(List.of());
         ctx.setUnmatchedBank(List.of());
-        ctx.setAnomalies(List.of("anomaly1"));
+        ctx.setAnomalies(List.of(new Anomaly(Anomaly.Category.OUTLIER, "test anomaly", null, null)));
 
         ctx.clearSession();
 

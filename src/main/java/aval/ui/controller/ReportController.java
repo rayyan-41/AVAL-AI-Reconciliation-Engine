@@ -26,6 +26,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 
 public class ReportController {
 
@@ -72,6 +74,12 @@ public class ReportController {
     @FXML
     private TableColumn<MatchHypothesis, String> rResCol;
 
+    @FXML private ToggleButton filterAll;
+    @FXML private ToggleButton filterAuto;
+    @FXML private ToggleButton filterApproved;
+    @FXML private ToggleButton filterRejected;
+
+    private ToggleGroup filterGroup;
     private final List<MatchHypothesis> currentHypotheses = new ArrayList<>();
     private String lastGeneratedReportPath = null;
 
@@ -79,6 +87,7 @@ public class ReportController {
     public void initialize() {
         updateHeader();
         setupLineageTable();
+        setupFilterGroup();
         UIAnimationUtil.applyButtonPressFeedback(btnGenerate);
         UIAnimationUtil.applyButtonPressFeedback(btnEmail);
 
@@ -90,6 +99,22 @@ public class ReportController {
         if (existing != null) {
             populateReport(existing);
         }
+    }
+
+    private void setupFilterGroup() {
+        filterGroup = new ToggleGroup();
+        filterAll.setToggleGroup(filterGroup);
+        filterAuto.setToggleGroup(filterGroup);
+        filterApproved.setToggleGroup(filterGroup);
+        filterRejected.setToggleGroup(filterGroup);
+        filterAll.setSelected(true);
+
+        // Prevent deselecting all — at least one must stay selected
+        filterGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == null && oldToggle != null) {
+                oldToggle.setSelected(true);
+            }
+        });
     }
 
     public void populateReport(List<MatchHypothesis> all) {
@@ -152,6 +177,48 @@ public class ReportController {
             );
 
         lineageTable.setItems(FXCollections.observableArrayList(all));
+        filterAll.setSelected(true);
+    }
+
+    // ── Filter handlers ────────────────────────────────────────────────────
+
+    @FXML
+    void handleFilterAll() {
+        applyFilter(null);
+    }
+
+    @FXML
+    void handleFilterAuto() {
+        applyFilter("AUTO");
+    }
+
+    @FXML
+    void handleFilterApproved() {
+        applyFilter("APPROVED");
+    }
+
+    @FXML
+    void handleFilterRejected() {
+        applyFilter("REJECTED");
+    }
+
+    private void applyFilter(String filterType) {
+        List<MatchHypothesis> filtered;
+        if (filterType == null) {
+            // Show all
+            filtered = currentHypotheses;
+        } else {
+            filtered = currentHypotheses.stream().filter(h -> {
+                return switch (filterType) {
+                    case "AUTO" -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED;
+                    case "APPROVED" -> h.getStatus() == HypothesisStatus.APPROVED
+                                       && h.getConfidenceScore() < 0.95;
+                    case "REJECTED" -> h.getStatus() == HypothesisStatus.REJECTED;
+                    default -> true;
+                };
+            }).collect(java.util.stream.Collectors.toList());
+        }
+        lineageTable.setItems(FXCollections.observableArrayList(filtered));
     }
 
     @FXML
@@ -204,7 +271,7 @@ public class ReportController {
                     ctx.getUnmatchedLedger();
                 List<StandardizedTransaction> unmatchedB =
                     ctx.getUnmatchedBank();
-                List<String> anomalies = ctx.getAnomalies();
+                List<aval.domain.ai.Anomaly> anomalies = ctx.getAnomalies();
 
                 if (records == null) records = new ArrayList<>();
                 if (unmatchedL == null) unmatchedL = new ArrayList<>();

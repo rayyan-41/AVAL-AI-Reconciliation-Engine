@@ -1,6 +1,7 @@
 package aval.ui;
 
 import aval.domain.SystemUser;
+import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
@@ -49,7 +50,7 @@ public class MainUIContext {
     );
     private volatile List<StandardizedTransaction> unmatchedLedger;
     private volatile List<StandardizedTransaction> unmatchedBank;
-    private volatile List<String> anomalies;
+    private volatile List<Anomaly> anomalies;
 
     //Constructor
     private MainUIContext() {
@@ -102,7 +103,7 @@ public class MainUIContext {
     }
     public List<StandardizedTransaction> getUnmatchedLedger() { return unmatchedLedger != null ? unmatchedLedger : Collections.emptyList(); }
     public List<StandardizedTransaction> getUnmatchedBank() { return unmatchedBank != null ? unmatchedBank : Collections.emptyList(); }
-    public List<String> getAnomalies() { return anomalies != null ? anomalies : Collections.emptyList(); }
+    public List<Anomaly> getAnomalies() { return anomalies != null ? anomalies : Collections.emptyList(); }
     public boolean isVectorizationAvailable() { return vectorizationAvailable; }
 
     //Setters
@@ -131,7 +132,7 @@ public void setWorkspaceController(IWorkspaceController workspaceController) { t
     }
     public void setUnmatchedLedger(List<StandardizedTransaction> unmatchedLedger) { this.unmatchedLedger = unmatchedLedger; }
     public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) { this.unmatchedBank = unmatchedBank; }
-    public void setAnomalies(List<String> anomalies) { this.anomalies = anomalies; }
+    public void setAnomalies(List<Anomaly> anomalies) { this.anomalies = anomalies; }
     public void setVectorizationAvailable(boolean available) { this.vectorizationAvailable = available; }
 
     //Helper Methods

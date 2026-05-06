@@ -1,0 +1,548 @@
+@startuml AVAL_Class_Diagram
+title AVAL — AI-Powered Reconciliation Engine\nComplete Class Diagram · CS-3004 Deliverable 5
+
+left to right direction
+
+skinparam linetype ortho
+skinparam ranksep 55
+skinparam nodesep 35
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+skinparam backgroundColor #F8FAFC
+skinparam packageStyle rectangle
+skinparam defaultFontName Segoe UI
+
+skinparam classFontColor #FFFFFF
+skinparam classAttributeFontColor #111827
+skinparam classStereotypeFontColor #111827
+skinparam classHeaderBackgroundColor #000000
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1F2937
+    FontSize 12
+}
+skinparam interface {
+    BackgroundColor #FFFFFF
+    BorderColor #0369A1
+}
+skinparam abstract {
+    BackgroundColor #FFFFFF
+    BorderColor #B45309
+}
+skinparam enum {
+    BackgroundColor #FFFFFF
+    BorderColor #15803D
+}
+skinparam package {
+    FontColor #0F172A
+    BorderColor #64748B
+}
+skinparam note {
+    BackgroundColor #FDEDEC
+    BorderColor #E74C3C
+}
+skinparam ArrowColor #475569
+skinparam ArrowFontColor #334155
+
+' ─────────────────────────────────────────────────────
+' LAYER 1 — Core Domain Model
+' ─────────────────────────────────────────────────────
+
+package "Layer 1 — Core Domain Model" #EEF2FF {
+
+    class ClientOrganization <<Information Expert, Creator>> {
+        - orgId : UUID
+        - legalName : String
+        - createdAt : LocalDate
+        - workspaces : List<ReconciliationWorkspace>
+        --
+        + getActiveWorkspace() : ReconciliationWorkspace
+        + addWorkspace(ws : ReconciliationWorkspace) : void
+    }
+
+    class ReconciliationWorkspace <<Information Expert>> {
+        - workspaceId : UUID
+        - name : String
+        - status : WorkspaceStatus
+        - datasets : List<FinancialDataset>
+        - hypotheses : List<MatchHypothesis>
+        - createdAt : LocalDateTime
+        - createdBy : SystemUser
+        --
+        + getMatchRate() : double
+        + getUnresolvedCount() : int
+        + isReadyForReport() : boolean
+        + addDataset(ds : FinancialDataset) : void
+        + addHypothesis(h : MatchHypothesis) : void
+    }
+
+    class MatchingConfig <<Information Expert>> {
+        + AUTO_CONFIRM_THRESHOLD : double = 0.95
+        + REVIEW_FLOOR : double = 0.70
+        + DATE_TOLERANCE_DAYS : int = 3
+        + AMOUNT_TOLERANCE_PCT : double = 0.01
+        --
+        + isAutoConfirm(score : double) : boolean
+        + requiresReview(score : double) : boolean
+        + isUnmatched(score : double) : boolean
+    }
+
+    class RawTransaction {
+        - transactionId : UUID
+        - rawDate : String
+        - rawAmount : String
+        - narrative : String
+        - transactionType : TransactionType
+        - sourceDataset : FinancialDataset
+        --
+        + getParsedAmount() : BigDecimal
+        + toEmbeddingInputText() : String
+        + hasValidAmount() : boolean
+    }
+
+    class StandardizedTransaction {
+        - standardizedId : UUID
+        - isoDate : LocalDate
+        - parsedAmount : BigDecimal
+        - cleanContext : String
+        - sourceRaw : RawTransaction
+        - embedding : SemanticEmbedding
+        --
+        + getEmbeddingVector() : float[]
+        + hasEmbedding() : boolean
+        + toMatchingContext() : String
+        + getTransactionType() : TransactionType
+    }
+
+    class SemanticEmbedding <<Pure Fabrication>> {
+        - embeddingId : UUID
+        - vectorData : float[]
+        - modelVersion : String
+        - generatedAt : LocalDateTime
+        --
+        + getVector() : float[]
+        + getDimensions() : int
+        + isValid() : boolean
+    }
+
+    class MatchHypothesis <<Information Expert>> {
+        - hypothesisId : UUID
+        - bankSideTx : StandardizedTransaction
+        - ledgerSideTx : StandardizedTransaction
+        - confidenceScore : double
+        - status : HypothesisStatus
+        - matchType : MatchType
+        - semanticProofLog : String
+        --
+        + isAutoConfirmable(cfg : MatchingConfig) : boolean
+        + requiresReview(cfg : MatchingConfig) : boolean
+        + getDiscrepancyAmount() : BigDecimal
+        + getXAICueText() : String
+        + seal(sealedBy : SystemUser) : ReconciliationRecord
+        + reject() : void
+    }
+
+    class ReconciliationRecord <<Pure Fabrication>> {
+        - recordId : UUID
+        - matchedAmount : BigDecimal
+        - approvalDate : LocalDate
+        - sealedBy : SystemUser
+        - hypothesisRef : MatchHypothesis
+        - auditNote : String
+        --
+        + isManualOverride() : boolean
+        + getSummary() : String
+    }
+
+    class SystemUser {
+        - userId : UUID
+        - email : String
+        - passwordHash : String
+        - role : UserRole
+        --
+        + getRole() : UserRole
+        + isAuthenticated() : boolean
+    }
+
+    ' Layer 1 Enumerations
+    enum WorkspaceStatus {
+        CREATED
+        INGESTING
+        PROCESSING
+        MATCHING
+        REVIEW_REQUIRED
+        COMPLETE
+    }
+
+    enum HypothesisStatus {
+        AUTO_RECONCILED
+        PENDING_REVIEW
+        APPROVED
+        REJECTED
+        FORCE_RECONCILED
+    }
+
+    enum MatchType {
+        EXACT
+        SEMANTIC
+        FORCE_OVERRIDE
+    }
+
+    enum TransactionType {
+        DEBIT
+        CREDIT
+        IBFT
+        CHEQUE
+        CASH
+    }
+
+    enum UserRole {
+        AVAL_ENGINEER
+        FINANCE_OFFICER
+    }
+}
+
+' ─────────────────────────────────────────────────────
+' LAYER 2 — Ingestion Layer
+' ─────────────────────────────────────────────────────
+
+package "Layer 2 — Ingestion Layer" #FFF8E1 {
+
+    abstract class FinancialDataset <<Polymorphism>> {
+        - datasetId : UUID
+        - importDate : LocalDate
+        - filePath : String
+        - status : DatasetStatus
+        - rawTransactions : List<RawTransaction>
+        - standardizedTransactions : List<StandardizedTransaction>
+        --
+        + {abstract} getSourceType() : DataSourceType
+        + {abstract} validate() : boolean
+        + getRawTransactions() : List<RawTransaction>
+        + getStandardizedTransactions() : List<StandardizedTransaction>
+        + markAsStandardized() : void
+    }
+
+    class RawInternalLedger {
+        - delimiter : char
+        - columnMappings : Map<String, Integer>
+        --
+        + getSourceType() : DataSourceType
+        + validate() : boolean
+        + detectDelimiter() : char
+    }
+
+    class RawBankStatement {
+        - sourceFileName : String
+        - extractedCsvPath : String
+        --
+        + getSourceType() : DataSourceType
+        + validate() : boolean
+    }
+
+    enum DatasetStatus {
+        RAW
+        VALIDATED
+        STANDARDIZED
+        VECTORIZED
+    }
+
+    enum DataSourceType {
+        INTERNAL_LEDGER
+        BANK_STATEMENT
+    }
+
+    ' Layer 2 Interfaces
+    interface DocumentParser<T> <<Polymorphism, Protected Variations>> {
+        + parse(filePath : String) : T
+        + validate(filePath : String) : boolean
+        + getSupportedFormat() : String
+        + extractRawRows(filePath : String) : List<String[]>
+    }
+
+    interface VectorizationEngine <<Protected Variations, Indirection>> {
+        + vectorize(tx : StandardizedTransaction) : SemanticEmbedding
+        + batchVectorize(txList : List<StandardizedTransaction>) : List<SemanticEmbedding>
+        + preprocess(text : String) : String
+    }
+
+    interface MatchingEngine <<Polymorphism, Protected Variations>> {
+        + match(bank : List<StandardizedTransaction>, ledger : List<StandardizedTransaction>, cfg : MatchingConfig) : List<MatchHypothesis>
+        + computeConfidence(a : StandardizedTransaction, b : StandardizedTransaction) : double
+    }
+}
+
+' ─────────────────────────────────────────────────────
+' LAYER 3 — AI Engine Implementations
+' ─────────────────────────────────────────────────────
+
+package "Layer 3 — AI Engine Implementations" #E8F5E9 {
+
+    class PDFBankStatementParser {
+        - tableDetectionHeuristics : List<String>
+        - outputCsvBasePath : String
+        --
+        + parse(filePath : String) : RawBankStatement
+        + extractRawRows(filePath : String) : List<String[]>
+        + normalizeNarrative(raw : String) : String
+        + validate(filePath : String) : boolean
+        + getSupportedFormat() : String
+        + writeToCsv(rows : List<String[]>) : String
+    }
+
+    class CSVLedgerParser {
+        - expectedHeaders : List<String>
+        --
+        + parse(filePath : String) : RawInternalLedger
+        + extractRawRows(filePath : String) : List<String[]>
+        + mapRowToRawTransaction(row : String[]) : RawTransaction
+        + detectDelimiter(filePath : String) : char
+        + validate(filePath : String) : boolean
+        + getSupportedFormat() : String
+    }
+
+    class LangChain4jVectorizationEngine <<Indirection>> {
+        - embeddingModel : EmbeddingModel
+        - modelName : String
+        - apiKey : String
+        --
+        + vectorize(tx : StandardizedTransaction) : SemanticEmbedding
+        + batchVectorize(txList : List<StandardizedTransaction>) : List<SemanticEmbedding>
+        + preprocess(text : String) : String
+        + cosineSimilarity(a : float[], b : float[]) : double
+    }
+
+    class SemanticMatchingEngine <<Low Coupling>> {
+        - vectorizationEngine : VectorizationEngine
+        --
+        + match(bank : List<StandardizedTransaction>, ledger : List<StandardizedTransaction>, cfg : MatchingConfig) : List<MatchHypothesis>
+        + computeConfidence(a : StandardizedTransaction, b : StandardizedTransaction) : double
+        + buildSemanticProofLog(score : double, a : StandardizedTransaction, b : StandardizedTransaction) : String
+    }
+
+    class RuleBasedMatchingEngine <<stub>> {
+        --
+        + match(bank : List<StandardizedTransaction>, ledger : List<StandardizedTransaction>, cfg : MatchingConfig) : List<MatchHypothesis>
+        + computeConfidence(a : StandardizedTransaction, b : StandardizedTransaction) : double
+    }
+
+    note bottom of RuleBasedMatchingEngine
+        STUB — exists only to demonstrate
+        Protected Variations argument.
+        Exact string/amount matching only.
+    end note
+}
+
+' ─────────────────────────────────────────────────────
+' LAYER 4 — Application Services
+' ─────────────────────────────────────────────────────
+
+package "Layer 4 — Application Services" #FCE4EC {
+
+    class IngestionService <<Controller, Creator>> {
+        - pdfParser : PDFBankStatementParser
+        - csvParser : CSVLedgerParser
+        - dataStore : DataStore
+        - storagePath : String
+        --
+        + ingestLedger(file : File, ws : ReconciliationWorkspace) : RawInternalLedger
+        + ingestBankStatement(file : File, ws : ReconciliationWorkspace) : RawBankStatement
+        + standardize(dataset : FinancialDataset) : List<StandardizedTransaction>
+        + validateFile(file : File, type : DataSourceType) : boolean
+        + storeFile(file : File) : String
+    }
+
+    class ReconciliationService <<Controller, Low Coupling>> {
+        - matchingEngine : MatchingEngine
+        - vectorizationEngine : VectorizationEngine
+        - config : MatchingConfig
+        - dataStore : DataStore
+        --
+        + vectorizeWorkspace(ws : ReconciliationWorkspace) : void
+        + runMatching(ws : ReconciliationWorkspace) : List<MatchHypothesis>
+        + approveHypothesis(hypothesisId : UUID, user : SystemUser) : ReconciliationRecord
+        + rejectHypothesis(hypothesisId : UUID, user : SystemUser) : void
+        + forceReconcile(bankId : UUID, ledgerId : UUID, note : String, user : SystemUser) : ReconciliationRecord
+        + getPendingQueue(ws : ReconciliationWorkspace) : List<MatchHypothesis>
+    }
+
+    class ReportService <<Information Expert, Creator>> {
+        - dataStore : DataStore
+        --
+        + generateSummary(ws : ReconciliationWorkspace, user : SystemUser) : ReportSummary
+        + exportToCsv(ws : ReconciliationWorkspace, path : String) : File
+        + exportToPdf(ws : ReconciliationWorkspace, path : String) : File
+    }
+
+    class DataStore <<Pure Fabrication, Indirection>> {
+        - connection : Connection
+        --
+        + saveOrganization(org : ClientOrganization) : void
+        + findOrganizationById(id : UUID) : ClientOrganization
+        + saveWorkspace(ws : ReconciliationWorkspace) : void
+        + findWorkspaceById(id : UUID) : ReconciliationWorkspace
+        + saveDataset(ds : FinancialDataset) : void
+        + saveTransaction(tx : RawTransaction) : void
+        + saveStandardizedTransaction(tx : StandardizedTransaction) : void
+        + findUnvectorized(workspaceId : UUID) : List<StandardizedTransaction>
+        + saveHypothesis(h : MatchHypothesis) : void
+        + findHypothesesByWorkspace(workspaceId : UUID) : List<MatchHypothesis>
+        + findPendingReview(workspaceId : UUID) : List<MatchHypothesis>
+        + saveRecord(r : ReconciliationRecord) : void
+        + saveUser(u : SystemUser) : void
+        + findUserByEmail(email : String) : SystemUser
+    }
+}
+
+' ─────────────────────────────────────────────────────
+' LAYER 5 — JavaFX UI Controllers
+' ─────────────────────────────────────────────────────
+
+package "Layer 5 — JavaFX UI Controllers" #EDE7F6 {
+
+    class AppController <<Controller Facade>> {
+        - currentUser : SystemUser
+        - currentWorkspace : ReconciliationWorkspace
+        - dataStore : DataStore
+        --
+        + handleLogin(email : String, pass : String) : void
+        + handleLogout() : void
+        + navigateTo(view : AppView) : void
+        + setActiveWorkspace(ws : ReconciliationWorkspace) : void
+        + getCurrentUser() : SystemUser
+    }
+
+    class IngestionController {
+        - ingestionService : IngestionService
+        - selectedLedger : File
+        - selectedStatement : File
+        --
+        + handleLedgerUpload() : void
+        + handleBankStatementUpload() : void
+        + displayPreview(rows : List<String[]>) : void
+        + showError(msg : String) : void
+        + onIngestionComplete(ds : FinancialDataset) : void
+    }
+
+    class ReconciliationDashboardController {
+        - reconciliationService : ReconciliationService
+        - hypothesisTable : TableView<MatchHypothesis>
+        --
+        + handleRunMatching() : void
+        + loadPendingQueue() : void
+        + handleApprove(h : MatchHypothesis) : void
+        + handleReject(h : MatchHypothesis) : void
+        + handleForceReconcile() : void
+        + filterByStatus(status : HypothesisStatus) : void
+        + showXAIExplanation(h : MatchHypothesis) : void
+    }
+
+    class ReportController {
+        - reportService : ReportService
+        --
+        + handleGenerateReport() : void
+        + handleExportCsv() : void
+        + handleExportPdf() : void
+        + showBlockingError(items : List) : void
+    }
+}
+
+' ─────────────────────────────────────────────────────
+' RELATIONSHIPS
+' ─────────────────────────────────────────────────────
+
+' Layer 1 — Domain relationships
+ClientOrganization "1" o-- "many" ReconciliationWorkspace : Aggregation
+ReconciliationWorkspace "1" o-- "1..*" FinancialDataset : Aggregation
+ReconciliationWorkspace "1" *-- "many" MatchHypothesis : Composition
+FinancialDataset "1" *-- "many" RawTransaction : Composition
+FinancialDataset "1" *-- "many" StandardizedTransaction : Composition
+StandardizedTransaction "1" *-- "1" SemanticEmbedding : Composition
+StandardizedTransaction "many" --> "1" RawTransaction : Association
+MatchHypothesis "many" --> "1" StandardizedTransaction : bank side
+MatchHypothesis "many" --> "1" StandardizedTransaction : ledger side
+ReconciliationRecord "1" --> "1" MatchHypothesis : Association
+ReconciliationRecord "many" --> "1" SystemUser : Association
+ReconciliationService "1" --> "1" MatchingConfig : Association (holds)
+SemanticMatchingEngine ..> MatchingConfig : Dependency (reads)
+
+' Layer 1 — Enum usage
+ReconciliationWorkspace ..> WorkspaceStatus : uses
+MatchHypothesis ..> HypothesisStatus : uses
+MatchHypothesis ..> MatchType : uses
+RawTransaction ..> TransactionType : uses
+SystemUser ..> UserRole : uses
+FinancialDataset ..> DatasetStatus : uses
+FinancialDataset ..> DataSourceType : uses
+
+' Layer 2 — Inheritance
+RawInternalLedger --|> FinancialDataset : extends
+RawBankStatement --|> FinancialDataset : extends
+
+' Layer 3 — Interface realizations
+PDFBankStatementParser ..|> DocumentParser : implements
+CSVLedgerParser ..|> DocumentParser : implements
+LangChain4jVectorizationEngine ..|> VectorizationEngine : implements
+SemanticMatchingEngine ..|> MatchingEngine : implements
+RuleBasedMatchingEngine ..|> MatchingEngine : implements (stub)
+
+' Layer 3 — Internal dependencies
+SemanticMatchingEngine ..> VectorizationEngine : Dependency (uses interface)
+
+' Layer 4 — Service dependencies on interfaces
+IngestionService ..> DocumentParser : Dependency (uses interface)
+IngestionService ..> DataStore : Dependency
+ReconciliationService ..> MatchingEngine : Dependency (uses interface)
+ReconciliationService ..> VectorizationEngine : Dependency (uses interface)
+ReconciliationService ..> DataStore : Dependency
+ReportService ..> DataStore : Dependency
+
+' Layer 5 — UI to Service dependencies
+AppController ..> DataStore : Dependency
+IngestionController ..> IngestionService : Dependency
+ReconciliationDashboardController ..> ReconciliationService : Dependency
+ReportController ..> ReportService : Dependency
+
+' ─────────────────────────────────────────────────────
+' V2 DEFERRED NOTES
+' ─────────────────────────────────────────────────────
+
+note top of ClientOrganization
+    ⚑ v2: pkTaxId, industryType,
+    bankAccountNumbers
+end note
+
+note top of ReconciliationWorkspace
+    ⚑ v2: quarter/billing-cycle locking,
+    anomalyList
+end note
+
+note top of MatchHypothesis
+    ⚑ v2: isConsolidated,
+    consolidatedEntries (UC9)
+end note
+
+note top of SystemUser
+    ⚑ v2: assignedOrg FK,
+    Permission enum, full RBAC
+end note
+
+note top of ReportService
+    ⚑ v2: ERP JSON push,
+    digital certification,
+    CryptoHashService integration
+end note
+
+legend right
+    |= Link |= Meaning |
+    | *--  | Composition |
+    | o--  | Aggregation |
+    | -->  | Association |
+    | ..>  | Dependency |
+    | --|> | Inheritance |
+    | ..|> | Interface realization |
+endlegend
+
+@enduml

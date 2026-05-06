@@ -700,3 +700,29 @@
     -fx-text-fill: -fx-green-text;
     -fx-font-weight: bold;
 }
+
+/* Filter pill toggles (Report lineage) */
+.filter-pill {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-muted;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 999px;
+    -fx-background-radius: 999px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 16 6 16;
+    -fx-cursor: hand;
+}
+.filter-pill:hover {
+    -fx-border-color: -fx-text-secondary;
+    -fx-text-fill: -fx-text-primary;
+}
+.filter-pill:selected {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+    -fx-border-color: -fx-accent;
+}
+.filter-pill:selected:hover {
+    -fx-background-color: -fx-accent-hover;
+    -fx-border-color: -fx-accent-hover;
+}

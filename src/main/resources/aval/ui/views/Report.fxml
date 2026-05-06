@@ -49,6 +49,12 @@
 
     <!-- Lineage table -->
     <Label text="Reconciliation Lineage" styleClass="section-heading" />
+    <HBox fx:id="filterBar" spacing="8" style="-fx-padding: 0 0 12 0;" alignment="CENTER_LEFT">
+      <ToggleButton fx:id="filterAll" text="All" styleClass="filter-pill" onAction="#handleFilterAll" />
+      <ToggleButton fx:id="filterAuto" text="Auto-Reconciled" styleClass="filter-pill" onAction="#handleFilterAuto" />
+      <ToggleButton fx:id="filterApproved" text="Approved Manually" styleClass="filter-pill" onAction="#handleFilterApproved" />
+      <ToggleButton fx:id="filterRejected" text="Rejected" styleClass="filter-pill" onAction="#handleFilterRejected" />
+    </HBox>
     <TableView fx:id="lineageTable" styleClass="data-table">
       <columns>
         <TableColumn text="Ledger Ref" fx:id="rlRefCol" prefWidth="110" />

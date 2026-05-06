@@ -3,6 +3,7 @@ package aval.ui.controller;
 import aval.common.enums.HypothesisStatus;
 import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
+import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
@@ -44,7 +45,7 @@ public class ManualCheckController {
     @FXML private TableColumn<MatchHypothesis, String> mcJustCol;
     @FXML private TableColumn<MatchHypothesis, Void> mcActionCol;
     @FXML private VBox anomalyPane;
-    @FXML private ListView<String> anomalyList;
+    @FXML private ListView<Anomaly> anomalyList;
     @FXML private HBox mcCompleteBar;
     @FXML private Button btnApproveAllPending;
     @FXML private Button btnRejectAllPending;
@@ -201,10 +202,23 @@ public class ManualCheckController {
     }
 
     public void loadAnomalies() {
-        List<String> anomalies = MainUIContext.getInstance().getAnomalies();
+        List<Anomaly> anomalies = MainUIContext.getInstance().getAnomalies();
         if (anomalies != null && !anomalies.isEmpty()) {
             anomaliesDismissed = false;
             anomalyList.setItems(FXCollections.observableArrayList(anomalies));
+            anomalyList.setCellFactory(lv -> new ListCell<>() {
+                @Override protected void updateItem(Anomaly item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) { setText(null); return; }
+                    String badge = switch (item.getCategory()) {
+                        case DUPLICATE              -> "⚠ DUPLICATE";
+                        case OUTLIER                -> "📈 OUTLIER";
+                        case WEEKEND_POSTING        -> "📅 WEEKEND";
+                        case CONSOLIDATION_VARIANCE -> "∑ VARIANCE";
+                    };
+                    setText(badge + "  —  " + item.getDescription());
+                }
+            });
             anomalyPane.setVisible(true);
             anomalyPane.setManaged(true);
         } else {

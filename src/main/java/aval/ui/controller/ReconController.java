@@ -692,7 +692,7 @@ public class ReconController {
 
                 AnomalyDetectionEngine anomalyEngine =
                     ctx.getAnomalyDetectionEngine();
-                List<String> anomalies =
+                List<aval.domain.ai.Anomaly> anomalies =
                     anomalyEngine != null
                         ? anomalyEngine.identifyAnomalies(
                               unmatchedLedger,

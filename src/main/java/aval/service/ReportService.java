@@ -41,7 +41,7 @@ public class ReportService {
         List<StandardizedTransaction> unmatchedLedger,
         List<StandardizedTransaction> unmatchedBank,
         List<aval.domain.ai.MatchHypothesis> pendingHypotheses,
-        List<String> unresolvedAnomalies,
+        List<aval.domain.ai.Anomaly> unresolvedAnomalies,
         String outputFilePath
     ) throws IOException, UnresolvedItemsException {
         if (
