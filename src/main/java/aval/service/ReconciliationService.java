@@ -178,23 +178,73 @@ public class ReconciliationService {
 
     /**
      * UC9 — Perform Multi-Source Consolidation
-     * Draft logic for future expansion to multiple financial datasets.
+     *
+     * Groups ledger transactions whose amounts sum (within tolerancePct %) to the amount
+     * of each bank transaction, creating a single FORCE_OVERRIDE hypothesis per group.
+     * Variance anomalies (sum outside tolerance) are returned via the provided list.
+     *
+     * @param workspace         the active workspace (used for MatchingConfig)
+     * @param ledgerTransactions all unmatched ledger transactions to consider
+     * @param bankTransaction    the single bank transaction to match against
+     * @param tolerancePct       acceptable variance as a fraction, e.g. 0.02 = 2 %
+     * @param anomaliesOut       mutable list — CONSOLIDATION_VARIANCE entries appended here
+     * @param confirmingUser     user performing the consolidation
+     * @return list of ReconciliationRecords created (one per group)
      */
-    public List<MatchHypothesis> consolidateMultiSource(
-        ReconciliationWorkspace workspace,
-        List<List<StandardizedTransaction>> multipleDatasets
-    ) {
-        List<MatchHypothesis> consolidated = new ArrayList<>();
-        if (
-            multipleDatasets == null || multipleDatasets.size() < 2
-        ) return consolidated;
+    public List<ReconciliationRecord> consolidateMultiSource(
+            ReconciliationWorkspace workspace,
+            List<StandardizedTransaction> ledgerTransactions,
+            StandardizedTransaction bankTransaction,
+            double tolerancePct,
+            List<aval.domain.ai.Anomaly> anomaliesOut,
+            SystemUser confirmingUser) {
 
-        List<StandardizedTransaction> primary = multipleDatasets.get(0);
-        for (int i = 1; i < multipleDatasets.size(); i++) {
-            List<StandardizedTransaction> secondary = multipleDatasets.get(i);
-            ReconciliationResult result = runMatching(workspace, primary, secondary);
-            consolidated.addAll(result.getHypotheses());
+        if (ledgerTransactions == null || ledgerTransactions.isEmpty() || bankTransaction == null) {
+            return new ArrayList<>();
         }
-        return consolidated;
+
+        java.math.BigDecimal bankAmt   = bankTransaction.getAmount().abs();
+        java.math.BigDecimal tolerance = bankAmt.multiply(java.math.BigDecimal.valueOf(tolerancePct));
+        java.math.BigDecimal lower     = bankAmt.subtract(tolerance);
+        java.math.BigDecimal upper     = bankAmt.add(tolerance);
+
+        // Build a subset whose running sum falls within [lower, upper]
+        List<StandardizedTransaction> group = new ArrayList<>();
+        java.math.BigDecimal runningSum = java.math.BigDecimal.ZERO;
+
+        for (StandardizedTransaction ledger : ledgerTransactions) {
+            java.math.BigDecimal candidate = runningSum.add(ledger.getAmount().abs());
+            if (candidate.compareTo(upper) <= 0) {
+                group.add(ledger);
+                runningSum = candidate;
+            }
+            if (runningSum.compareTo(lower) >= 0) break;
+        }
+
+        List<ReconciliationRecord> records = new ArrayList<>();
+
+        if (runningSum.compareTo(lower) >= 0 && runningSum.compareTo(upper) <= 0) {
+            // Within tolerance — create one hypothesis per grouped ledger entry
+            for (StandardizedTransaction ledger : group) {
+                MatchHypothesis h = new MatchHypothesis(ledger, bankTransaction,
+                    1.0, aval.common.enums.MatchType.FORCE_OVERRIDE);
+                h.setStatus(aval.common.enums.HypothesisStatus.APPROVED);
+                h.setJustification(String.format(
+                    "UC9 Consolidation: group sum %s matches bank %s (tolerance %.1f%%)",
+                    runningSum.toPlainString(), bankAmt.toPlainString(), tolerancePct * 100));
+                records.add(new ReconciliationRecord(h, confirmingUser));
+            }
+            dataStore.saveReconciliationRecords(records);
+        } else {
+            // Outside tolerance — flag as variance anomaly
+            if (anomaliesOut != null) {
+                anomaliesOut.add(new aval.domain.ai.Anomaly(
+                    aval.domain.ai.Anomaly.Category.CONSOLIDATION_VARIANCE,
+                    String.format("Consolidation variance: ledger group sums to %s, bank posted %s (tolerance %.1f%%)",
+                        runningSum.toPlainString(), bankAmt.toPlainString(), tolerancePct * 100),
+                    bankTransaction, null));
+            }
+        }
+        return records;
     }
 }

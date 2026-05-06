@@ -110,6 +110,59 @@
 
       </VBox>
 
+      <!-- UC9: Multi-Source Consolidation Panel -->
+      <VBox fx:id="consolidationPane" spacing="12" styleClass="fd-card"
+            visible="false" managed="false">
+
+        <Label text="Multi-Source Consolidation" styleClass="section-heading" />
+        <Label text="Select a single bank transaction and the ledger entries whose amounts sum to it."
+               styleClass="mc-sub" wrapText="true" />
+
+        <HBox spacing="16" alignment="TOP_LEFT">
+
+          <!-- Bank target picker -->
+          <VBox spacing="6" minWidth="280">
+            <Label text="Target Bank Transaction" styleClass="mc-prog-label" />
+            <TableView fx:id="consolidationBankTable" styleClass="data-table" prefHeight="160">
+              <columns>
+                <TableColumn text="Date"      fx:id="csBDateCol" prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="csBAmtCol"  prefWidth="110" />
+                <TableColumn text="Narrative" fx:id="csBNarrCol" prefWidth="160" />
+              </columns>
+            </TableView>
+          </VBox>
+
+          <!-- Ledger multi-select -->
+          <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Ledger Entries to Consolidate (multi-select)" styleClass="mc-prog-label" />
+            <TableView fx:id="consolidationLedgerTable" styleClass="data-table" prefHeight="160">
+              <columns>
+                <TableColumn text="Date"      fx:id="csLDateCol" prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="csLAmtCol"  prefWidth="110" />
+                <TableColumn text="Narrative" fx:id="csLNarrCol" prefWidth="200" />
+              </columns>
+            </TableView>
+          </VBox>
+
+        </HBox>
+
+        <HBox spacing="12" alignment="CENTER_LEFT">
+          <Label text="Tolerance (%)" styleClass="mc-prog-label" />
+          <TextField fx:id="toleranceField" text="2.0" prefWidth="70" />
+          <Region HBox.hgrow="ALWAYS" />
+          <Label fx:id="consolidationSumLabel" styleClass="mc-sub" />
+          <Button fx:id="btnConsolidate"
+                  text="Consolidate"
+                  styleClass="btn-approve"
+                  onAction="#handleConsolidate"
+                  disable="true" />
+        </HBox>
+
+        <Label fx:id="consolidationFeedback" styleClass="mc-sub" visible="false" managed="false"
+               wrapText="true" />
+
+      </VBox>
+
       <!-- Anomaly Review Panel -->
       <VBox
             fx:id="anomalyPane"

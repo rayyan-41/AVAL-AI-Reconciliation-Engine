@@ -422,56 +422,41 @@ public class ReconciliationServiceTest {
 
     @Test
     void consolidateMultiSource_nullInput_returnsEmpty() {
-        List<MatchHypothesis> result = service.consolidateMultiSource(workspace, null);
+        List<ReconciliationRecord> result = service.consolidateMultiSource(
+            workspace, null, null, 0.0, null, user);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    void consolidateMultiSource_singleDataset_returnsEmpty() {
-        List<MatchHypothesis> result = service.consolidateMultiSource(
-            workspace,
-            List.of(List.of(ledgerTx(new BigDecimal("100.00"), LocalDate.now())))
-        );
-        assertTrue(result.isEmpty(), "Single dataset cannot be reconciled without a second source");
-    }
+    void consolidateMultiSource_withinTolerance_createsRecords() {
+        StandardizedTransaction l1 = ledgerTx(new BigDecimal("100.00"), LocalDate.now());
+        StandardizedTransaction l2 = ledgerTx(new BigDecimal("200.00"), LocalDate.now());
+        StandardizedTransaction b  = bankTx(new BigDecimal("300.00"), LocalDate.now());
 
-    @Test
-    void consolidateMultiSource_twoDatasets_producesHypotheses() {
-        StandardizedTransaction l = ledgerTx(new BigDecimal("100.00"), LocalDate.now());
-        StandardizedTransaction b = bankTx(new BigDecimal("100.00"), LocalDate.now());
+        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
 
-        MatchHypothesis hyp = new MatchHypothesis(l, b, 0.95, MatchType.EXACT_RULE);
-        when(mockMatchingEngine.generateHypotheses(anyList(), anyList())).thenReturn(List.of(hyp));
-        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
-
-        List<MatchHypothesis> result = service.consolidateMultiSource(
-            workspace,
-            List.of(List.of(l), List.of(b))
-        );
-
-        assertFalse(result.isEmpty());
-    }
-
-    @Test
-    void consolidateMultiSource_threeSources_combinedResults() {
-        StandardizedTransaction l = ledgerTx(new BigDecimal("100.00"), LocalDate.now());
-        StandardizedTransaction b1 = bankTx(new BigDecimal("100.00"), LocalDate.now());
-        StandardizedTransaction b2 = bankTx(new BigDecimal("200.00"), LocalDate.now());
-
-        MatchHypothesis hyp1 = new MatchHypothesis(l, b1, 1.0, MatchType.EXACT_RULE);
-        MatchHypothesis hyp2 = new MatchHypothesis(l, b2, 0.75, MatchType.AI_PROBABILISTIC);
-
-        when(mockMatchingEngine.generateHypotheses(anyList(), anyList()))
-            .thenReturn(List.of(hyp1))
-            .thenReturn(List.of(hyp2));
-        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
-
-        List<MatchHypothesis> result = service.consolidateMultiSource(
-            workspace,
-            List.of(List.of(l), List.of(b1), List.of(b2))
-        );
+        List<ReconciliationRecord> result = service.consolidateMultiSource(
+            workspace, List.of(l1, l2), b, 0.05, new java.util.ArrayList<>(), user);
 
         assertEquals(2, result.size());
+        assertEquals(MatchType.FORCE_OVERRIDE, result.get(0).getHypothesis().getMatchType());
+        verify(mockDataStore).saveReconciliationRecords(anyList());
+    }
+
+    @Test
+    void consolidateMultiSource_outsideTolerance_createsAnomaly() {
+        StandardizedTransaction l1 = ledgerTx(new BigDecimal("100.00"), LocalDate.now());
+        StandardizedTransaction l2 = ledgerTx(new BigDecimal("50.00"), LocalDate.now());
+        StandardizedTransaction b  = bankTx(new BigDecimal("300.00"), LocalDate.now());
+
+        List<aval.domain.ai.Anomaly> anomalies = new java.util.ArrayList<>();
+        List<ReconciliationRecord> result = service.consolidateMultiSource(
+            workspace, List.of(l1, l2), b, 0.05, anomalies, user);
+
+        assertTrue(result.isEmpty());
+        assertEquals(1, anomalies.size());
+        assertEquals(aval.domain.ai.Anomaly.Category.CONSOLIDATION_VARIANCE, anomalies.get(0).getCategory());
+        verify(mockDataStore, never()).saveReconciliationRecords(anyList());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

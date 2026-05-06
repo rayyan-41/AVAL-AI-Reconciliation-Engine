@@ -64,6 +64,21 @@ public class ManualCheckController {
     @FXML private Button btnForceLink;
     @FXML private Label forceFeedback;
 
+    // UC9: Multi-Source Consolidation panel
+    @FXML private VBox consolidationPane;
+    @FXML private TableView<StandardizedTransaction> consolidationBankTable;
+    @FXML private TableColumn<StandardizedTransaction, String> csBDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> csBAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> csBNarrCol;
+    @FXML private TableView<StandardizedTransaction> consolidationLedgerTable;
+    @FXML private TableColumn<StandardizedTransaction, String> csLDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> csLAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> csLNarrCol;
+    @FXML private TextField toleranceField;
+    @FXML private Label consolidationSumLabel;
+    @FXML private Button btnConsolidate;
+    @FXML private Label consolidationFeedback;
+
     //-------------- Attributes ----------------------//
     private static final String DECISION_CONFIRMED = "CONFIRMED";
     private static final String DECISION_REJECTED = "REJECTED";
@@ -83,6 +98,7 @@ public class ManualCheckController {
         UIAnimationUtil.applyButtonPressFeedback(btnApproveAllPending);
         UIAnimationUtil.applyButtonPressFeedback(btnRejectAllPending);
         setupForceMatchTables();
+        setupConsolidationTables();
         hypothesesList = FXCollections.observableArrayList();
         mcTable.setItems(hypothesesList);
         mcTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
@@ -602,12 +618,19 @@ public class ManualCheckController {
         ObservableList<StandardizedTransaction> bankItems =
             FXCollections.observableArrayList(bank   != null ? bank   : List.of());
 
+        // UC8 tables
         unmatchedLedgerTable.setItems(ledgerItems);
         unmatchedBankTable  .setItems(bankItems);
 
+        // UC9 tables (same source data, separate table references)
+        consolidationLedgerTable.setItems(FXCollections.observableArrayList(ledgerItems));
+        consolidationBankTable  .setItems(FXCollections.observableArrayList(bankItems));
+
         boolean anyUnmatched = !ledgerItems.isEmpty() || !bankItems.isEmpty();
-        forceMatchPane.setVisible(anyUnmatched);
-        forceMatchPane.setManaged(anyUnmatched);
+        forceMatchPane    .setVisible(anyUnmatched);
+        forceMatchPane    .setManaged(anyUnmatched);
+        consolidationPane .setVisible(anyUnmatched);
+        consolidationPane .setManaged(anyUnmatched);
         checkIfComplete();
     }
 
@@ -670,5 +693,150 @@ public class ManualCheckController {
         forceFeedback.setText(msg);
         forceFeedback.setVisible(true);
         forceFeedback.setManaged(true);
+    }
+
+    // ── UC9: Multi-Source Consolidation Setup ───────────────────────────────
+
+    private void setupConsolidationTables() {
+        csBDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        csBAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        csBNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+
+        csLDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        csLAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        csLNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+
+        // Multi-select on ledger table
+        consolidationLedgerTable.getSelectionModel()
+            .setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+
+        // Proportional column widths
+        consolidationBankTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        csBDateCol.prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.20));
+        csBAmtCol .prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.25));
+        csBNarrCol.prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.55));
+
+        consolidationLedgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        csLDateCol.prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.20));
+        csLAmtCol .prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.25));
+        csLNarrCol.prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.55));
+
+        // Live sum label as ledger rows are selected
+        consolidationLedgerTable.getSelectionModel().getSelectedItems()
+            .addListener((javafx.collections.ListChangeListener<StandardizedTransaction>) change -> {
+                java.math.BigDecimal sum = consolidationLedgerTable.getSelectionModel()
+                    .getSelectedItems().stream()
+                    .map(tx -> tx.getAmount().abs())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                consolidationSumLabel.setText("Selected sum: " + sum.toPlainString());
+                updateConsolidateButton();
+            });
+
+        consolidationBankTable.getSelectionModel().selectedItemProperty()
+            .addListener((obs, o, n) -> updateConsolidateButton());
+    }
+
+    private void updateConsolidateButton() {
+        boolean bankSelected   = consolidationBankTable.getSelectionModel().getSelectedItem() != null;
+        boolean ledgerSelected = !consolidationLedgerTable.getSelectionModel().getSelectedItems().isEmpty();
+        btnConsolidate.setDisable(!(bankSelected && ledgerSelected));
+    }
+
+    @FXML
+    void handleConsolidate() {
+        StandardizedTransaction bankTx = consolidationBankTable.getSelectionModel().getSelectedItem();
+        List<StandardizedTransaction> selectedLedger = new ArrayList<>(
+            consolidationLedgerTable.getSelectionModel().getSelectedItems());
+
+        if (bankTx == null || selectedLedger.isEmpty()) return;
+
+        double tolerancePct;
+        try {
+            tolerancePct = Double.parseDouble(toleranceField.getText().trim()) / 100.0;
+        } catch (NumberFormatException ex) {
+            consolidationFeedback.setText("Invalid tolerance value — enter a number like 2.0");
+            consolidationFeedback.setVisible(true);
+            consolidationFeedback.setManaged(true);
+            return;
+        }
+
+        SystemUser user = getOrCreateCurrentUser();
+        ReconciliationService svc = getReconciliationServiceOrShowError();
+        if (svc == null) return;
+
+        btnConsolidate.setDisable(true);
+
+        Task<List<aval.domain.ai.ReconciliationRecord>> task = new Task<>() {
+            @Override
+            protected List<aval.domain.ai.ReconciliationRecord> call() {
+                List<aval.domain.ai.Anomaly> newAnomalies = new ArrayList<>();
+                List<aval.domain.ai.ReconciliationRecord> records = svc.consolidateMultiSource(
+                    MainUIContext.getInstance().getActiveWorkspace(),
+                    selectedLedger, bankTx, tolerancePct, newAnomalies, user);
+
+                // Merge any consolidation-variance anomalies back into context
+                if (!newAnomalies.isEmpty()) {
+                    List<aval.domain.ai.Anomaly> existing =
+                        MainUIContext.getInstance().getAnomalies();
+                    if (existing == null) existing = new ArrayList<>();
+                    else existing = new ArrayList<>(existing);
+                    existing.addAll(newAnomalies);
+                    MainUIContext.getInstance().setAnomalies(existing);
+                }
+                return records;
+            }
+        };
+
+        task.setOnSucceeded(e -> Platform.runLater(() -> {
+            List<aval.domain.ai.ReconciliationRecord> records = task.getValue();
+
+            if (records.isEmpty()) {
+                // Variance anomaly was added — reload anomaly panel
+                loadAnomalies();
+                consolidationFeedback.setText("Variance detected — anomaly logged. Adjust selection or tolerance.");
+            } else {
+                records.forEach(r -> MainUIContext.getInstance().addReconciledRecord(r));
+                
+                // Remove consolidated entries from unmatched lists
+                selectedLedger.forEach(l -> {
+                    unmatchedLedgerTable.getItems().remove(l);
+                    consolidationLedgerTable.getItems().remove(l);
+                });
+                unmatchedBankTable.getItems().remove(bankTx);
+                consolidationBankTable.getItems().remove(bankTx);
+
+                // Sync the main context unmatched lists back
+                MainUIContext.getInstance().setUnmatchedLedger(new ArrayList<>(unmatchedLedgerTable.getItems()));
+                MainUIContext.getInstance().setUnmatchedBank(new ArrayList<>(unmatchedBankTable.getItems()));
+
+                consolidationFeedback.setText(
+                    records.size() + " ledger entries consolidated against bank transaction "
+                    + bankTx.getAmount().toPlainString());
+                checkIfComplete();
+
+                // If no more unmatched, hide both panes
+                if (unmatchedLedgerTable.getItems().isEmpty() && unmatchedBankTable.getItems().isEmpty()) {
+                    forceMatchPane.setVisible(false);
+                    forceMatchPane.setManaged(false);
+                    consolidationPane.setVisible(false);
+                    consolidationPane.setManaged(false);
+                }
+            }
+
+            consolidationFeedback.setVisible(true);
+            consolidationFeedback.setManaged(true);
+            btnConsolidate.setDisable(false);
+        }));
+
+        task.setOnFailed(e -> Platform.runLater(() -> {
+            consolidationFeedback.setText("Error: " + task.getException().getMessage());
+            consolidationFeedback.setVisible(true);
+            consolidationFeedback.setManaged(true);
+            btnConsolidate.setDisable(false);
+        }));
+
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 }
