@@ -58,6 +58,58 @@
         </columns>
       </TableView>
 
+      <!-- UC8: Force Manual Reconciliation Panel -->
+      <VBox fx:id="forceMatchPane" spacing="12" styleClass="fd-card"
+            visible="true" managed="true">
+
+        <Label text="Unmatched Transactions" styleClass="section-heading" />
+        <Label text="Select one entry from each list and provide a justification to force-link them."
+               styleClass="mc-sub" wrapText="true" />
+
+        <HBox spacing="16" alignment="TOP_LEFT">
+
+          <!-- Unmatched Ledger -->
+          <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Unmatched Ledger" styleClass="mc-prog-label" />
+            <TableView fx:id="unmatchedLedgerTable" styleClass="data-table" prefHeight="180">
+              <columns>
+                <TableColumn text="Date"      fx:id="fmLDateCol"  prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="fmLAmtCol"   prefWidth="100" />
+                <TableColumn text="Narrative" fx:id="fmLNarrCol"  prefWidth="200" />
+              </columns>
+            </TableView>
+          </VBox>
+
+          <!-- Unmatched Bank -->
+          <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Unmatched Bank" styleClass="mc-prog-label" />
+            <TableView fx:id="unmatchedBankTable" styleClass="data-table" prefHeight="180">
+              <columns>
+                <TableColumn text="Date"      fx:id="fmBDateCol"  prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="fmBAmtCol"   prefWidth="100" />
+                <TableColumn text="Narrative" fx:id="fmBNarrCol"  prefWidth="200" />
+              </columns>
+            </TableView>
+          </VBox>
+
+        </HBox>
+
+        <HBox spacing="12" alignment="CENTER_LEFT">
+          <TextField fx:id="forceJustField"
+                     promptText="Enter justification for manual link..."
+                     HBox.hgrow="ALWAYS" />
+          <Button fx:id="btnForceLink"
+                  text="Force Link"
+                  styleClass="btn-approve"
+                  onAction="#handleForceLink"
+                  disable="true" />
+        </HBox>
+
+        <Label fx:id="forceFeedback" styleClass="mc-sub" visible="false" managed="false"
+               wrapText="true" />
+
+      </VBox>
+
       <!-- Anomaly Review Panel -->
       <VBox
             fx:id="anomalyPane"

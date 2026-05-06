@@ -210,6 +210,7 @@ public class WorkspaceController implements IWorkspaceController {
                 .getPendingHypotheses();
             manualCheckController.setItems(hypotheses);
             manualCheckController.loadAnomalies();
+            manualCheckController.loadUnmatchedTransactions();
         }
         if (manualView != null) showView(manualView, null);
         tabManual.setSelected(true);

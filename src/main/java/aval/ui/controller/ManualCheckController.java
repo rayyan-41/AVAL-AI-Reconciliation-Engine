@@ -50,6 +50,20 @@ public class ManualCheckController {
     @FXML private Button btnApproveAllPending;
     @FXML private Button btnRejectAllPending;
 
+    // UC8: Force match panel
+    @FXML private VBox forceMatchPane;
+    @FXML private TableView<StandardizedTransaction> unmatchedLedgerTable;
+    @FXML private TableColumn<StandardizedTransaction, String> fmLDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> fmLAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> fmLNarrCol;
+    @FXML private TableView<StandardizedTransaction> unmatchedBankTable;
+    @FXML private TableColumn<StandardizedTransaction, String> fmBDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> fmBAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> fmBNarrCol;
+    @FXML private TextField forceJustField;
+    @FXML private Button btnForceLink;
+    @FXML private Label forceFeedback;
+
     //-------------- Attributes ----------------------//
     private static final String DECISION_CONFIRMED = "CONFIRMED";
     private static final String DECISION_REJECTED = "REJECTED";
@@ -68,6 +82,7 @@ public class ManualCheckController {
         );
         UIAnimationUtil.applyButtonPressFeedback(btnApproveAllPending);
         UIAnimationUtil.applyButtonPressFeedback(btnRejectAllPending);
+        setupForceMatchTables();
         hypothesesList = FXCollections.observableArrayList();
         mcTable.setItems(hypothesesList);
         mcTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
@@ -315,7 +330,10 @@ public class ManualCheckController {
 
     private void checkIfComplete() {
         int total = mcTable.getItems().size();
-        if (resolved >= total && anomaliesDismissed) {
+        boolean hypothesesDone = resolved >= total;
+        boolean unmatchedDone  = unmatchedLedgerTable.getItems().isEmpty()
+                              && unmatchedBankTable.getItems().isEmpty();
+        if (hypothesesDone && anomaliesDismissed && unmatchedDone) {
             mcCompleteBar.setVisible(true);
             mcCompleteBar.setManaged(true);
         } else {
@@ -542,5 +560,115 @@ public class ManualCheckController {
             .substring(0, 8)
             .toUpperCase();
         return tx.getNarrative() + "\n" + ref + "\n" + tx.getAmount();
+    }
+
+    // ── UC8: Force Match Setup ─────────────────────────────────────────────
+
+    private void setupForceMatchTables() {
+        // Value factories
+        fmLDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        fmLAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        fmLNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+        fmBDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        fmBAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        fmBNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+
+        // Proportional column widths: 20% date, 25% amount, 55% narrative
+        unmatchedLedgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        fmLDateCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.20));
+        fmLAmtCol .prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.25));
+        fmLNarrCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.55));
+
+        unmatchedBankTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        fmBDateCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.20));
+        fmBAmtCol .prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.25));
+        fmBNarrCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.55));
+
+        // Enable Force Link only when both tables have a selection AND justification is non-blank
+        javafx.beans.binding.BooleanBinding canForce = unmatchedLedgerTable.getSelectionModel()
+            .selectedItemProperty().isNotNull()
+            .and(unmatchedBankTable.getSelectionModel().selectedItemProperty().isNotNull())
+            .and(forceJustField.textProperty().isNotEmpty());
+        btnForceLink.disableProperty().bind(canForce.not());
+    }
+
+    public void loadUnmatchedTransactions() {
+        MainUIContext ctx = MainUIContext.getInstance();
+        List<StandardizedTransaction> ledger = ctx.getUnmatchedLedger();
+        List<StandardizedTransaction> bank   = ctx.getUnmatchedBank();
+
+        ObservableList<StandardizedTransaction> ledgerItems =
+            FXCollections.observableArrayList(ledger != null ? ledger : List.of());
+        ObservableList<StandardizedTransaction> bankItems =
+            FXCollections.observableArrayList(bank   != null ? bank   : List.of());
+
+        unmatchedLedgerTable.setItems(ledgerItems);
+        unmatchedBankTable  .setItems(bankItems);
+
+        boolean anyUnmatched = !ledgerItems.isEmpty() || !bankItems.isEmpty();
+        forceMatchPane.setVisible(anyUnmatched);
+        forceMatchPane.setManaged(anyUnmatched);
+        checkIfComplete();
+    }
+
+    @FXML
+    void handleForceLink() {
+        StandardizedTransaction selectedLedger = unmatchedLedgerTable.getSelectionModel().getSelectedItem();
+        StandardizedTransaction selectedBank   = unmatchedBankTable.getSelectionModel().getSelectedItem();
+        String justification = forceJustField.getText().trim();
+
+        if (selectedLedger == null || selectedBank == null || justification.isBlank()) return;
+
+        SystemUser user = getOrCreateCurrentUser();
+        ReconciliationService svc = getReconciliationServiceOrShowError();
+        if (svc == null) return;
+
+        showForceFeedback("Saving forced reconciliation...");
+
+        Task<ReconciliationRecord> task = new Task<>() {
+            @Override
+            protected ReconciliationRecord call() {
+                return svc.forceReconcile(selectedLedger, selectedBank, user, justification);
+            }
+        };
+
+        task.setOnSucceeded(e -> Platform.runLater(() -> {
+            ReconciliationRecord record = task.getValue();
+            MainUIContext ctx = MainUIContext.getInstance();
+            ctx.addReconciledRecord(record);
+
+            // Remove from UI tables
+            unmatchedLedgerTable.getItems().remove(selectedLedger);
+            unmatchedBankTable  .getItems().remove(selectedBank);
+
+            // Push updated lists back to context
+            ctx.setUnmatchedLedger(new ArrayList<>(unmatchedLedgerTable.getItems()));
+            ctx.setUnmatchedBank(new ArrayList<>(unmatchedBankTable.getItems()));
+
+            forceJustField.clear();
+            showForceFeedback("Force-linked: " + selectedLedger.getNarrative()
+                + "  ↔  " + selectedBank.getNarrative());
+
+            // Hide panel if no more unmatched
+            if (unmatchedLedgerTable.getItems().isEmpty() && unmatchedBankTable.getItems().isEmpty()) {
+                forceMatchPane.setVisible(false);
+                forceMatchPane.setManaged(false);
+            }
+            checkIfComplete();
+        }));
+
+        task.setOnFailed(e -> Platform.runLater(() -> {
+            showForceFeedback("Error: " + task.getException().getMessage());
+        }));
+
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void showForceFeedback(String msg) {
+        forceFeedback.setText(msg);
+        forceFeedback.setVisible(true);
+        forceFeedback.setManaged(true);
     }
 }
