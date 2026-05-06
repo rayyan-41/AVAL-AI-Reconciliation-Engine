@@ -454,6 +454,12 @@
     -fx-cell-size: 42px;
     -fx-border-color: transparent transparent -fx-border-subtle transparent;
 }
+.data-table .table-row-cell:selected {
+    -fx-background-color: -fx-accent;
+}
+.data-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+}
 .data-table .table-cell {
     -fx-border-color: transparent;
     -fx-alignment: CENTER_LEFT;

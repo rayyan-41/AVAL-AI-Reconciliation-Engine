@@ -4,6 +4,7 @@ package aval.service;
 
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.ai.UnresolvableRecord;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,6 +43,26 @@ public class ReportService {
         List<StandardizedTransaction> unmatchedBank,
         List<aval.domain.ai.MatchHypothesis> pendingHypotheses,
         List<aval.domain.ai.Anomaly> unresolvedAnomalies,
+        String outputFilePath
+    ) throws IOException, UnresolvedItemsException {
+        generateReconciliationReport(
+            reconciledRecords, unmatchedLedger, unmatchedBank,
+            pendingHypotheses, unresolvedAnomalies, null, outputFilePath
+        );
+    }
+
+    /**
+     * UC11 — Generate Verified Reconciliation Report (with unresolvable records).
+     * Unresolvable items are written as UNRESOLVABLE rows in the CSV — they represent
+     * explicit dispositions, not missing data, so they do not block the gate.
+     */
+    public void generateReconciliationReport(
+        List<ReconciliationRecord> reconciledRecords,
+        List<StandardizedTransaction> unmatchedLedger,
+        List<StandardizedTransaction> unmatchedBank,
+        List<aval.domain.ai.MatchHypothesis> pendingHypotheses,
+        List<aval.domain.ai.Anomaly> unresolvedAnomalies,
+        List<UnresolvableRecord> unresolvableRecords,
         String outputFilePath
     ) throws IOException, UnresolvedItemsException {
         if (
@@ -152,6 +173,31 @@ public class ReportService {
                 );
             }
 
+            // 4. Write Unresolvable Records
+            if (unresolvableRecords != null) {
+                for (UnresolvableRecord ur : unresolvableRecords) {
+                    StandardizedTransaction tx = ur.getTransaction();
+                    boolean isLedger = ur.getSide() == aval.common.enums.TransactionSide.LEDGER;
+                    
+                    csvPrinter.printRecord(
+                        "UNRESOLVABLE",
+                        isLedger ? tx.getValueDate().format(DATE_FORMAT) : "",
+                        isLedger ? tx.getAmount().toPlainString() : "",
+                        isLedger ? tx.getType().name() : "",
+                        isLedger ? tx.getNarrative() : "",
+                        !isLedger ? tx.getValueDate().format(DATE_FORMAT) : "",
+                        !isLedger ? tx.getAmount().toPlainString() : "",
+                        !isLedger ? tx.getType().name() : "",
+                        !isLedger ? tx.getNarrative() : "",
+                        ur.getReason().name(),
+                        "",
+                        ur.getSealedBy() != null ? ur.getSealedBy().getUsername() : "SYSTEM",
+                        ur.getSealedAt() != null ? ur.getSealedAt().format(DATETIME_FORMAT) : "",
+                        ur.getAuditNote()
+                    );
+                }
+            }
+
             csvPrinter.flush();
         }
     }
@@ -162,7 +208,8 @@ public class ReportService {
     public String generateSummary(
         List<ReconciliationRecord> reconciledRecords,
         List<StandardizedTransaction> unmatchedLedger,
-        List<StandardizedTransaction> unmatchedBank
+        List<StandardizedTransaction> unmatchedBank,
+        List<UnresolvableRecord> unresolvableRecords
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("=========================================\n");
@@ -183,8 +230,14 @@ public class ReportService {
         );
         sb.append(
             String.format(
-                "Unmatched Bank (Missing from Ledger): %d transactions\n\n",
+                "Unmatched Bank (Missing from Ledger): %d transactions\n",
                 unmatchedBank.size()
+            )
+        );
+        sb.append(
+            String.format(
+                "Marked as Unresolvable (Exceptions): %d transactions\n\n",
+                unresolvableRecords != null ? unresolvableRecords.size() : 0
             )
         );
 

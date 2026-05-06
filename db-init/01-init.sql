@@ -94,4 +94,15 @@ VALUES ('00000000-0000-0000-0000-000000000001',
         'system_auto', 'ADMIN', 'System', 'N/A')
 ON CONFLICT DO NOTHING;
 
+-- 10. Unresolvable Records (UC8/UC9 Disposition Flow)
+CREATE TABLE IF NOT EXISTS unresolvable_records (
+    record_id        UUID PRIMARY KEY,
+    transaction_id   UUID NOT NULL,
+    transaction_side VARCHAR(10)  NOT NULL,   -- 'BANK' or 'LEDGER'
+    reason_code      VARCHAR(30)  NOT NULL,   -- UnresolvableReason enum value
+    audit_note       TEXT         NOT NULL,
+    sealed_by        UUID REFERENCES app_user(user_id),
+    sealed_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE INDEX IF NOT EXISTS idx_unresolvable_tx ON unresolvable_records(transaction_id);

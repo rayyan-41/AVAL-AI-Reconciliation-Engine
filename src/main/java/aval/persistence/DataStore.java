@@ -1077,4 +1077,39 @@ public class DataStore {
         }
         return result;
     }
+
+    // =========================================================
+    // UC8 / UC9 — Unresolvable disposition persistence
+    // =========================================================
+
+    /**
+     * Persists an UnresolvableRecord to the unresolvable_records table.
+     * Called by ReconciliationService.markAsUnresolvable() after domain validation.
+     *
+     * @throws RuntimeException wrapping the underlying SQLException on failure
+     */
+    public void saveUnresolvableRecord(aval.domain.ai.UnresolvableRecord record) {
+        String sql =
+            "INSERT INTO unresolvable_records " +
+            "(record_id, transaction_id, transaction_side, reason_code, audit_note, sealed_by, sealed_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.setObject(1, record.getRecordId());
+            pstmt.setObject(2, record.getTransaction().getTransactionId());
+            pstmt.setString(3, record.getSide().name());
+            pstmt.setString(4, record.getReason().name());
+            pstmt.setString(5, record.getAuditNote());
+            pstmt.setObject(6, record.getSealedBy() != null
+                ? record.getSealedBy().getUserId() : null);
+            pstmt.setTimestamp(7, java.sql.Timestamp.valueOf(record.getSealedAt()));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                "Failed to save unresolvable record: " + e.getMessage(), e
+            );
+        }
+    }
 }

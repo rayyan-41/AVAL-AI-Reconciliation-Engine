@@ -279,7 +279,8 @@ public class ReportServiceTest {
         String summary = reportService.generateSummary(
             List.of(reconciledRecord(new BigDecimal("100.00"))),
             Collections.emptyList(),
-            Collections.emptyList()
+            Collections.emptyList(),
+            null
         );
         assertTrue(summary.contains("1"), "Summary should mention reconciled count");
         assertTrue(summary.contains("Reconciled") || summary.contains("reconciled"));
@@ -290,7 +291,8 @@ public class ReportServiceTest {
         String summary = reportService.generateSummary(
             Collections.emptyList(),
             List.of(ledgerTx(new BigDecimal("200.00")), ledgerTx(new BigDecimal("300.00"))),
-            Collections.emptyList()
+            Collections.emptyList(),
+            null
         );
         assertTrue(summary.contains("2"), "Summary should mention unmatched ledger count");
     }
@@ -300,7 +302,8 @@ public class ReportServiceTest {
         String summary = reportService.generateSummary(
             Collections.emptyList(),
             Collections.emptyList(),
-            List.of(bankTx(new BigDecimal("150.00")))
+            List.of(bankTx(new BigDecimal("150.00"))),
+            null
         );
         assertTrue(summary.contains("1"), "Summary should mention unmatched bank count");
     }
@@ -308,7 +311,7 @@ public class ReportServiceTest {
     @Test
     void generateSummary_allEmpty_returnsNonEmptyString() {
         String summary = reportService.generateSummary(
-            Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null
         );
         assertNotNull(summary);
         assertFalse(summary.isBlank());
@@ -317,7 +320,7 @@ public class ReportServiceTest {
     @Test
     void generateSummary_containsReportHeader() {
         String summary = reportService.generateSummary(
-            Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null
         );
         assertTrue(summary.contains("RECONCILIATION") || summary.contains("Summary") || summary.contains("SUMMARY"));
     }

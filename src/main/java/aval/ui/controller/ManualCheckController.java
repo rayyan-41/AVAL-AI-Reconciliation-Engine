@@ -1,5 +1,7 @@
 package aval.ui.controller;
 
+import aval.common.enums.TransactionSide;
+import aval.common.enums.UnresolvableReason;
 import aval.common.enums.HypothesisStatus;
 import aval.common.enums.UserRole;
 import aval.domain.SystemUser;
@@ -7,6 +9,7 @@ import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.ai.UnresolvableRecord;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
 import aval.ui.util.UIAnimationUtil;
@@ -50,34 +53,28 @@ public class ManualCheckController {
     @FXML private Button btnApproveAllPending;
     @FXML private Button btnRejectAllPending;
 
-    // UC8: Force match panel
-    @FXML private VBox forceMatchPane;
+    // Unified Manual Disposition Panel
+    @FXML private VBox manualActionPane;
     @FXML private TableView<StandardizedTransaction> unmatchedLedgerTable;
-    @FXML private TableColumn<StandardizedTransaction, String> fmLDateCol;
-    @FXML private TableColumn<StandardizedTransaction, String> fmLAmtCol;
-    @FXML private TableColumn<StandardizedTransaction, String> fmLNarrCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ulDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ulAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ulNarrCol;
+    
     @FXML private TableView<StandardizedTransaction> unmatchedBankTable;
-    @FXML private TableColumn<StandardizedTransaction, String> fmBDateCol;
-    @FXML private TableColumn<StandardizedTransaction, String> fmBAmtCol;
-    @FXML private TableColumn<StandardizedTransaction, String> fmBNarrCol;
-    @FXML private TextField forceJustField;
-    @FXML private Button btnForceLink;
-    @FXML private Label forceFeedback;
-
-    // UC9: Multi-Source Consolidation panel
-    @FXML private VBox consolidationPane;
-    @FXML private TableView<StandardizedTransaction> consolidationBankTable;
-    @FXML private TableColumn<StandardizedTransaction, String> csBDateCol;
-    @FXML private TableColumn<StandardizedTransaction, String> csBAmtCol;
-    @FXML private TableColumn<StandardizedTransaction, String> csBNarrCol;
-    @FXML private TableView<StandardizedTransaction> consolidationLedgerTable;
-    @FXML private TableColumn<StandardizedTransaction, String> csLDateCol;
-    @FXML private TableColumn<StandardizedTransaction, String> csLAmtCol;
-    @FXML private TableColumn<StandardizedTransaction, String> csLNarrCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ubDateCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ubAmtCol;
+    @FXML private TableColumn<StandardizedTransaction, String> ubNarrCol;
+    
+    @FXML private javafx.scene.control.ComboBox<aval.common.enums.UnresolvableReason> unresolvableReasonCombo;
+    @FXML private TextField actionNoteField;
+    @FXML private Label toleranceLabel;
     @FXML private TextField toleranceField;
-    @FXML private Label consolidationSumLabel;
+    @FXML private Label selectionSumLabel;
+    
+    @FXML private Button btnForceLink;
     @FXML private Button btnConsolidate;
-    @FXML private Label consolidationFeedback;
+    @FXML private Button btnUnresolvable;
+    @FXML private Label actionFeedback;
 
     //-------------- Attributes ----------------------//
     private static final String DECISION_CONFIRMED = "CONFIRMED";
@@ -86,6 +83,7 @@ public class ManualCheckController {
     private ObservableList<MatchHypothesis> hypothesesList;
     private int resolved = 0;
     private boolean anomaliesDismissed = true;
+    private boolean pendedForLater = false;
 
     //-------------- Methods ----------------------//
     public void setWorkspaceController(IWorkspaceController wc) { this.workspaceController = wc; }
@@ -97,8 +95,7 @@ public class ManualCheckController {
         );
         UIAnimationUtil.applyButtonPressFeedback(btnApproveAllPending);
         UIAnimationUtil.applyButtonPressFeedback(btnRejectAllPending);
-        setupForceMatchTables();
-        setupConsolidationTables();
+        setupUnifiedTables();
         hypothesesList = FXCollections.observableArrayList();
         mcTable.setItems(hypothesesList);
         mcTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
@@ -348,8 +345,8 @@ public class ManualCheckController {
     private void checkIfComplete() {
         int total = mcTable.getItems().size();
         boolean hypothesesDone = resolved >= total;
-        boolean unmatchedDone  = unmatchedLedgerTable.getItems().isEmpty()
-                              && unmatchedBankTable.getItems().isEmpty();
+        boolean unmatchedDone  = pendedForLater || (unmatchedLedgerTable.getItems().isEmpty()
+                              && unmatchedBankTable.getItems().isEmpty());
         if (hypothesesDone && anomaliesDismissed && unmatchedDone) {
             mcCompleteBar.setVisible(true);
             mcCompleteBar.setManaged(true);
@@ -579,34 +576,92 @@ public class ManualCheckController {
         return tx.getNarrative() + "\n" + ref + "\n" + tx.getAmount();
     }
 
-    // ── UC8: Force Match Setup ─────────────────────────────────────────────
+    // ── Unified Manual Disposition Setup ─────────────────────────────────────────────
 
-    private void setupForceMatchTables() {
+    private void setupUnifiedTables() {
         // Value factories
-        fmLDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
-        fmLAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
-        fmLNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
-        fmBDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
-        fmBAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
-        fmBNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+        ulDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        ulAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        ulNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
+        
+        ubDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
+        ubAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
+        ubNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
 
-        // Proportional column widths: 20% date, 25% amount, 55% narrative
+        // Proportional column widths
         unmatchedLedgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        fmLDateCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.20));
-        fmLAmtCol .prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.25));
-        fmLNarrCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.55));
+        ulDateCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.20));
+        ulAmtCol .prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.25));
+        ulNarrCol.prefWidthProperty().bind(unmatchedLedgerTable.widthProperty().subtract(5).multiply(0.55));
 
         unmatchedBankTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        fmBDateCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.20));
-        fmBAmtCol .prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.25));
-        fmBNarrCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.55));
+        ubDateCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.20));
+        ubAmtCol .prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.25));
+        ubNarrCol.prefWidthProperty().bind(unmatchedBankTable.widthProperty().subtract(5).multiply(0.55));
 
-        // Enable Force Link only when both tables have a selection AND justification is non-blank
-        javafx.beans.binding.BooleanBinding canForce = unmatchedLedgerTable.getSelectionModel()
-            .selectedItemProperty().isNotNull()
-            .and(unmatchedBankTable.getSelectionModel().selectedItemProperty().isNotNull())
-            .and(forceJustField.textProperty().isNotEmpty());
-        btnForceLink.disableProperty().bind(canForce.not());
+        // Ledger and Bank are multi-select
+        unmatchedLedgerTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        unmatchedBankTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        // Populate Unresolvable reasons
+        unresolvableReasonCombo.setItems(FXCollections.observableArrayList(UnresolvableReason.values()));
+
+        // Add selection listeners
+        unmatchedLedgerTable.getSelectionModel().getSelectedItems().addListener((javafx.collections.ListChangeListener<StandardizedTransaction>) c -> updateActionState());
+        unmatchedBankTable.getSelectionModel().getSelectedItems().addListener((javafx.collections.ListChangeListener<StandardizedTransaction>) c -> updateActionState());
+        actionNoteField.textProperty().addListener((obs, oldV, newV) -> updateActionState());
+        unresolvableReasonCombo.valueProperty().addListener((obs, oldV, newV) -> updateActionState());
+        
+        updateActionState();
+    }
+
+    private void updateActionState() {
+        List<StandardizedTransaction> ledgers = unmatchedLedgerTable.getSelectionModel().getSelectedItems();
+        List<StandardizedTransaction> bank = unmatchedBankTable.getSelectionModel().getSelectedItems();
+        boolean hasNote = !actionNoteField.getText().trim().isEmpty();
+        boolean hasReason = unresolvableReasonCombo.getValue() != null;
+        
+        int lCount = ledgers.size();
+        int bCount = bank.size();
+        
+        // Hide all buttons and tolerance by default
+        btnForceLink.setVisible(false); btnForceLink.setManaged(false); btnForceLink.setDisable(true);
+        btnConsolidate.setVisible(false); btnConsolidate.setManaged(false); btnConsolidate.setDisable(true);
+        btnUnresolvable.setVisible(false); btnUnresolvable.setManaged(false); btnUnresolvable.setDisable(true);
+        toleranceLabel.setVisible(false); toleranceLabel.setManaged(false);
+        toleranceField.setVisible(false); toleranceField.setManaged(false);
+        selectionSumLabel.setVisible(false); selectionSumLabel.setManaged(false);
+        
+        if (lCount > 0 || bCount > 0) {
+            selectionSumLabel.setVisible(true); selectionSumLabel.setManaged(true);
+            
+            if ((lCount >= 2 && bCount >= 1) || (lCount >= 1 && bCount >= 2)) {
+                java.math.BigDecimal sum = ledgers.stream()
+                    .map(tx -> tx.getAmount().abs())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                java.math.BigDecimal bSum = bank.stream()
+                    .map(tx -> tx.getAmount().abs())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                selectionSumLabel.setText(String.format("Ledger sum: %s | Bank sum: %s", 
+                    sum.toPlainString(), bSum.toPlainString()));
+            } else {
+                selectionSumLabel.setText(String.format("Selected: %d Ledger | %d Bank", lCount, bCount));
+            }
+        }
+        
+        if (lCount == 1 && bCount == 1) {
+            btnForceLink.setVisible(true); btnForceLink.setManaged(true);
+            btnForceLink.setDisable(!hasNote);
+        } else if ((lCount >= 2 && bCount >= 1) || (lCount >= 1 && bCount >= 2)) {
+            btnConsolidate.setVisible(true); btnConsolidate.setManaged(true);
+            toleranceLabel.setVisible(true); toleranceLabel.setManaged(true);
+            toleranceField.setVisible(true); toleranceField.setManaged(true);
+            
+            btnConsolidate.setDisable(false); 
+        } else if ((lCount >= 1 && bCount == 0) || (lCount == 0 && bCount == 1)) {
+            btnUnresolvable.setVisible(true); btnUnresolvable.setManaged(true);
+            btnUnresolvable.setDisable(!(hasNote && hasReason));
+        }
     }
 
     public void loadUnmatchedTransactions() {
@@ -619,19 +674,14 @@ public class ManualCheckController {
         ObservableList<StandardizedTransaction> bankItems =
             FXCollections.observableArrayList(bank   != null ? bank   : List.of());
 
-        // UC8 tables
+        // We must call setupUnifiedTables once if it hasn't been called. We can do it safely here or in initialize.
+        // Actually, we'll do it in initialize. Let's just set items here.
         unmatchedLedgerTable.setItems(ledgerItems);
         unmatchedBankTable  .setItems(bankItems);
 
-        // UC9 tables (same source data, separate table references)
-        consolidationLedgerTable.setItems(FXCollections.observableArrayList(ledgerItems));
-        consolidationBankTable  .setItems(FXCollections.observableArrayList(bankItems));
-
         boolean anyUnmatched = !ledgerItems.isEmpty() || !bankItems.isEmpty();
-        forceMatchPane    .setVisible(anyUnmatched);
-        forceMatchPane    .setManaged(anyUnmatched);
-        consolidationPane .setVisible(anyUnmatched);
-        consolidationPane .setManaged(anyUnmatched);
+        manualActionPane.setVisible(anyUnmatched);
+        manualActionPane.setManaged(anyUnmatched);
         checkIfComplete();
     }
 
@@ -639,7 +689,7 @@ public class ManualCheckController {
     void handleForceLink() {
         StandardizedTransaction selectedLedger = unmatchedLedgerTable.getSelectionModel().getSelectedItem();
         StandardizedTransaction selectedBank   = unmatchedBankTable.getSelectionModel().getSelectedItem();
-        String justification = forceJustField.getText().trim();
+        String justification = actionNoteField.getText().trim();
 
         if (selectedLedger == null || selectedBank == null || justification.isBlank()) return;
 
@@ -647,7 +697,7 @@ public class ManualCheckController {
         ReconciliationService svc = getReconciliationServiceOrShowError();
         if (svc == null) return;
 
-        showForceFeedback("Saving forced reconciliation...");
+        showActionFeedback("Saving forced reconciliation...");
 
         Task<ReconciliationRecord> task = new Task<>() {
             @Override
@@ -661,28 +711,18 @@ public class ManualCheckController {
             MainUIContext ctx = MainUIContext.getInstance();
             ctx.addReconciledRecord(record);
 
-            // Remove from UI tables
             unmatchedLedgerTable.getItems().remove(selectedLedger);
             unmatchedBankTable  .getItems().remove(selectedBank);
+            syncUnmatchedToContext();
 
-            // Push updated lists back to context
-            ctx.setUnmatchedLedger(new ArrayList<>(unmatchedLedgerTable.getItems()));
-            ctx.setUnmatchedBank(new ArrayList<>(unmatchedBankTable.getItems()));
-
-            forceJustField.clear();
-            showForceFeedback("Force-linked: " + selectedLedger.getNarrative()
+            actionNoteField.clear();
+            showActionFeedback("Force-linked: " + selectedLedger.getNarrative()
                 + "  ↔  " + selectedBank.getNarrative());
-
-            // Hide panel if no more unmatched
-            if (unmatchedLedgerTable.getItems().isEmpty() && unmatchedBankTable.getItems().isEmpty()) {
-                forceMatchPane.setVisible(false);
-                forceMatchPane.setManaged(false);
-            }
-            checkIfComplete();
+            checkCompletionAndVisibility();
         }));
 
         task.setOnFailed(e -> Platform.runLater(() -> {
-            showForceFeedback("Error: " + task.getException().getMessage());
+            showActionFeedback("Error: " + task.getException().getMessage());
         }));
 
         Thread t = new Thread(task);
@@ -690,74 +730,20 @@ public class ManualCheckController {
         t.start();
     }
 
-    private void showForceFeedback(String msg) {
-        forceFeedback.setText(msg);
-        forceFeedback.setVisible(true);
-        forceFeedback.setManaged(true);
-    }
-
-    // ── UC9: Multi-Source Consolidation Setup ───────────────────────────────
-
-    private void setupConsolidationTables() {
-        csBDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
-        csBAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
-        csBNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
-
-        csLDateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getValueDate().toString()));
-        csLAmtCol .setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getAmount().toPlainString()));
-        csLNarrCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue().getNarrative()));
-
-        // Multi-select on ledger table
-        consolidationLedgerTable.getSelectionModel()
-            .setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
-
-        // Proportional column widths
-        consolidationBankTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        csBDateCol.prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.20));
-        csBAmtCol .prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.25));
-        csBNarrCol.prefWidthProperty().bind(consolidationBankTable.widthProperty().subtract(5).multiply(0.55));
-
-        consolidationLedgerTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        csLDateCol.prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.20));
-        csLAmtCol .prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.25));
-        csLNarrCol.prefWidthProperty().bind(consolidationLedgerTable.widthProperty().subtract(5).multiply(0.55));
-
-        // Live sum label as ledger rows are selected
-        consolidationLedgerTable.getSelectionModel().getSelectedItems()
-            .addListener((javafx.collections.ListChangeListener<StandardizedTransaction>) change -> {
-                java.math.BigDecimal sum = consolidationLedgerTable.getSelectionModel()
-                    .getSelectedItems().stream()
-                    .map(tx -> tx.getAmount().abs())
-                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-                consolidationSumLabel.setText("Selected sum: " + sum.toPlainString());
-                updateConsolidateButton();
-            });
-
-        consolidationBankTable.getSelectionModel().selectedItemProperty()
-            .addListener((obs, o, n) -> updateConsolidateButton());
-    }
-
-    private void updateConsolidateButton() {
-        boolean bankSelected   = consolidationBankTable.getSelectionModel().getSelectedItem() != null;
-        boolean ledgerSelected = !consolidationLedgerTable.getSelectionModel().getSelectedItems().isEmpty();
-        btnConsolidate.setDisable(!(bankSelected && ledgerSelected));
-    }
-
     @FXML
     void handleConsolidate() {
-        StandardizedTransaction bankTx = consolidationBankTable.getSelectionModel().getSelectedItem();
+        List<StandardizedTransaction> selectedBank = new ArrayList<>(
+            unmatchedBankTable.getSelectionModel().getSelectedItems());
         List<StandardizedTransaction> selectedLedger = new ArrayList<>(
-            consolidationLedgerTable.getSelectionModel().getSelectedItems());
+            unmatchedLedgerTable.getSelectionModel().getSelectedItems());
 
-        if (bankTx == null || selectedLedger.isEmpty()) return;
+        if (selectedBank.isEmpty() || selectedLedger.isEmpty()) return;
 
         double tolerancePct;
         try {
             tolerancePct = Double.parseDouble(toleranceField.getText().trim()) / 100.0;
         } catch (NumberFormatException ex) {
-            consolidationFeedback.setText("Invalid tolerance value — enter a number like 2.0");
-            consolidationFeedback.setVisible(true);
-            consolidationFeedback.setManaged(true);
+            showActionFeedback("Invalid tolerance value — enter a number like 2.0");
             return;
         }
 
@@ -773,9 +759,8 @@ public class ManualCheckController {
                 List<aval.domain.ai.Anomaly> newAnomalies = new ArrayList<>();
                 List<aval.domain.ai.ReconciliationRecord> records = svc.consolidateMultiSource(
                     MainUIContext.getInstance().getActiveWorkspace(),
-                    selectedLedger, bankTx, tolerancePct, newAnomalies, user);
+                    selectedLedger, selectedBank, tolerancePct, newAnomalies, user);
 
-                // Merge any consolidation-variance anomalies back into context
                 if (!newAnomalies.isEmpty()) {
                     List<aval.domain.ai.Anomaly> existing =
                         MainUIContext.getInstance().getAnomalies();
@@ -792,52 +777,111 @@ public class ManualCheckController {
             List<aval.domain.ai.ReconciliationRecord> records = task.getValue();
 
             if (records.isEmpty()) {
-                // Variance anomaly was added — reload anomaly panel
                 loadAnomalies();
-                consolidationFeedback.setText("Variance detected — anomaly logged. Adjust selection or tolerance.");
+                showActionFeedback("Variance detected — anomaly logged. Adjust selection or tolerance.");
             } else {
                 records.forEach(r -> MainUIContext.getInstance().addReconciledRecord(r));
                 
-                // Remove consolidated entries from unmatched lists
-                selectedLedger.forEach(l -> {
-                    unmatchedLedgerTable.getItems().remove(l);
-                    consolidationLedgerTable.getItems().remove(l);
-                });
-                unmatchedBankTable.getItems().remove(bankTx);
-                consolidationBankTable.getItems().remove(bankTx);
+                selectedLedger.forEach(l -> unmatchedLedgerTable.getItems().remove(l));
+                selectedBank.forEach(b -> unmatchedBankTable.getItems().remove(b));
+                syncUnmatchedToContext();
 
-                // Sync the main context unmatched lists back
-                MainUIContext.getInstance().setUnmatchedLedger(new ArrayList<>(unmatchedLedgerTable.getItems()));
-                MainUIContext.getInstance().setUnmatchedBank(new ArrayList<>(unmatchedBankTable.getItems()));
-
-                consolidationFeedback.setText(
-                    records.size() + " ledger entries consolidated against bank transaction "
-                    + bankTx.getAmount().toPlainString());
-                checkIfComplete();
-
-                // If no more unmatched, hide both panes
-                if (unmatchedLedgerTable.getItems().isEmpty() && unmatchedBankTable.getItems().isEmpty()) {
-                    forceMatchPane.setVisible(false);
-                    forceMatchPane.setManaged(false);
-                    consolidationPane.setVisible(false);
-                    consolidationPane.setManaged(false);
-                }
+                showActionFeedback(records.size() + " ledger/bank entries consolidated successfully");
+                checkCompletionAndVisibility();
             }
-
-            consolidationFeedback.setVisible(true);
-            consolidationFeedback.setManaged(true);
             btnConsolidate.setDisable(false);
         }));
 
         task.setOnFailed(e -> Platform.runLater(() -> {
-            consolidationFeedback.setText("Error: " + task.getException().getMessage());
-            consolidationFeedback.setVisible(true);
-            consolidationFeedback.setManaged(true);
+            showActionFeedback("Error: " + task.getException().getMessage());
             btnConsolidate.setDisable(false);
         }));
 
         Thread t = new Thread(task);
         t.setDaemon(true);
         t.start();
+    }
+
+    @FXML
+    void handleUnresolvable() {
+        List<StandardizedTransaction> ledgers = new ArrayList<>(unmatchedLedgerTable.getSelectionModel().getSelectedItems());
+        List<StandardizedTransaction> banks = new ArrayList<>(unmatchedBankTable.getSelectionModel().getSelectedItems());
+        UnresolvableReason reason = unresolvableReasonCombo.getValue();
+        String note = actionNoteField.getText().trim();
+        
+        if (reason == null || note.isEmpty()) return;
+        
+        SystemUser user = getOrCreateCurrentUser();
+        ReconciliationService svc = getReconciliationServiceOrShowError();
+        if (svc == null) return;
+        
+        btnUnresolvable.setDisable(true);
+        
+        Task<List<UnresolvableRecord>> task = new Task<>() {
+            @Override
+            protected List<UnresolvableRecord> call() {
+                List<UnresolvableRecord> records = new ArrayList<>();
+                for (StandardizedTransaction bank : banks) {
+                    records.add(svc.markAsUnresolvable(bank, TransactionSide.BANK, reason, note, user));
+                }
+                for (StandardizedTransaction ledger : ledgers) {
+                    records.add(svc.markAsUnresolvable(ledger, TransactionSide.LEDGER, reason, note, user));
+                }
+                return records;
+            }
+        };
+        
+        task.setOnSucceeded(e -> Platform.runLater(() -> {
+            List<UnresolvableRecord> records = task.getValue();
+            records.forEach(r -> MainUIContext.getInstance().addUnresolvableRecord(r));
+            
+            banks.forEach(b -> unmatchedBankTable.getItems().remove(b));
+            ledgers.forEach(l -> unmatchedLedgerTable.getItems().remove(l));
+            syncUnmatchedToContext();
+            
+            unresolvableReasonCombo.getSelectionModel().clearSelection();
+            actionNoteField.clear();
+            showActionFeedback("Marked " + records.size() + " item(s) as unresolvable: " + reason.name());
+            
+            checkCompletionAndVisibility();
+            btnUnresolvable.setDisable(false);
+        }));
+        
+        task.setOnFailed(e -> Platform.runLater(() -> {
+            showActionFeedback("Error: " + task.getException().getMessage());
+            btnUnresolvable.setDisable(false);
+        }));
+        
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    @FXML
+    void handlePendLater() {
+        pendedForLater = true;
+        manualActionPane.setVisible(false);
+        manualActionPane.setManaged(false);
+        checkIfComplete();
+        showActionFeedback("Remaining items pended. You can now proceed to the report.");
+    }
+
+    private void syncUnmatchedToContext() {
+        MainUIContext.getInstance().setUnmatchedLedger(new ArrayList<>(unmatchedLedgerTable.getItems()));
+        MainUIContext.getInstance().setUnmatchedBank(new ArrayList<>(unmatchedBankTable.getItems()));
+    }
+
+    private void checkCompletionAndVisibility() {
+        if (unmatchedLedgerTable.getItems().isEmpty() && unmatchedBankTable.getItems().isEmpty()) {
+            manualActionPane.setVisible(false);
+            manualActionPane.setManaged(false);
+        }
+        checkIfComplete();
+    }
+
+    private void showActionFeedback(String msg) {
+        actionFeedback.setText(msg);
+        actionFeedback.setVisible(true);
+        actionFeedback.setManaged(true);
     }
 }

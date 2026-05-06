@@ -59,107 +59,62 @@
         <Button text="Dismiss All Anomalies" onAction="#handleDismissAnomalies" styleClass="btn-ghost" />
       </VBox>
 
-      <!-- SECTION 3: UC8 Force Manual Reconciliation Panel -->
-      <VBox fx:id="forceMatchPane" spacing="12" styleClass="fd-card"
+      <!-- SECTION 3: Unified Manual Disposition Panel -->
+      <VBox fx:id="manualActionPane" spacing="12" styleClass="fd-card"
             visible="false" managed="false">
 
-        <Label text="3. 1-to-1 Force Linking (Unmatched Transactions)" styleClass="section-heading" />
-        <Label text="Select one orphaned entry from each list and provide a justification to force-link them."
+        <Label text="3. Forced Reconciliation" styleClass="section-heading" />
+        <Label text="Select unmatched entries to force link, consolidate, or mark as unresolvable."
                styleClass="mc-sub" wrapText="true" />
 
         <HBox spacing="16" alignment="TOP_LEFT" maxWidth="Infinity">
 
           <!-- Unmatched Ledger -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
-            <Label text="Unmatched Ledger" styleClass="mc-prog-label" />
-            <TableView fx:id="unmatchedLedgerTable" styleClass="data-table" prefHeight="180">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" prefWidth="5000" maxWidth="Infinity">
+            <Label text="Unmatched Ledger (Multi-select)" styleClass="mc-prog-label" />
+            <TableView fx:id="unmatchedLedgerTable" styleClass="data-table" prefHeight="180" style="-fx-selection-bar-non-focused: -fx-selection-bar;">
               <columns>
-                <TableColumn text="Date"      fx:id="fmLDateCol"  prefWidth="90" />
-                <TableColumn text="Amount"    fx:id="fmLAmtCol"   prefWidth="100" />
-                <TableColumn text="Narrative" fx:id="fmLNarrCol"  prefWidth="200" />
+                <TableColumn text="Date"      fx:id="ulDateCol"  prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="ulAmtCol"   prefWidth="100" />
+                <TableColumn text="Narrative" fx:id="ulNarrCol"  prefWidth="200" />
               </columns>
             </TableView>
           </VBox>
 
           <!-- Unmatched Bank -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
-            <Label text="Unmatched Bank" styleClass="mc-prog-label" />
-            <TableView fx:id="unmatchedBankTable" styleClass="data-table" prefHeight="180">
+          <VBox spacing="6" HBox.hgrow="ALWAYS" prefWidth="5000" maxWidth="Infinity">
+            <Label text="Unmatched Bank (Multi-select)" styleClass="mc-prog-label" />
+            <TableView fx:id="unmatchedBankTable" styleClass="data-table" prefHeight="180" style="-fx-selection-bar-non-focused: -fx-selection-bar;">
               <columns>
-                <TableColumn text="Date"      fx:id="fmBDateCol"  prefWidth="90" />
-                <TableColumn text="Amount"    fx:id="fmBAmtCol"   prefWidth="100" />
-                <TableColumn text="Narrative" fx:id="fmBNarrCol"  prefWidth="200" />
+                <TableColumn text="Date"      fx:id="ubDateCol"  prefWidth="90" />
+                <TableColumn text="Amount"    fx:id="ubAmtCol"   prefWidth="100" />
+                <TableColumn text="Narrative" fx:id="ubNarrCol"  prefWidth="200" />
               </columns>
             </TableView>
           </VBox>
 
         </HBox>
 
-        <HBox spacing="12" alignment="CENTER_LEFT">
-          <TextField fx:id="forceJustField"
-                     promptText="Enter justification for manual link..."
-                     HBox.hgrow="ALWAYS" />
-          <Button fx:id="btnForceLink"
-                  text="Force Link"
-                  styleClass="btn-approve"
-                  onAction="#handleForceLink"
-                  disable="true" />
-        </HBox>
+        <!-- Action Bar -->
+        <VBox spacing="10">
+          <HBox spacing="12" alignment="CENTER_LEFT">
+            <ComboBox fx:id="unresolvableReasonCombo" promptText="Select Reason Code..." prefWidth="220" />
+            <TextField fx:id="actionNoteField" promptText="Enter mandatory justification/audit note..." HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnPendLater" text="Pend all for later" styleClass="btn-ghost" onAction="#handlePendLater" />
+          </HBox>
 
-        <Label fx:id="forceFeedback" styleClass="mc-sub" visible="false" managed="false"
-               wrapText="true" />
+          <HBox spacing="12" alignment="CENTER_LEFT">
+            <Label text="Tolerance (%):" fx:id="toleranceLabel" styleClass="mc-prog-label" />
+            <TextField fx:id="toleranceField" text="2.0" prefWidth="60" />
+            <Label fx:id="selectionSumLabel" styleClass="mc-sub" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnForceLink" text="Force Link" styleClass="btn-approve" onAction="#handleForceLink" disable="true" managed="false" visible="false" />
+            <Button fx:id="btnConsolidate" text="Consolidate" styleClass="btn-approve" onAction="#handleConsolidate" disable="true" managed="false" visible="false" />
+            <Button fx:id="btnUnresolvable" text="Mark as Unresolvable" styleClass="btn-reject" onAction="#handleUnresolvable" disable="true" managed="false" visible="false" />
+          </HBox>
+        </VBox>
 
-      </VBox>
-
-      <!-- SECTION 4: UC9 Multi-Source Consolidation Panel -->
-      <VBox fx:id="consolidationPane" spacing="12" styleClass="fd-card"
-            visible="false" managed="false">
-
-        <Label text="4. Multi-Source Consolidation (N-to-1)" styleClass="section-heading" />
-        <Label text="Select a single bank transaction and the ledger entries whose amounts sum to it."
-               styleClass="mc-sub" wrapText="true" />
-
-        <HBox spacing="16" alignment="TOP_LEFT" maxWidth="Infinity">
-
-          <!-- Bank target picker -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
-            <Label text="Target Bank Transaction" styleClass="mc-prog-label" />
-            <TableView fx:id="consolidationBankTable" styleClass="data-table" prefHeight="160">
-              <columns>
-                <TableColumn text="Date"      fx:id="csBDateCol" prefWidth="90" />
-                <TableColumn text="Amount"    fx:id="csBAmtCol"  prefWidth="110" />
-                <TableColumn text="Narrative" fx:id="csBNarrCol" prefWidth="160" />
-              </columns>
-            </TableView>
-          </VBox>
-
-          <!-- Ledger multi-select -->
-          <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
-            <Label text="Ledger Entries to Consolidate (multi-select)" styleClass="mc-prog-label" />
-            <TableView fx:id="consolidationLedgerTable" styleClass="data-table" prefHeight="160">
-              <columns>
-                <TableColumn text="Date"      fx:id="csLDateCol" prefWidth="90" />
-                <TableColumn text="Amount"    fx:id="csLAmtCol"  prefWidth="110" />
-                <TableColumn text="Narrative" fx:id="csLNarrCol" prefWidth="200" />
-              </columns>
-            </TableView>
-          </VBox>
-
-        </HBox>
-
-        <HBox spacing="12" alignment="CENTER_LEFT">
-          <Label text="Tolerance (%)" styleClass="mc-prog-label" />
-          <TextField fx:id="toleranceField" text="2.0" prefWidth="70" />
-          <Region HBox.hgrow="ALWAYS" />
-          <Label fx:id="consolidationSumLabel" styleClass="mc-sub" />
-          <Button fx:id="btnConsolidate"
-                  text="Consolidate"
-                  styleClass="btn-approve"
-                  onAction="#handleConsolidate"
-                  disable="true" />
-        </HBox>
-
-        <Label fx:id="consolidationFeedback" styleClass="mc-sub" visible="false" managed="false"
+        <Label fx:id="actionFeedback" styleClass="mc-sub" visible="false" managed="false"
                wrapText="true" />
 
       </VBox>

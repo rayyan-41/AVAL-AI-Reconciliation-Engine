@@ -341,7 +341,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_returnsNonNullRecord() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -352,7 +352,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_matchTypeIsForceOverride() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -363,7 +363,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_statusIsApproved() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -374,7 +374,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_confidenceIsOne() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -385,7 +385,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_isManualOverride_returnsTrue() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -396,7 +396,7 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_justificationContainsProvidedText() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("750.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("750.00"), LocalDate.now());
 
@@ -407,13 +407,13 @@ public class ReconciliationServiceTest {
 
     @Test
     void forceReconcile_persists() {
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
         StandardizedTransaction l = ledgerTx(new BigDecimal("100.00"), LocalDate.now());
         StandardizedTransaction b = bankTx(new BigDecimal("100.00"), LocalDate.now());
 
         service.forceReconcile(l, b, user, "test");
 
-        verify(mockDataStore).saveReconciliationRecords(anyList());
+        verify(mockDataStore).saveMatchingResults(anyList(), anyList());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -421,10 +421,10 @@ public class ReconciliationServiceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void consolidateMultiSource_nullInput_returnsEmpty() {
-        List<ReconciliationRecord> result = service.consolidateMultiSource(
-            workspace, null, null, 0.0, null, user);
-        assertTrue(result.isEmpty());
+    void consolidateMultiSource_nullInput_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.consolidateMultiSource(workspace, null, null, 0.0, null, user);
+        });
     }
 
     @Test
@@ -433,14 +433,14 @@ public class ReconciliationServiceTest {
         StandardizedTransaction l2 = ledgerTx(new BigDecimal("200.00"), LocalDate.now());
         StandardizedTransaction b  = bankTx(new BigDecimal("300.00"), LocalDate.now());
 
-        doNothing().when(mockDataStore).saveReconciliationRecords(anyList());
+        doNothing().when(mockDataStore).saveMatchingResults(anyList(), anyList());
 
         List<ReconciliationRecord> result = service.consolidateMultiSource(
-            workspace, List.of(l1, l2), b, 0.05, new java.util.ArrayList<>(), user);
+            workspace, List.of(l1, l2), List.of(b), 0.05, new java.util.ArrayList<>(), user);
 
         assertEquals(2, result.size());
         assertEquals(MatchType.FORCE_OVERRIDE, result.get(0).getHypothesis().getMatchType());
-        verify(mockDataStore).saveReconciliationRecords(anyList());
+        verify(mockDataStore).saveMatchingResults(anyList(), anyList());
     }
 
     @Test
@@ -451,12 +451,37 @@ public class ReconciliationServiceTest {
 
         List<aval.domain.ai.Anomaly> anomalies = new java.util.ArrayList<>();
         List<ReconciliationRecord> result = service.consolidateMultiSource(
-            workspace, List.of(l1, l2), b, 0.05, anomalies, user);
+            workspace, List.of(l1, l2), List.of(b), 0.05, anomalies, user);
 
         assertTrue(result.isEmpty());
         assertEquals(1, anomalies.size());
         assertEquals(aval.domain.ai.Anomaly.Category.CONSOLIDATION_VARIANCE, anomalies.get(0).getCategory());
-        verify(mockDataStore, never()).saveReconciliationRecords(anyList());
+        verify(mockDataStore, never()).saveMatchingResults(anyList(), anyList());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  UC8/UC9 — markAsUnresolvable
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void markAsUnresolvable_createsAndSavesRecord() {
+        StandardizedTransaction tx = bankTx(new BigDecimal("100.00"), LocalDate.now());
+        aval.common.enums.UnresolvableReason reason = aval.common.enums.UnresolvableReason.BANK_CHARGE;
+        String note = "Verified bank charge";
+
+        doNothing().when(mockDataStore).saveUnresolvableRecord(any(aval.domain.ai.UnresolvableRecord.class));
+
+        aval.domain.ai.UnresolvableRecord record = service.markAsUnresolvable(
+            tx, aval.common.enums.TransactionSide.BANK, reason, note, user);
+
+        assertNotNull(record);
+        assertEquals(tx.getTransactionId(), record.getTransaction().getTransactionId());
+        assertEquals(aval.common.enums.TransactionSide.BANK, record.getSide());
+        assertEquals(reason, record.getReason());
+        assertEquals(note, record.getAuditNote());
+        assertEquals(user, record.getSealedBy());
+
+        verify(mockDataStore).saveUnresolvableRecord(record);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

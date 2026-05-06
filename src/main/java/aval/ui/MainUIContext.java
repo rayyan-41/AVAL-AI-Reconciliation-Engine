@@ -5,6 +5,7 @@ import aval.domain.ai.Anomaly;
 import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
+import aval.domain.ai.UnresolvableRecord;
 import aval.domain.core.ClientOrganization;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.engine.AnomalyDetectionEngine;
@@ -51,6 +52,9 @@ public class MainUIContext {
     private volatile List<StandardizedTransaction> unmatchedLedger;
     private volatile List<StandardizedTransaction> unmatchedBank;
     private volatile List<Anomaly> anomalies;
+    private final List<UnresolvableRecord> unresolvableRecords = Collections.synchronizedList(
+        new ArrayList<>()
+    );
 
     //Constructor
     private MainUIContext() {
@@ -75,6 +79,7 @@ public class MainUIContext {
         this.unmatchedLedger = null;
         this.unmatchedBank = null;
         this.anomalies = null;
+        this.unresolvableRecords.clear();
     }
 
     private volatile boolean vectorizationAvailable = true;
@@ -104,6 +109,9 @@ public class MainUIContext {
     public List<StandardizedTransaction> getUnmatchedLedger() { return unmatchedLedger != null ? unmatchedLedger : Collections.emptyList(); }
     public List<StandardizedTransaction> getUnmatchedBank() { return unmatchedBank != null ? unmatchedBank : Collections.emptyList(); }
     public List<Anomaly> getAnomalies() { return anomalies != null ? anomalies : Collections.emptyList(); }
+    public List<UnresolvableRecord> getUnresolvableRecords() {
+        synchronized (unresolvableRecords) { return new ArrayList<>(unresolvableRecords); }
+    }
     public boolean isVectorizationAvailable() { return vectorizationAvailable; }
 
     //Setters
@@ -133,6 +141,13 @@ public void setWorkspaceController(IWorkspaceController workspaceController) { t
     public void setUnmatchedLedger(List<StandardizedTransaction> unmatchedLedger) { this.unmatchedLedger = unmatchedLedger; }
     public void setUnmatchedBank(List<StandardizedTransaction> unmatchedBank) { this.unmatchedBank = unmatchedBank; }
     public void setAnomalies(List<Anomaly> anomalies) { this.anomalies = anomalies; }
+    public void addUnresolvableRecord(UnresolvableRecord record) {
+        if (record == null) throw new IllegalArgumentException("record cannot be null");
+        unresolvableRecords.add(record);
+    }
+    public void clearUnresolvableRecords() {
+        synchronized (unresolvableRecords) { unresolvableRecords.clear(); }
+    }
     public void setVectorizationAvailable(boolean available) { this.vectorizationAvailable = available; }
 
     //Helper Methods
