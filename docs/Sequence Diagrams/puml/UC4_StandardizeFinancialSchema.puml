@@ -1,0 +1,38 @@
+title UC4: Standardize Financial Schema
+
+participant "IngestionService" as IS
+participant "FinancialDataset" as FD
+participant "RawTransaction" as RT
+participant "StandardizedTransaction" as ST
+participant "DataStore" as DS
+
+IS -> FD : getRawTransactions()
+FD --> IS : return List<RawTransaction>
+
+loop for each RawTransaction
+    IS -> RT : getParsedAmount()
+    RT --> IS : return BigDecimal
+
+    IS -> RT : hasValidAmount()
+    RT --> IS : return boolean
+
+    alt Invalid amount (text in numeric field)
+        IS -> IS : log warning, drop row
+    else Valid amount
+        IS -> RT : toEmbeddingInputText()
+        RT --> IS : return combined context String
+        IS -> ST : new StandardizedTransaction(isoDate, parsedAmount, cleanContext, sourceRaw)
+    end
+end
+
+IS -> FD : markAsStandardized()
+
+loop for each StandardizedTransaction
+    IS -> DS : saveStandardizedTransaction(tx)
+end
+
+IS -> DS : saveDataset(dataset)
+
+alt Unrecognized column header
+    IS -> IS : log warning, skip column, continue processing
+end

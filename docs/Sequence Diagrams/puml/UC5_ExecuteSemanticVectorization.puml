@@ -1,0 +1,38 @@
+title UC5: Execute Semantic Vectorization
+
+participant "ReconciliationService" as RS
+participant "DataStore" as DS
+participant "VectorizationEngine\n<<interface>>" as VE
+participant "LangChain4jVectorizationEngine" as LC
+participant "LangChain4j SDK" as SDK
+participant "StandardizedTransaction" as ST
+participant "SemanticEmbedding" as SE
+
+RS -> DS : findUnvectorized(workspaceId)
+DS --> RS : return List<StandardizedTransaction>
+
+RS -> VE : batchVectorize(txList)
+VE -> LC : batchVectorize(txList)
+
+loop for each StandardizedTransaction
+    LC -> LC : preprocess(text)
+
+    LC -> SDK : embed(preprocessedText)
+
+    alt LangChain4j API unavailable
+        SDK --> LC : connection error
+        LC -> LC : retry (max attempts)
+        LC -> LC : flag tx for keyword-based fallback\nand manual review
+    else Success
+        SDK --> LC : return float[]
+        LC -> SE : new SemanticEmbedding(vectorData, modelVersion, generatedAt)
+    end
+end
+
+LC --> VE : return List<SemanticEmbedding>
+VE --> RS : return List<SemanticEmbedding>
+
+loop for each tx + embedding pair
+    RS -> ST : setEmbedding(embedding)
+    RS -> DS : saveStandardizedTransaction(tx)
+end

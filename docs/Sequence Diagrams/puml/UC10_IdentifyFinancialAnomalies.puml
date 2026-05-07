@@ -1,0 +1,35 @@
+title UC10: Identify Financial Anomalies
+
+actor "Finance Officer" as FO
+participant "ReconciliationDashboardController" as RDC
+participant "AnomalyDetector" as AD
+participant "DataStore" as DS
+
+FO -> RDC : openAnomalyDashboard(workspaceId)
+RDC -> AD : getAnomalies(workspaceId)
+
+alt No anomalies detected
+    AD --> RDC : return empty list
+    RDC --> FO : display "Zero Anomalies Detected for this Period"
+else Anomalies found
+    AD --> RDC : return List<Anomaly>
+    RDC --> FO : display anomaly list
+
+    loop for each Anomaly
+        FO -> RDC : selectAnomaly(anomalyId)
+        RDC --> FO : show anomaly detail
+
+        FO -> RDC : resolveAnomaly(action)
+
+        RDC -> AD : resolveAnomaly(anomalyId, resolution)
+        AD -> DS : saveAnomalyResolution(record)
+        DS --> AD : saved
+
+        alt Anomaly requires client clarification
+            FO -> RDC : requestClientClarification()
+            RDC -> AD : sendClientAlert(anomalyId)
+        end
+
+        RDC --> FO : refresh anomaly list
+    end
+end

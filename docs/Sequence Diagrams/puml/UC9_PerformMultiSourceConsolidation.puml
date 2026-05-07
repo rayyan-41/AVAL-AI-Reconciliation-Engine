@@ -1,0 +1,36 @@
+title UC9: Perform Multi-Source Consolidation
+
+actor "Finance Officer" as FO
+participant "ReconciliationDashboardController" as RDC
+participant "ReconciliationService" as RS
+participant "MatchHypothesis" as MH
+participant "DataStore" as DS
+
+FO -> RDC : selectUnmatchedDeposit(bankTxId)
+
+RDC -> RS : getSuggestedLedgerEntries(bankTxId)
+RS --> RDC : return suggestedEntries
+
+RDC --> FO : display suggested ledger entries
+
+FO -> RDC : selectEntries(ledgerIds)
+FO -> RDC : calculateConsolidation()
+RDC -> RS : forceConsolidate(bankId, ledgerIds, note, user)
+
+RS -> MH : new MatchHypothesis(..., isConsolidated=true)
+
+alt Calculated sum does not match bank deposit
+    RS --> RDC : return "Variance Detected" alert
+    RDC --> FO : show variance amount
+    FO -> RDC : add adjustment entry (e.g. "Bank Fee")
+    FO -> RDC : recalculate consolidation
+end
+
+RS -> MH : seal(user)
+MH --> RS : return ReconciliationRecord
+
+RS -> DS : saveHypothesis(h)
+RS -> DS : saveRecord(r)
+
+RS --> RDC : consolidation complete
+RDC --> FO : navigate back to pending queue

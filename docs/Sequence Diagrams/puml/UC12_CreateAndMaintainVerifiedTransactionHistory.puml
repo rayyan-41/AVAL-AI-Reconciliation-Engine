@@ -1,0 +1,37 @@
+title UC12: Create and Maintain Verified Transaction History
+
+actor "Business Client (CFO)" as CFO
+participant "CompliancePortalController" as CPC
+participant "DataStore" as DS
+participant "ReconciliationRecord" as RR
+participant "CryptoHashService" as CHS
+
+CFO -> CPC : openCompliancePortal(workspaceId)
+
+CPC -> DS : findRecordsByWorkspace(wsId)
+DS --> CPC : return List<ReconciliationRecord>
+CPC --> CFO : display available financial periods
+
+CFO -> CPC : viewSemanticProofLog(quarter)
+CPC --> CFO : display semantic proof log entries\n(XAI explanation text per record)
+
+CFO -> CPC : exportCertifiedAudit()
+
+loop for each ReconciliationRecord
+    CPC -> CHS : validateHash(record)
+
+    alt Hash mismatch (data tampering detected)
+        CHS --> CPC : INVALID — hash mismatch
+        CPC --> CFO : "Critical Error: Hash Mismatch"\ndownload halted
+        CPC -> CPC : send emergency alert to AVAL System Engineer
+    else Hash valid
+        CHS --> CPC : VALID
+    end
+end
+
+CPC --> CFO : deliver certified, read-only audit export
+
+alt Insufficient role (non-Auditor access attempt)
+    CPC --> CFO : "Access Denied: Insufficient Privileges"
+    CPC -> DS : logUnauthorizedAccessAttempt(userId)
+end

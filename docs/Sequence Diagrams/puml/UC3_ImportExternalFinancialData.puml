@@ -1,0 +1,36 @@
+title UC3: Import External Financial Data (Bank Statement)
+
+actor "AVAL Engineer" as AE
+participant "IngestionController" as IC
+participant "IngestionService" as IS
+participant "PDFBankStatementParser" as PDF
+participant "RawBankStatement" as RBS
+participant "DataStore" as DS
+
+AE -> IC : handleBankStatementUpload()
+IC -> IS : validateFile(file, BANK_STATEMENT)
+IS -> PDF : validate(filePath)
+PDF --> IS : return true
+
+IS -> PDF : parse(filePath)
+PDF -> PDF : extractRawRows(filePath)
+PDF -> PDF : normalizeNarrative(raw)
+PDF -> PDF : writeToCsv(rows)
+
+PDF --> IS : return RawBankStatement\n(with extractedCsvPath set)
+
+IS -> DS : saveDataset(RawBankStatement)
+IS -> IC : onIngestionComplete(RawBankStatement)
+IC --> AE : displayPreview(rawRows)
+
+alt Unsupported or unreadable PDF
+    PDF --> IS : return false
+    IS --> IC : validation failed
+    IC --> AE : showError("Unsupported file. Please upload a valid PDF.")
+end
+
+alt Missing required bank columns
+    PDF --> IS : invalid — columns missing
+    IS --> IC : column validation failed
+    IC --> AE : showError("Incomplete bank statement. Required columns missing.")
+end

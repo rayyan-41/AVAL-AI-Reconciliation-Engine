@@ -1,0 +1,37 @@
+title UC11: Generate Verified Reconciliation Report
+
+actor "Finance Officer" as FO
+participant "ReportController" as RC
+participant "ReportService" as RS
+participant "ReconciliationWorkspace" as RW
+participant "DataStore" as DS
+
+FO -> RC : handleGenerateReport()
+RC -> RS : generateSummary(ws, user)
+
+RS -> DS : findHypothesesByWorkspace(wsId)
+DS --> RS : return List<MatchHypothesis>
+
+RS -> RW : isReadyForReport()
+
+alt Unresolved pending items or anomalies exist
+    RW --> RS : return false
+    RS --> RC : blocking items list
+    RC --> FO : showBlockingError(items)\n"Cannot Generate: Unresolved Items"
+else All items resolved
+    RW --> RS : return true
+    RS -> RS : build ReportSummary\n(matchRate, unmatchedCount, discrepancies)
+    RS --> RC : return ReportSummary
+    RC --> FO : display draft report summary
+
+    FO -> RC : handleExportPdf()
+    RC -> RS : exportToPdf(ws, path)
+    RS -> DS : saveWorkspace(ws)\n[WorkspaceStatus = COMPLETE]
+    RS --> RC : return PDF File
+    RC --> FO : provide PDF download
+
+    FO -> RC : handleExportCsv()
+    RC -> RS : exportToCsv(ws, path)
+    RS --> RC : return CSV File
+    RC --> FO : provide CSV download
+end

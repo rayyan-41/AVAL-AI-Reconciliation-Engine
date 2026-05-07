@@ -1,0 +1,37 @@
+title UC8: Force Manual Reconciliation
+
+actor "Finance Officer" as FO
+participant "ReconciliationDashboardController" as RDC
+participant "ReconciliationService" as RS
+participant "MatchHypothesis" as MH
+participant "ReconciliationRecord" as RR
+participant "DataStore" as DS
+
+FO -> RDC : filterByStatus(UNMATCHED)
+RDC --> FO : display unmatched pool
+
+FO -> RDC : handleForceReconcile(bankId, ledgerId)
+RDC -> RS : forceReconcile(bankId, ledgerId, note, user)
+
+RS -> MH : new MatchHypothesis(bank, ledger, 1.0, FORCE_RECONCILED)
+
+alt Amount mismatch between entries
+    RS -> MH : getDiscrepancyAmount()
+    MH --> RS : return discrepancy
+    RS --> RDC : return discrepancy warning
+    RDC --> FO : display "Amount Mismatch" warning
+    FO -> RDC : adjust selection or add adjustment entry
+    RDC -> RS : forceReconcile(adjustedIds, note, user)
+end
+
+RS -> MH : seal(sealedBy: SystemUser)
+MH --> RS : return ReconciliationRecord
+
+RS -> RR : isManualOverride()
+RR --> RS : return true
+
+RS -> DS : saveHypothesis(h)
+RS -> DS : saveRecord(ReconciliationRecord)\n[with auditNote, sealedBy, approvalDate]
+
+RS --> RDC : reconciliation complete
+RDC --> FO : refresh dashboard\n(items marked as Force-Reconciled)

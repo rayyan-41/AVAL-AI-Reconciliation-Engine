@@ -1,0 +1,42 @@
+title UC2: Ingest Client Internal Ledger
+
+actor "AVAL Engineer" as AE
+participant "IngestionController" as IC
+participant "IngestionService" as IS
+participant "CSVLedgerParser" as CLP
+participant "RawInternalLedger" as RIL
+participant "DataStore" as DS
+
+AE -> IC : handleLedgerUpload()
+IC -> IS : validateFile(file, INTERNAL_LEDGER)
+IS -> CLP : validate(filePath)
+CLP --> IS : return true
+
+IS -> CLP : parse(filePath)
+CLP -> CLP : detectDelimiter(filePath)
+
+loop for each CSV row
+    CLP -> CLP : mapRowToRawTransaction(row[])
+end
+
+CLP --> IS : return RawInternalLedger
+
+IS -> DS : saveDataset(RawInternalLedger)
+
+loop for each RawTransaction
+    IS -> DS : saveTransaction(tx)
+end
+
+IS -> IC : onIngestionComplete(RawInternalLedger)
+IC --> AE : displayPreview(rawRows)
+
+alt Unsupported file type or unreadable data
+    CLP --> IS : return false
+    IS --> IC : validation failed
+    IC --> AE : showError("Unsupported file type. Please upload a valid CSV.")
+end
+
+alt File too large for single batch
+    IS --> IC : batch size warning
+    IC --> AE : display warning message
+end

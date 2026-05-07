@@ -1,0 +1,34 @@
+title UC1: Create Client Organization Profile
+
+actor "AVAL Engineer" as AE
+participant "AppController" as AC
+participant "DataStore" as DS
+participant "ClientOrganization" as CO
+participant "ReconciliationWorkspace" as RW
+
+AE -> AC : handleLogin(email, password)
+AC -> DS : findUserByEmail(email)
+DS --> AC : return SystemUser
+AC --> AE : login success
+
+AE -> AC : navigateTo(CREATE_ORG_VIEW)
+AC --> AE : display new client configuration form
+
+AE -> AC : submitOrgForm(legalName, ...)
+AC -> DS : findOrganizationById(orgId)
+DS --> AC : return null (no duplicate)
+
+AC -> CO : new ClientOrganization(orgId, legalName)
+AC -> RW : new ReconciliationWorkspace(...)
+AC -> CO : addWorkspace(ws)
+
+AC -> DS : saveOrganization(org)
+AC -> DS : saveWorkspace(ws)
+
+AC --> AE : display "Workspace Created Successfully"
+
+alt Duplicate organization detected
+    DS --> AC : return existing ClientOrganization
+    AC --> AE : display error "Duplicate profile detected"
+    AE -> AC : submitOrgForm(correctedData)
+end

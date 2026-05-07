@@ -1,0 +1,33 @@
+title UC7: Review AI-Suggested Matches
+
+actor "Finance Officer" as FO
+participant "ReconciliationDashboardController" as RDC
+participant "ReconciliationService" as RS
+participant "MatchHypothesis" as MH
+participant "ReconciliationRecord" as RR
+participant "DataStore" as DS
+
+FO -> RDC : loadPendingQueue()
+RDC -> RS : getPendingQueue(ws)
+RS -> DS : findPendingReview(workspaceId)
+DS --> RS : return List<MatchHypothesis>
+RS --> RDC : return List<MatchHypothesis>
+
+loop for each pending MatchHypothesis
+    RDC -> RDC : showXAIExplanation(hypothesis)
+
+    alt Finance Officer clicks "Approve"
+        FO -> RDC : handleApprove(hypothesis)
+        RDC -> RS : approveHypothesis(hypothesisId, user)
+        RS -> MH : seal(sealedBy: SystemUser)
+        MH --> RS : return ReconciliationRecord
+        RS -> DS : saveRecord(ReconciliationRecord)
+        RS -> DS : saveHypothesis(h)\n[status = APPROVED]
+
+    else Finance Officer clicks "Reject"
+        FO -> RDC : handleReject(hypothesis)
+        RDC -> RS : rejectHypothesis(hypothesisId, user)
+        RS -> MH : reject()
+        RS -> DS : saveHypothesis(h)\n[status = REJECTED]
+    end
+end

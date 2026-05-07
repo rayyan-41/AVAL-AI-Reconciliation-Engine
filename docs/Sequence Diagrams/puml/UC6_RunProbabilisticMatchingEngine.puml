@@ -1,0 +1,42 @@
+title UC6: Run Probabilistic Matching Engine
+
+participant "ReconciliationDashboardController" as RDC
+participant "ReconciliationService" as RS
+participant "MatchingEngine\n<<interface>>" as ME
+participant "SemanticMatchingEngine" as SME
+participant "MatchingConfig" as MC
+participant "MatchHypothesis" as MH
+participant "DataStore" as DS
+
+RDC -> RS : runMatching(ws)
+RS -> ME : match(bankList, ledgerList, config)
+ME -> SME : match(bankList, ledgerList, config)
+
+loop for each bank-ledger candidate pair
+    SME -> SME : computeConfidence(a, b)
+
+    SME -> MC : isAutoConfirm(score)
+    MC --> SME : return boolean
+
+    SME -> MC : requiresReview(score)
+    MC --> SME : return boolean
+
+    SME -> SME : buildSemanticProofLog(score, a, b)
+
+    alt score >= 0.95 (auto-confirm)
+        SME -> MH : new MatchHypothesis(bank, ledger, score, AUTO_RECONCILED)
+    else score 0.70 - 0.94 (requires review)
+        SME -> MH : new MatchHypothesis(bank, ledger, score, PENDING_REVIEW)
+    else score < 0.70 (no match)
+    end
+end
+
+SME --> ME : return List<MatchHypothesis>
+ME --> RS : return List<MatchHypothesis>
+
+loop for each MatchHypothesis
+    RS -> DS : saveHypothesis(h)
+end
+
+RS --> RDC : return hypotheses
+RDC -> RDC : refresh dashboard
