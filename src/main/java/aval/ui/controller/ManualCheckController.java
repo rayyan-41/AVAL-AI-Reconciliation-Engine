@@ -10,11 +10,14 @@ import aval.domain.ai.MatchHypothesis;
 import aval.domain.ai.ReconciliationRecord;
 import aval.domain.ai.StandardizedTransaction;
 import aval.domain.ai.UnresolvableRecord;
+import aval.domain.core.MatchingConfig;
 import aval.service.ReconciliationService;
 import aval.ui.MainUIContext;
 import aval.ui.util.UIAnimationUtil;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javafx.animation.Interpolator;
@@ -88,10 +91,18 @@ public class ManualCheckController {
     //-------------- Methods ----------------------//
     public void setWorkspaceController(IWorkspaceController wc) { this.workspaceController = wc; }
 
+    private static final DateTimeFormatter PAIR_DATE_FMT =
+        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
+
     @FXML
     public void initialize() {
+        MatchingConfig config = MainUIContext.getInstance().getActiveMatchingConfig();
         mcSub.setText(
-            "Review AI-suggested hypotheses below 95% confidence and approve or reject each item."
+            String.format(
+                Locale.ENGLISH,
+                "Approve or reject AI-suggested matches below the %.0f%% auto-confirm threshold.",
+                config.getAutoConfirmThreshold() * 100
+            )
         );
         UIAnimationUtil.applyButtonPressFeedback(btnApproveAllPending);
         UIAnimationUtil.applyButtonPressFeedback(btnRejectAllPending);
@@ -119,21 +130,47 @@ public class ManualCheckController {
         mcConfCol.setCellValueFactory(data ->
             new SimpleObjectProperty<>(data.getValue().getConfidenceScore())
         );
-        mcLedgerCol.setCellValueFactory(data -> {
-            return new SimpleStringProperty(
-                formatTransaction(data.getValue().getLedgerTransaction())
-            );
-        });
-        mcBankCol.setCellValueFactory(data -> {
-            return new SimpleStringProperty(
-                formatTransaction(data.getValue().getBankTransaction())
-            );
-        });
+        mcLedgerCol.setCellValueFactory(data ->
+            new SimpleStringProperty(
+                data.getValue().getLedgerTransaction() != null
+                    ? data.getValue().getLedgerTransaction().getNarrative()
+                    : ""
+            )
+        );
+        mcLedgerCol.setCellFactory(col -> matchSideCell(true));
+        mcBankCol.setCellValueFactory(data ->
+            new SimpleStringProperty(
+                data.getValue().getBankTransaction() != null
+                    ? data.getValue().getBankTransaction().getNarrative()
+                    : ""
+            )
+        );
+        mcBankCol.setCellFactory(col -> matchSideCell(false));
         mcJustCol.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getJustification())
         );
+        mcJustCol.setCellFactory(col ->
+            new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setGraphic(null);
+                        setText(null);
+                        return;
+                    }
+                    Label text = new Label(item);
+                    text.setWrapText(true);
+                    text.getStyleClass().add("pair-meta");
+                    text.maxWidthProperty().bind(widthProperty().subtract(24));
+                    setGraphic(text);
+                    setText(null);
+                }
+            }
+        );
 
-        // Confidence pill cell
+        // Confidence pill cell — band cutoff derived from the workspace policy
+        // (midpoint of the manual-review range) instead of a hardcoded value.
         mcConfCol.setCellFactory(col ->
             new TableCell<MatchHypothesis, Double>() {
                 @Override
@@ -143,11 +180,15 @@ public class ManualCheckController {
                         setGraphic(null);
                         return;
                     }
-                    int pct = (int) (conf * 100);
+                    MatchingConfig cfg =
+                        MainUIContext.getInstance().getActiveMatchingConfig();
+                    double bandMid =
+                        (cfg.getReviewFloor() + cfg.getAutoConfirmThreshold()) / 2.0;
+                    int pct = (int) Math.round(conf * 100);
                     Label pill = new Label(pct + "%");
                     pill
                         .getStyleClass()
-                        .addAll("conf-pill", pct >= 85 ? "conf-hi" : "conf-lo");
+                        .addAll("conf-pill", conf >= bandMid ? "conf-hi" : "conf-lo");
                     setGraphic(pill);
                     setText(null);
                 }
@@ -214,10 +255,13 @@ public class ManualCheckController {
     public void setItems(List<MatchHypothesis> pendingHypotheses) {
         List<MatchHypothesis> source =
             pendingHypotheses != null ? pendingHypotheses : List.of();
+        double autoThreshold = MainUIContext.getInstance()
+            .getActiveMatchingConfig()
+            .getAutoConfirmThreshold();
         hypothesesList.setAll(
             source
                 .stream()
-                .filter(h -> h.getConfidenceScore() < 0.95)
+                .filter(h -> h.getConfidenceScore() < autoThreshold)
                 .collect(Collectors.toList())
         );
         resolved = (int) hypothesesList
@@ -237,15 +281,20 @@ public class ManualCheckController {
             anomalyList.setCellFactory(lv -> new ListCell<>() {
                 @Override protected void updateItem(Anomaly item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (empty || item == null) { setText(null); setStyle(""); return; }
-                    String badge = switch (item.getCategory()) {
-                        case DUPLICATE              -> "⚠ DUPLICATE";
-                        case OUTLIER                -> "📈 OUTLIER";
-                        case WEEKEND_POSTING        -> "📅 WEEKEND";
-                        case CONSOLIDATION_VARIANCE -> "∑ VARIANCE";
-                    };
-                    setText(badge + "  —  " + item.getDescription());
-                    setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold;");
+                    if (empty || item == null) {
+                        setGraphic(null);
+                        setText(null);
+                        return;
+                    }
+                    Label chip = new Label(item.getCategory().name().replace('_', ' '));
+                    chip.getStyleClass().add("anomaly-chip");
+                    Label desc = new Label(item.getDescription());
+                    desc.getStyleClass().add("anomaly-desc");
+                    desc.setWrapText(true);
+                    HBox row = new HBox(10, chip, desc);
+                    row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                    setGraphic(row);
+                    setText(null);
                 }
             });
             anomalyPane.setVisible(true);
@@ -564,16 +613,44 @@ public class ManualCheckController {
         thread.start();
     }
 
-    private String formatTransaction(StandardizedTransaction tx) {
-        if (tx == null) {
-            return "";
-        }
-        String ref = tx
-            .getTransactionId()
-            .toString()
-            .substring(0, 8)
-            .toUpperCase();
-        return tx.getNarrative() + "\n" + ref + "\n" + tx.getAmount();
+    /**
+     * Structured cell for one side of a match pair: narrative on top,
+     * reference + value date underneath, amount emphasised at the bottom.
+     */
+    private TableCell<MatchHypothesis, String> matchSideCell(boolean ledgerSide) {
+        return new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                MatchHypothesis h = null;
+                if (!empty && getTableRow() != null) {
+                    h = getTableRow().getItem();
+                }
+                StandardizedTransaction tx = h == null
+                    ? null
+                    : (ledgerSide ? h.getLedgerTransaction() : h.getBankTransaction());
+                if (tx == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                Label narr = new Label(tx.getNarrative());
+                narr.getStyleClass().add("pair-narr");
+                Label meta = new Label(
+                    tx.getTransactionId().toString().substring(0, 8).toUpperCase() +
+                        " · " +
+                        tx.getValueDate().format(PAIR_DATE_FMT)
+                );
+                meta.getStyleClass().add("pair-meta");
+                Label amt = new Label(
+                    String.format(Locale.ENGLISH, "$%,.2f", tx.getAmount())
+                );
+                amt.getStyleClass().add("pair-amt");
+                VBox box = new VBox(2, narr, meta, amt);
+                setGraphic(box);
+                setText(null);
+            }
+        };
     }
 
     // ── Unified Manual Disposition Setup ─────────────────────────────────────────────

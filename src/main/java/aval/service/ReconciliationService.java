@@ -15,6 +15,7 @@ import aval.domain.ai.UnresolvableRecord;
 import aval.domain.core.MatchingConfig;
 import aval.domain.core.ReconciliationWorkspace;
 import aval.engine.MatchingEngine;
+import aval.engine.MatchingProgressListener;
 import aval.engine.VectorizationEngine;
 import aval.persistence.DataStore;
 import java.math.BigDecimal;
@@ -64,10 +65,30 @@ public class ReconciliationService {
         List<StandardizedTransaction> ledgerTransactions,
         List<StandardizedTransaction> bankTransactions
     ) {
-        List<MatchHypothesis> candidates = matchingEngine.generateHypotheses(
-            ledgerTransactions, bankTransactions
-        );
+        return runMatching(workspace, ledgerTransactions, bankTransactions, null);
+    }
 
+    /**
+     * Same as {@link #runMatching(ReconciliationWorkspace, List, List)} but reports
+     * each real pipeline stage to the listener so the UI progress tracker reflects
+     * actual work instead of a timed animation.
+     */
+    public ReconciliationResult runMatching(
+        ReconciliationWorkspace workspace,
+        List<StandardizedTransaction> ledgerTransactions,
+        List<StandardizedTransaction> bankTransactions,
+        MatchingProgressListener progressListener
+    ) {
+        notifyStage(progressListener, MatchingProgressListener.Stage.PREPARE);
+        List<MatchHypothesis> candidates = progressListener != null
+            ? matchingEngine.generateHypotheses(
+                  ledgerTransactions, bankTransactions, progressListener
+              )
+            : matchingEngine.generateHypotheses(
+                  ledgerTransactions, bankTransactions
+              );
+
+        notifyStage(progressListener, MatchingProgressListener.Stage.CLASSIFY);
         MatchingConfig config = workspace.getMatchingConfig();
         double threshold   = config != null ? config.getAutoConfirmThreshold() : new MatchingConfig().getAutoConfirmThreshold();
         double reviewFloor = config != null ? config.getReviewFloor()          : new MatchingConfig().getReviewFloor();
@@ -91,8 +112,20 @@ public class ReconciliationService {
             }
         }
 
+        notifyStage(progressListener, MatchingProgressListener.Stage.PERSIST);
         dataStore.saveMatchingResults(candidates, autoRecords);
+
+        notifyStage(progressListener, MatchingProgressListener.Stage.COMPLETE);
         return new ReconciliationResult(candidates, autoRecords);
+    }
+
+    private void notifyStage(
+        MatchingProgressListener listener,
+        MatchingProgressListener.Stage stage
+    ) {
+        if (listener != null) {
+            listener.onStage(stage);
+        }
     }
 
     // =========================================================

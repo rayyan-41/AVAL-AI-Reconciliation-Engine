@@ -8,11 +8,17 @@ package aval.ui.controller;
 public interface IWorkspaceController {
     /**
      * Unlocks the manual check tab after reconciliation completes.
+     * Does not navigate — the user stays on the results summary.
      */
     void unlockManualCheck();
 
     /**
-     * Unlocks the report tab after manual check completes.
+     * Unlocks the manual check tab and navigates to it (explicit user action).
+     */
+    void openManualCheck();
+
+    /**
+     * Unlocks the report tab and navigates to it after manual check completes.
      */
     void unlockReport();
 }

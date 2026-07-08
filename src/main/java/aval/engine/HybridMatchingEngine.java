@@ -33,6 +33,16 @@ public class HybridMatchingEngine implements MatchingEngine {
         List<StandardizedTransaction> ledgerTransactions,
         List<StandardizedTransaction> bankTransactions
     ) {
+        return generateHypotheses(ledgerTransactions, bankTransactions, null);
+    }
+
+    @Override
+    public List<MatchHypothesis> generateHypotheses(
+        List<StandardizedTransaction> ledgerTransactions,
+        List<StandardizedTransaction> bankTransactions,
+        MatchingProgressListener progressListener
+    ) {
+        notifyStage(progressListener, MatchingProgressListener.Stage.RULE_MATCH);
         List<MatchHypothesis> ruleResults =
             ruleBasedEngine.generateHypotheses(ledgerTransactions, bankTransactions);
 
@@ -63,6 +73,7 @@ public class HybridMatchingEngine implements MatchingEngine {
 
         List<MatchHypothesis> allResults = new ArrayList<>(ruleResults);
         if (!unmatchedLedger.isEmpty() && !unmatchedBank.isEmpty()) {
+            notifyStage(progressListener, MatchingProgressListener.Stage.SEMANTIC_MATCH);
             List<MatchHypothesis> semanticResults =
                 semanticEngine.generateHypotheses(unmatchedLedger, unmatchedBank);
 
@@ -99,5 +110,14 @@ public class HybridMatchingEngine implements MatchingEngine {
         }
 
         return allResults;
+    }
+
+    private void notifyStage(
+        MatchingProgressListener listener,
+        MatchingProgressListener.Stage stage
+    ) {
+        if (listener != null) {
+            listener.onStage(stage);
+        }
     }
 }

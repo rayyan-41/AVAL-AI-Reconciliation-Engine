@@ -385,14 +385,16 @@
 }
 .stat-card {
     -fx-background-color: -fx-bg;
-    -fx-border-color: transparent;
+    -fx-border-color: -fx-border-subtle;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
     -fx-padding: 20 24 20 24;
 }
 .sc-label {
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-weight: bold;
     -fx-text-fill: -fx-text-muted;
 }
 .sc-value {
@@ -405,7 +407,7 @@
 }
 .fd-card {
     -fx-background-color: -fx-bg;
-    -fx-border-color: transparent;
+    -fx-border-color: -fx-border-subtle;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);
@@ -454,6 +456,9 @@
     -fx-cell-size: 42px;
     -fx-border-color: transparent transparent -fx-border-subtle transparent;
 }
+.data-table .table-row-cell:hover {
+    -fx-background-color: -fx-bg-subtle;
+}
 .data-table .table-row-cell:selected {
     -fx-background-color: -fx-accent;
 }
@@ -472,9 +477,14 @@
     -fx-background-color: -fx-bg;
     -fx-border-color: transparent transparent -fx-border transparent;
 }
-.rw-period {
+.rw-title {
+    -fx-font-size: 17px;
     -fx-font-weight: bold;
-    -fx-font-size: 14px;
+    -fx-text-fill: -fx-text-primary;
+}
+.rw-period {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
 }
 .btn-recon {
     -fx-background-color: -fx-accent;
@@ -485,6 +495,9 @@
     -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
 }
+.btn-recon:hover {
+    -fx-background-color: -fx-accent-hover;
+}
 .btn-recon:disabled {
     -fx-background-color: -fx-bg-inset;
     -fx-text-fill: -fx-text-ghost;
@@ -494,42 +507,124 @@
     -fx-text-fill: -fx-text-muted;
     -fx-font-size: 13px;
 }
+
+/* Source readiness chips in the header */
+.step-chip {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+}
+.step-chip-pending {
+    -fx-background-color: -fx-bg-subtle;
+    -fx-border-color: -fx-border;
+    -fx-text-fill: -fx-text-muted;
+}
+.step-chip-done {
+    -fx-background-color: -fx-green-bg;
+    -fx-border-color: -fx-green-border;
+    -fx-text-fill: -fx-green-text;
+}
+
+/* Pipeline step tracker (driven by real engine stages) */
 .pipeline-strip {
     -fx-background-color: -fx-bg-subtle;
     -fx-border-color: transparent transparent -fx-border transparent;
 }
-.result-bar {
+.pl-step {
+    -fx-padding: 0 4 0 4;
+}
+.pl-dot {
+    -fx-min-width: 12px;
+    -fx-min-height: 12px;
+    -fx-max-width: 12px;
+    -fx-max-height: 12px;
+    -fx-background-radius: 999px;
+    -fx-background-color: -fx-border-strong;
+}
+.pl-dot-active {
+    -fx-background-color: -fx-accent;
+    -fx-effect: dropshadow(gaussian, rgba(128,0,32,0.45), 8, 0.4, 0, 0);
+}
+.pl-dot-done {
+    -fx-background-color: -fx-accent;
+}
+.pl-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-ghost;
+}
+.pl-label-active {
+    -fx-text-fill: -fx-accent;
+}
+.pl-label-done {
+    -fx-text-fill: -fx-text-secondary;
+}
+.pl-connector {
+    -fx-min-width: 42px;
+    -fx-max-width: 42px;
+    -fx-min-height: 2px;
+    -fx-max-height: 2px;
+    -fx-background-color: -fx-border;
+    -fx-translate-y: -10px;
+}
+
+/* Result summary strip */
+.result-strip {
+    -fx-background-color: -fx-bg;
+    -fx-border-color: transparent transparent -fx-border transparent;
+}
+.sum-chip {
+    -fx-padding: 8 14 8 14;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+.sum-num {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.sum-cap {
+    -fx-font-size: 12px;
+}
+.sum-good {
     -fx-background-color: -fx-green-bg;
-    -fx-border-color: transparent transparent -fx-green-border transparent;
+    -fx-border-color: -fx-green-border;
 }
-.rb-num {
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
+.sum-good .sum-num, .sum-good .sum-cap {
     -fx-text-fill: -fx-green-text;
 }
-.rb-label {
-    -fx-font-size: 14px;
-    -fx-text-fill: -fx-green-text;
+.sum-warn {
+    -fx-background-color: -fx-amber-bg;
+    -fx-border-color: #eadcb8;
 }
-.rb-sep {
-    -fx-background-color: -fx-green-border;
-    -fx-min-height: 20px;
-    -fx-max-height: 20px;
-}
-.rb-num-warn {
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
+.sum-warn .sum-num, .sum-warn .sum-cap {
     -fx-text-fill: -fx-amber-text;
 }
-.rb-label-warn {
-    -fx-font-size: 14px;
-    -fx-text-fill: -fx-amber-text;
+.sum-open {
+    -fx-background-color: -fx-bg-subtle;
+    -fx-border-color: -fx-border;
 }
+.sum-open .sum-num, .sum-open .sum-cap {
+    -fx-text-fill: -fx-text-secondary;
+}
+.sum-rate {
+    -fx-background-color: -fx-accent-dim;
+    -fx-border-color: #ecc8d2;
+}
+.sum-rate .sum-num, .sum-rate .sum-cap {
+    -fx-text-fill: -fx-accent;
+}
+
+/* Source panels */
 .panel {
     -fx-background-color: -fx-bg;
 }
-.panel-left {
-    -fx-border-color: transparent -fx-border transparent transparent;
+.panel-divider {
+    -fx-background-color: -fx-border;
+    -fx-min-width: 1px;
+    -fx-max-width: 1px;
 }
 .p-hdr {
     -fx-background-color: -fx-bg-subtle;
@@ -541,6 +636,10 @@
     -fx-font-size: 12px;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-text-secondary;
+}
+.p-src {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-ghost;
 }
 .drop-zone {
     -fx-background-color: -fx-bg-subtle;
@@ -554,6 +653,23 @@
     -fx-border-color: -fx-accent;
     -fx-background-color: -fx-accent-dim;
 }
+.dz-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+    -fx-font-size: 14px;
+}
+.dz-sub {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12px;
+}
+.ing-file {
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.ing-step {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12px;
+}
 .ing-progress .track {
     -fx-background-color: -fx-bg-inset;
 }
@@ -561,16 +677,51 @@
     -fx-background-color: -fx-accent;
     -fx-background-insets: 0;
 }
-.ingested-card {
-    -fx-background-color: -fx-green-bg;
-    -fx-border-color: -fx-green-border;
+
+/* Loaded-source meta strip above each table */
+.panel-meta {
+    -fx-background-color: -fx-bg-subtle;
+    -fx-border-color: -fx-border-subtle;
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
-    -fx-padding: 24;
-    -fx-alignment: CENTER;
+    -fx-padding: 10 16 10 16;
 }
-.lmb {
-    -fx-background-color: -fx-bg;
+.pm-cap {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-ghost;
+}
+.pm-val {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
+/* Transaction type chips + monospace cells */
+.tx-type {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8 2 8;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+}
+.tx-debit {
+    -fx-background-color: -fx-accent-dim;
+    -fx-text-fill: -fx-red-text;
+}
+.tx-credit {
+    -fx-background-color: -fx-green-bg;
+    -fx-text-fill: -fx-green-text;
+}
+.cell-mono {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-text-fill: -fx-text-muted;
+}
+.cell-amount {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-weight: bold;
 }
 
 /* --- Phase 7: Manual Check --- */
@@ -647,6 +798,39 @@
     -fx-border-radius: 8px;
     -fx-background-radius: 8px;
     -fx-cursor: hand;
+}
+
+/* Match-pair cells (Manual Check review table) */
+.pair-narr {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+.pair-meta {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-muted;
+}
+.pair-amt {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-secondary;
+}
+
+/* Anomaly rows */
+.anomaly-chip {
+    -fx-font-family: "Consolas", "Courier New";
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 9 3 9;
+    -fx-background-radius: 999px;
+    -fx-background-color: -fx-accent-dim;
+    -fx-text-fill: -fx-red-text;
+}
+.anomaly-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-secondary;
 }
 
 .conf-pill {

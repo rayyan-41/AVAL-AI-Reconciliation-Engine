@@ -52,6 +52,10 @@ public class MainUIContext {
     private volatile List<StandardizedTransaction> unmatchedLedger;
     private volatile List<StandardizedTransaction> unmatchedBank;
     private volatile List<Anomaly> anomalies;
+    private volatile String ledgerSourceFileName;
+    private volatile String bankSourceFileName;
+    private volatile java.time.LocalDateTime ledgerLoadedAt;
+    private volatile java.time.LocalDateTime bankLoadedAt;
     private final List<UnresolvableRecord> unresolvableRecords = Collections.synchronizedList(
         new ArrayList<>()
     );
@@ -80,6 +84,10 @@ public class MainUIContext {
         this.unmatchedBank = null;
         this.anomalies = null;
         this.unresolvableRecords.clear();
+        this.ledgerSourceFileName = null;
+        this.bankSourceFileName = null;
+        this.ledgerLoadedAt = null;
+        this.bankLoadedAt = null;
     }
 
     private volatile boolean vectorizationAvailable = true;
@@ -113,6 +121,22 @@ public class MainUIContext {
         synchronized (unresolvableRecords) { return new ArrayList<>(unresolvableRecords); }
     }
     public boolean isVectorizationAvailable() { return vectorizationAvailable; }
+    public String getLedgerSourceFileName() { return ledgerSourceFileName; }
+    public String getBankSourceFileName() { return bankSourceFileName; }
+    public java.time.LocalDateTime getLedgerLoadedAt() { return ledgerLoadedAt; }
+    public java.time.LocalDateTime getBankLoadedAt() { return bankLoadedAt; }
+
+    /**
+     * Matching thresholds for the active workspace, falling back to defaults so
+     * the UI always renders real policy values instead of hardcoded copies.
+     */
+    public aval.domain.core.MatchingConfig getActiveMatchingConfig() {
+        ReconciliationWorkspace ws = activeWorkspace;
+        if (ws != null && ws.getMatchingConfig() != null) {
+            return ws.getMatchingConfig();
+        }
+        return new aval.domain.core.MatchingConfig();
+    }
 
     //Setters
     public void setDarkModeActive(boolean active) { darkModeActive.set(active); }
@@ -149,6 +173,10 @@ public void setWorkspaceController(IWorkspaceController workspaceController) { t
         synchronized (unresolvableRecords) { unresolvableRecords.clear(); }
     }
     public void setVectorizationAvailable(boolean available) { this.vectorizationAvailable = available; }
+    public void setLedgerSourceFileName(String fileName) { this.ledgerSourceFileName = fileName; }
+    public void setBankSourceFileName(String fileName) { this.bankSourceFileName = fileName; }
+    public void setLedgerLoadedAt(java.time.LocalDateTime loadedAt) { this.ledgerLoadedAt = loadedAt; }
+    public void setBankLoadedAt(java.time.LocalDateTime loadedAt) { this.bankLoadedAt = loadedAt; }
 
     //Helper Methods
     public void addReconciledRecord(ReconciliationRecord record) {

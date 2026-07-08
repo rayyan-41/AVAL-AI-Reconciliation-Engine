@@ -1,99 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.ProgressBar?>
 
 <VBox fx:controller="aval.ui.controller.ReconController" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
 
-  <!-- Action bar -->
-  <HBox fx:id="actionBar" styleClass="rw-bar" alignment="CENTER" spacing="16" style="-fx-padding: 16;">
-    <Label fx:id="periodLabel" styleClass="rw-period" />
-    <Button fx:id="btnRecon" text="Perform Reconciliation"
-            styleClass="btn-recon" disable="true"
-            onAction="#handlePerformRecon" />
-    <Label fx:id="reconHint" styleClass="rw-hint" text="Upload Bank Statement to proceed." />
-  </HBox>
+  <!-- Header: title + source step chips + run action -->
+  <VBox fx:id="actionBar" styleClass="rw-bar" spacing="6" style="-fx-padding: 18 24 14 24;">
+    <HBox alignment="CENTER_LEFT" spacing="16">
+      <VBox spacing="2">
+        <Label text="Reconciliation" styleClass="rw-title" />
+        <Label fx:id="periodLabel" styleClass="rw-period" />
+      </VBox>
+      <Region HBox.hgrow="ALWAYS" />
+      <HBox spacing="8" alignment="CENTER">
+        <Label fx:id="stepLedger" styleClass="step-chip" text="1 · INTERNAL LEDGER" />
+        <Label fx:id="stepBank"   styleClass="step-chip" text="2 · BANK STATEMENT" />
+      </HBox>
+      <Button fx:id="btnRecon" text="Run Reconciliation"
+              styleClass="btn-recon" disable="true"
+              onAction="#handlePerformRecon" />
+    </HBox>
+    <Label fx:id="reconHint" styleClass="rw-hint" text="Load both sources to proceed." />
+  </VBox>
 
-  <!-- Pipeline strip (hidden until reconciliation starts) -->
+  <!-- Pipeline tracker (hidden until reconciliation starts; steps built in controller) -->
   <HBox fx:id="pipelineStrip" styleClass="pipeline-strip"
-        visible="false" managed="false" alignment="CENTER" spacing="8" style="-fx-padding: 16;">
-    <!-- Built programmatically in controller -->
+        visible="false" managed="false" alignment="CENTER" spacing="0"
+        style="-fx-padding: 18 24 18 24;" />
+
+  <!-- Result summary (hidden until pipeline completes; chips built in controller) -->
+  <HBox fx:id="resultStrip" styleClass="result-strip"
+        visible="false" managed="false" alignment="CENTER_LEFT" spacing="12"
+        style="-fx-padding: 14 24 14 24;">
+    <HBox fx:id="resultChips" spacing="10" alignment="CENTER_LEFT" />
+    <Region HBox.hgrow="ALWAYS" />
+    <Button text="Run Again" styleClass="btn-ghost" onAction="#handleRunAgain" />
+    <Button fx:id="btnReview" text="Review Matches" styleClass="btn-recon"
+            onAction="#handleGoToReview" />
   </HBox>
 
-  <!-- Result bar (hidden until pipeline complete) -->
-  <HBox fx:id="resultBar" styleClass="result-bar"
-        visible="false" managed="false" alignment="CENTER" spacing="12" style="-fx-padding: 16;">
-    <Label fx:id="rbAuto"   styleClass="rb-num" />
-    <Label text="auto-matched (≥95%)" styleClass="rb-label" />
-    <Region prefWidth="1" styleClass="rb-sep" />
-    <Label fx:id="rbManual" styleClass="rb-num-warn" />
-    <Label text="require manual review" styleClass="rb-label-warn" />
-  </HBox>
-
-  <!-- Dual panel -->
+  <!-- Dual source panels -->
   <HBox VBox.vgrow="ALWAYS">
 
-    <!-- LEFT: Bank Statement -->
-    <VBox styleClass="panel" HBox.hgrow="ALWAYS">
-      <HBox styleClass="p-hdr">
-        <Label text="BANK STATEMENT" styleClass="p-title" />
+    <!-- LEFT: Internal Ledger (the company's own records) -->
+    <VBox fx:id="ledgerPanel" styleClass="panel" HBox.hgrow="ALWAYS">
+      <HBox styleClass="p-hdr" spacing="10">
+        <VBox spacing="1">
+          <Label text="INTERNAL LEDGER" styleClass="p-title" />
+          <Label text="Company records · Excel (.xlsx)" styleClass="p-src" />
+        </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Label fx:id="bankStatus" styleClass="badge, badge-pending" text="Awaiting File" />
+        <Label fx:id="ledgerStatus" styleClass="badge, badge-pending" text="Not Loaded" />
+        <Button fx:id="btnLedgerReplace" text="Replace" onAction="#handleLedgerReplace"
+                styleClass="btn-ghost" visible="false" managed="false" />
       </HBox>
-      <StackPane fx:id="bankPanel" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+      <StackPane VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
 
-        <VBox fx:id="dropZonePane" styleClass="drop-zone" alignment="CENTER" spacing="12" VBox.vgrow="ALWAYS">
-            <Label text="Drag &amp; drop PDF here" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
-            <Label text="or" style="-fx-text-fill: -fx-text-muted;" />
-            <Button text="Browse Files" onAction="#handleBrowse" styleClass="btn-ghost" />
+        <VBox fx:id="ledgerDropPane" styleClass="drop-zone" alignment="CENTER" spacing="10">
+          <Label text="Drag &amp; drop the internal ledger here" styleClass="dz-title" />
+          <Label text=".xlsx — exported from your accounting system" styleClass="dz-sub" />
+          <Button text="Browse Files" onAction="#handleLoadLedger" styleClass="btn-ghost" />
         </VBox>
 
-        <VBox fx:id="ingestingPane" alignment="CENTER" spacing="16" visible="false" managed="false" VBox.vgrow="ALWAYS">
-            <Label fx:id="ingFilename" style="-fx-font-weight: bold;" />
-            <ProgressBar fx:id="ingProgress" progress="0" prefWidth="300" styleClass="ing-progress" />
-            <Label fx:id="ingLabel" style="-fx-text-fill: -fx-text-muted;" />
+        <VBox fx:id="ledgerLoadingPane" alignment="CENTER" spacing="14" visible="false" managed="false">
+          <Label fx:id="ledgerLoadingFile" styleClass="ing-file" />
+          <ProgressBar fx:id="ledgerLoadingBar" progress="-1" prefWidth="300" styleClass="ing-progress" />
+          <Label fx:id="ledgerLoadingLabel" styleClass="ing-step" />
         </VBox>
 
-        <VBox fx:id="ingestedPane" styleClass="ingested-card" visible="false" managed="false" spacing="12" VBox.vgrow="ALWAYS">
-            <Label text="File successfully ingested." style="-fx-text-fill: -fx-green-text; -fx-font-weight: bold;" />
-            <!-- Metadata here if needed -->
-            <Button text="Replace file" onAction="#resetDropZone" styleClass="btn-ghost" />
+        <VBox fx:id="ledgerLoadedPane" spacing="10" visible="false" managed="false">
+          <HBox fx:id="ledgerMetaBar" styleClass="panel-meta" alignment="CENTER_LEFT" spacing="18" />
+          <TableView fx:id="ledgerTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+            <columns>
+              <TableColumn text="Date"        fx:id="lDateCol" prefWidth="95"  />
+              <TableColumn text="Reference"   fx:id="lRefCol"  prefWidth="95"  />
+              <TableColumn text="Description" fx:id="lNarrCol" prefWidth="180" />
+              <TableColumn text="Type"        fx:id="lTypeCol" prefWidth="85"  />
+              <TableColumn text="Amount"      fx:id="lAmtCol"  prefWidth="110" />
+            </columns>
+          </TableView>
         </VBox>
 
       </StackPane>
     </VBox>
 
-    <Region style="-fx-background-color: -fx-border; -fx-min-width: 1px; -fx-max-width: 1px;" />
+    <Region styleClass="panel-divider" />
 
-    <!-- RIGHT: Internal Ledger -->
-    <VBox styleClass="panel" HBox.hgrow="ALWAYS">
-      <HBox styleClass="p-hdr">
-        <Label text="INTERNAL LEDGER" styleClass="p-title" />
+    <!-- RIGHT: Bank Statement (the external source of truth) -->
+    <VBox fx:id="bankPanel" styleClass="panel" HBox.hgrow="ALWAYS">
+      <HBox styleClass="p-hdr" spacing="10">
+        <VBox spacing="1">
+          <Label text="BANK STATEMENT" styleClass="p-title" />
+          <Label text="External records · PDF statement" styleClass="p-src" />
+        </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Label fx:id="ledgerStatus" styleClass="badge, badge-pending" text="Not Loaded" />
-        <Button text="Load Ledger" onAction="#handleLoadLedger" styleClass="btn-ghost" />
+        <Label fx:id="bankStatus" styleClass="badge, badge-pending" text="Not Loaded" />
+        <Button fx:id="btnBankReplace" text="Replace" onAction="#handleBankReplace"
+                styleClass="btn-ghost" visible="false" managed="false" />
       </HBox>
-      <VBox VBox.vgrow="ALWAYS" style="-fx-padding: 16;" spacing="12">
-        <HBox fx:id="ledgerMetaBar" styleClass="lmb" alignment="CENTER_LEFT" spacing="16">
-            <Label fx:id="ledgerMetaPrimary" text="No records loaded" style="-fx-font-weight: bold; -fx-text-fill: -fx-text-primary;" />
-            <Label fx:id="ledgerMetaSecondary" text="Select an .xlsx file to ingest" style="-fx-text-fill: -fx-text-muted;" />
-        </HBox>
-        <TableView fx:id="ledgerTable" VBox.vgrow="ALWAYS" styleClass="data-table">
-          <columns>
-            <TableColumn text="Date"      fx:id="lDateCol" prefWidth="90" />
-            <TableColumn text="Reference" fx:id="lRefCol"  prefWidth="110" />
-            <TableColumn text="Narrative" fx:id="lNarrCol" prefWidth="180" />
-            <TableColumn text="Type"      fx:id="lTypeCol" prefWidth="90" />
-            <TableColumn text="Amount"    fx:id="lAmtCol"  prefWidth="110" />
-          </columns>
-        </TableView>
-      </VBox>
+      <StackPane VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+
+        <VBox fx:id="bankDropPane" styleClass="drop-zone" alignment="CENTER" spacing="10">
+          <Label text="Drag &amp; drop the bank statement here" styleClass="dz-title" />
+          <Label text=".pdf — issued by the bank" styleClass="dz-sub" />
+          <Button text="Browse Files" onAction="#handleBrowse" styleClass="btn-ghost" />
+        </VBox>
+
+        <VBox fx:id="bankLoadingPane" alignment="CENTER" spacing="14" visible="false" managed="false">
+          <Label fx:id="bankLoadingFile" styleClass="ing-file" />
+          <ProgressBar fx:id="bankLoadingBar" progress="-1" prefWidth="300" styleClass="ing-progress" />
+          <Label fx:id="bankLoadingLabel" styleClass="ing-step" />
+        </VBox>
+
+        <VBox fx:id="bankLoadedPane" spacing="10" visible="false" managed="false">
+          <HBox fx:id="bankMetaBar" styleClass="panel-meta" alignment="CENTER_LEFT" spacing="18" />
+          <TableView fx:id="bankTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+            <columns>
+              <TableColumn text="Date"        fx:id="bDateCol" prefWidth="95"  />
+              <TableColumn text="Reference"   fx:id="bRefCol"  prefWidth="95"  />
+              <TableColumn text="Description" fx:id="bNarrCol" prefWidth="180" />
+              <TableColumn text="Type"        fx:id="bTypeCol" prefWidth="85"  />
+              <TableColumn text="Amount"      fx:id="bAmtCol"  prefWidth="110" />
+            </columns>
+          </TableView>
+        </VBox>
+
+      </StackPane>
     </VBox>
 
   </HBox>

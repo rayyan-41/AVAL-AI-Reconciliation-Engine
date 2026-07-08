@@ -20,4 +20,17 @@ public interface MatchingEngine {
         List<StandardizedTransaction> ledgerTransactions,
         List<StandardizedTransaction> bankTransactions
     );
+
+    /**
+     * Same as {@link #generateHypotheses(List, List)} but reports pipeline stage
+     * transitions to the given listener so the UI can track real progress.
+     * Engines without internal stages simply ignore the listener.
+     */
+    default List<MatchHypothesis> generateHypotheses(
+        List<StandardizedTransaction> ledgerTransactions,
+        List<StandardizedTransaction> bankTransactions,
+        MatchingProgressListener progressListener
+    ) {
+        return generateHypotheses(ledgerTransactions, bankTransactions);
+    }
 }

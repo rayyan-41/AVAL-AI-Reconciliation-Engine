@@ -6,7 +6,6 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.Priority?>
 
 <ScrollPane fitToWidth="true" styleClass="fd-scroll"
     xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
@@ -17,20 +16,22 @@
     <Label fx:id="fdTitle" styleClass="fd-title" />
     <Label fx:id="fdSub"   styleClass="fd-sub" />
 
-    <!-- Stat cards: 4 equal HBox children -->
-    <HBox fx:id="statRow" spacing="14" style="-fx-padding: 28 0 28 0;">
-      <!-- 4 x VBox.styleClass="stat-card" injected by controller -->
-    </HBox>
+    <!-- Stat cards: injected by controller -->
+    <HBox fx:id="statRow" spacing="14" style="-fx-padding: 28 0 28 0;" />
 
-    <!-- Metadata grid: 2 fd-card VBoxes side by side -->
+    <!-- Info cards: company profile, data sources, matching policy -->
     <HBox spacing="18" style="-fx-padding: 0 0 28 0;">
       <VBox styleClass="fd-card" HBox.hgrow="ALWAYS">
-        <Label text="COMPANY INFORMATION" styleClass="fdc-label" />
+        <Label text="COMPANY PROFILE" styleClass="fdc-label" />
         <GridPane fx:id="coGrid" styleClass="meta-grid" />
       </VBox>
       <VBox styleClass="fd-card" HBox.hgrow="ALWAYS">
-        <Label text="LEDGER METADATA" styleClass="fdc-label" />
-        <GridPane fx:id="ldgGrid" styleClass="meta-grid" />
+        <Label text="DATA SOURCES" styleClass="fdc-label" />
+        <GridPane fx:id="srcGrid" styleClass="meta-grid" />
+      </VBox>
+      <VBox styleClass="fd-card" HBox.hgrow="ALWAYS">
+        <Label text="MATCHING POLICY" styleClass="fdc-label" />
+        <GridPane fx:id="policyGrid" styleClass="meta-grid" />
       </VBox>
     </HBox>
 
@@ -38,7 +39,7 @@
     <Label text="Reconciliation History" styleClass="section-heading" />
     <TableView fx:id="historyTable" styleClass="data-table">
       <columns>
-        <TableColumn text="Date"         fx:id="hDateCol"    prefWidth="110" />
+        <TableColumn text="Date"          fx:id="hDateCol"    prefWidth="110" />
         <TableColumn text="Period"        fx:id="hPeriodCol"  prefWidth="110" />
         <TableColumn text="Transactions"  fx:id="hTxnsCol"    prefWidth="110" />
         <TableColumn text="Matched"       fx:id="hMatchedCol" prefWidth="90"  />

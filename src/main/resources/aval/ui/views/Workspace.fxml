@@ -22,16 +22,16 @@
         </VBox>
       </HBox>
 
-      <!-- Tab nav (ToggleGroup) -->
+      <!-- Tab nav (ToggleGroup) — numbered to read as a guided workflow -->
       <HBox fx:id="tabNav" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-        <ToggleButton fx:id="tabFinance"  text="Finance Dashboard"
+        <ToggleButton fx:id="tabFinance"  text="1 · Overview"
             styleClass="ws-tab" onAction="#showFinance" />
-        <ToggleButton fx:id="tabRecon"    text="Reconciliation"
+        <ToggleButton fx:id="tabRecon"    text="2 · Reconciliation"
             styleClass="ws-tab" onAction="#showRecon" />
-        <ToggleButton fx:id="tabManual"   text="Manual Check"
+        <ToggleButton fx:id="tabManual"   text="3 · Review &amp; Approve"
             styleClass="ws-tab" onAction="#showManual"
             disable="true" />
-        <ToggleButton fx:id="tabReport"   text="Report"
+        <ToggleButton fx:id="tabReport"   text="4 · Report"
             styleClass="ws-tab" onAction="#showReport"
             disable="true" />
       </HBox>

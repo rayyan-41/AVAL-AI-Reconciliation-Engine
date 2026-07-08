@@ -61,10 +61,16 @@ public class WorkspaceController implements IWorkspaceController {
             MainUIContext.getInstance().getActiveClient();
         if (client != null) {
             wsCompanyName.setText(client.getName());
+            String shortId = client
+                .getOrgId()
+                .toString()
+                .substring(0, 8)
+                .toUpperCase();
+            String contact = client.getContactMetadata();
             wsCompanyId.setText(
-                client.getOrgId() +
-                    " · " +
-                    getIndustryFromName(client.getName())
+                contact != null && !contact.isBlank()
+                    ? "CLIENT " + shortId + " · " + contact
+                    : "CLIENT " + shortId
             );
         } else {
             wsCompanyName.setText("Unknown Company");
@@ -96,14 +102,6 @@ public class WorkspaceController implements IWorkspaceController {
         tabReport.setToggleGroup(tg);
         tabFinance.setSelected(true);
         showFinance();
-    }
-
-    private String getIndustryFromName(String name) {
-        if (name.contains("Retail")) return "Retail & eCommerce";
-        if (name.contains("Logistics")) return "Transportation & Logistics";
-        if (name.contains("Trust")) return "Financial Services";
-        if (name.contains("Estates")) return "Real Estate";
-        return "Enterprise Holding";
     }
 
     private Node loadFxml(String fxml) {
@@ -167,6 +165,10 @@ public class WorkspaceController implements IWorkspaceController {
     }
 
     public void unlockManualCheck() {
+        tabManual.setDisable(false);
+    }
+
+    public void openManualCheck() {
         tabManual.setDisable(false);
         showManual();
     }

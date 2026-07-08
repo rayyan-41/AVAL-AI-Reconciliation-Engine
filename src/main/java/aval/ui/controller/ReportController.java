@@ -121,57 +121,78 @@ public class ReportController {
         currentHypotheses.clear();
         currentHypotheses.addAll(all);
 
+        // Count by resolution status so the cards, the filters, and the lineage
+        // table all agree on the same numbers.
         long autoMatched = all
             .stream()
-            .filter(h -> h.getConfidenceScore() >= 0.95)
+            .filter(h -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED)
             .count();
         long approved = all
             .stream()
-            .filter(
-                h ->
-                    h.getStatus() == HypothesisStatus.APPROVED &&
-                    h.getConfidenceScore() < 0.95
-            )
+            .filter(h -> h.getStatus() == HypothesisStatus.APPROVED)
             .count();
         long rejected = all
             .stream()
             .filter(h -> h.getStatus() == HypothesisStatus.REJECTED)
             .count();
         long total = all.size();
-        long matched = autoMatched + approved;
-        double rate = total == 0 ? 0 : ((double) matched / total) * 100;
+
+        // Final match rate: reconciled ledger transactions over all ledger
+        // transactions — the number a client actually cares about.
+        MainUIContext ctx = MainUIContext.getInstance();
+        java.util.Set<java.util.UUID> matchedLedgerIds = all
+            .stream()
+            .filter(
+                h ->
+                    h.getStatus() == HypothesisStatus.AUTO_RECONCILED ||
+                    h.getStatus() == HypothesisStatus.APPROVED
+            )
+            .map(MatchHypothesis::getLedgerTransaction)
+            .filter(java.util.Objects::nonNull)
+            .map(StandardizedTransaction::getTransactionId)
+            .collect(Collectors.toSet());
+        int ledgerTotal = ctx.getStandardizedLedgerTransactions().size();
+        double rate = ledgerTotal > 0
+            ? ((double) matchedLedgerIds.size() / ledgerTotal) * 100
+            : (total == 0 ? 0 : ((double) (autoMatched + approved) / total) * 100);
+
+        String autoSub = String.format(
+            java.util.Locale.ENGLISH,
+            "Confidence ≥ %.0f%%",
+            ctx.getActiveMatchingConfig().getAutoConfirmThreshold() * 100
+        );
 
         rptStatRow
             .getChildren()
             .setAll(
                 makeStatCard(
-                    "Total Hypotheses",
+                    "Total Candidates",
                     String.valueOf(total),
-                    "All candidates",
+                    "All match hypotheses",
                     "0d0d0d"
                 ),
                 makeStatCard(
-                    "Auto-Matched",
+                    "Auto-Reconciled",
                     String.valueOf(autoMatched),
-                    "Confidence ≥ 95%",
+                    autoSub,
                     "1a5c2a"
                 ),
                 makeStatCard(
-                    "Manual Approved",
+                    "Approved in Review",
                     String.valueOf(approved),
-                    "Approved in review",
+                    "Confirmed by reviewer",
                     "0d0d0d"
                 ),
                 makeStatCard(
                     "Rejected",
                     String.valueOf(rejected),
-                    "Dismissed by reviewer",
+                    "Dismissed candidates",
                     "800020"
                 ),
                 makeStatCard(
-                    "Final Match Rate",
-                    String.format("%.1f%%", rate),
-                    "Auto + approved",
+                    "Ledger Match Rate",
+                    String.format(java.util.Locale.ENGLISH, "%.1f%%", rate),
+                    "Reconciled ledger records",
                     "1a5c2a"
                 )
             );
@@ -211,8 +232,7 @@ public class ReportController {
             filtered = currentHypotheses.stream().filter(h -> {
                 return switch (filterType) {
                     case "AUTO" -> h.getStatus() == HypothesisStatus.AUTO_RECONCILED;
-                    case "APPROVED" -> h.getStatus() == HypothesisStatus.APPROVED
-                                       && h.getConfidenceScore() < 0.95;
+                    case "APPROVED" -> h.getStatus() == HypothesisStatus.APPROVED;
                     case "REJECTED" -> h.getStatus() == HypothesisStatus.REJECTED;
                     default -> true;
                 };
@@ -248,11 +268,20 @@ public class ReportController {
             client != null
                 ? client.getName().replace(" ", "_")
                 : "Unknown_Client";
+        String period = java.time.LocalDate.now().format(
+            java.time.format.DateTimeFormatter.ofPattern(
+                "MMMyyyy",
+                java.util.Locale.ENGLISH
+            )
+        );
         String outputPath =
             System.getProperty("user.home") +
-            "\\reconciliation_report_" +
+            java.io.File.separator +
+            "reconciliation_report_" +
             clientName +
-            "_Sep2024.csv";
+            "_" +
+            period +
+            ".csv";
         this.lastGeneratedReportPath = outputPath;
         showFeedback("Generating report...");
 
@@ -314,6 +343,10 @@ public class ReportController {
 
         ClientOrganization client =
             MainUIContext.getInstance().getActiveClient();
+        if (client == null) {
+            showFeedback("No active client — cannot determine the recipient.");
+            return;
+        }
         String toEmail = client.getContactMetadata();
 
         if (toEmail == null || toEmail.isBlank()) {
