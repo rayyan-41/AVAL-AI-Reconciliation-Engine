@@ -18,20 +18,14 @@ import aval.ui.controller.IWorkspaceController;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.scene.Scene;
 
 /**
- * Global context for the UI, managing application-wide state such as theme selection.
+ * Global context for the UI, managing application-wide session state.
  */
 public class MainUIContext {
 
     //-------------- Attributes ----------------------//
     private static final MainUIContext instance = new MainUIContext();
-    private final BooleanProperty darkModeActive = new SimpleBooleanProperty(
-        false
-    );
     private ClientOrganization activeClient;
     private volatile List<MatchHypothesis> pendingHypotheses;
     private volatile IWorkspaceController workspaceController;
@@ -93,8 +87,6 @@ public class MainUIContext {
     private volatile boolean vectorizationAvailable = true;
 
     //Getters
-    public BooleanProperty darkModeActiveProperty() { return darkModeActive; }
-    public boolean isDarkModeActive() { return darkModeActive.get(); }
     public ClientOrganization getActiveClient() { return activeClient; }
     public List<MatchHypothesis> getPendingHypotheses() { return pendingHypotheses != null ? pendingHypotheses : Collections.emptyList(); }
     public IWorkspaceController getWorkspaceController() { return workspaceController; }
@@ -139,7 +131,6 @@ public class MainUIContext {
     }
 
     //Setters
-    public void setDarkModeActive(boolean active) { darkModeActive.set(active); }
     public void setActiveClient(ClientOrganization activeClient) { this.activeClient = activeClient; }
     public void setPendingHypotheses(List<MatchHypothesis> pendingHypotheses) { this.pendingHypotheses = pendingHypotheses; }
 public void setWorkspaceController(IWorkspaceController workspaceController) { this.workspaceController = workspaceController; }
@@ -169,9 +160,6 @@ public void setWorkspaceController(IWorkspaceController workspaceController) { t
         if (record == null) throw new IllegalArgumentException("record cannot be null");
         unresolvableRecords.add(record);
     }
-    public void clearUnresolvableRecords() {
-        synchronized (unresolvableRecords) { unresolvableRecords.clear(); }
-    }
     public void setVectorizationAvailable(boolean available) { this.vectorizationAvailable = available; }
     public void setLedgerSourceFileName(String fileName) { this.ledgerSourceFileName = fileName; }
     public void setBankSourceFileName(String fileName) { this.bankSourceFileName = fileName; }
@@ -184,20 +172,5 @@ public void setWorkspaceController(IWorkspaceController workspaceController) { t
             throw new IllegalArgumentException("record cannot be null");
         }
         reconciledRecords.add(record);
-    }
-
-    /**
-     * Applies the light theme to the provided scene.
-     * @param scene The JavaFX scene to style.
-     */
-    public void applyTheme(Scene scene) {
-        scene.getStylesheets().clear();
-        String path = "/aval/ui/styles/fintech-light.css";
-        var resource = getClass().getResource(path);
-        if (resource != null) {
-            scene.getStylesheets().add(resource.toExternalForm());
-        } else {
-            System.err.println("Theme resource not found: " + path);
-        }
     }
 }

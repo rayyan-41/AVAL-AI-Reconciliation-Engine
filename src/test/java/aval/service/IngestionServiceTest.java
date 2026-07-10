@@ -94,7 +94,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
 
@@ -113,7 +112,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
 
@@ -131,7 +129,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
 
@@ -148,7 +145,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         service.standardize(ledger);
 
@@ -165,7 +161,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         service.standardize(ledger);
 
@@ -183,7 +178,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
         assertEquals(1, result.size());
@@ -199,7 +193,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
         assertEquals(1, result.size());
@@ -215,7 +208,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
         assertEquals(1, result.size());
@@ -231,7 +223,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
 
@@ -248,7 +239,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         List<StandardizedTransaction> result = service.standardize(ledger);
 
@@ -268,7 +258,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedBankTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         service.standardize(bank);
 
@@ -286,7 +275,6 @@ public class IngestionServiceTest {
         SemanticEmbedding emb = dummyEmbedding(UUID.randomUUID());
         when(mockVectorEngine.vectorize(any())).thenReturn(emb);
         doNothing().when(mockDataStore).saveStandardizedLedgerTransaction(any(), any());
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         service.standardize(ledger);
 
@@ -304,7 +292,6 @@ public class IngestionServiceTest {
         for (RawTransaction t : ledger.getRawTransactions()) setSource(t, ledger);
 
         when(mockVectorEngine.vectorize(any())).thenThrow(new RuntimeException("Ollama down"));
-        doNothing().when(mockDataStore).saveStandardizedTransactions(any());
 
         // Should not throw; vectorization failure is logged and skipped
         assertDoesNotThrow(() -> {

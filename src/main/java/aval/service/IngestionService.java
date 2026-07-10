@@ -122,7 +122,6 @@ public class IngestionService {
 
         dataset.getStandardizedTransactions().addAll(standardizedList);
         dataset.markAsStandardized();
-        this.dataStore.saveStandardizedTransactions(standardizedList);
         return standardizedList;
     }
 

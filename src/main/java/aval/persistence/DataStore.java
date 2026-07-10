@@ -246,10 +246,6 @@ public class DataStore {
         return null;
     }
 
-    public void saveFinancialDataset(FinancialDataset dataset) {
-        saveFinancialDataset(dataset, null);
-    }
-
     public void saveFinancialDataset(
         FinancialDataset dataset,
         UUID workspaceId
@@ -303,13 +299,6 @@ public class DataStore {
                 e
             );
         }
-    }
-
-    public void saveStandardizedTransactions(
-        List<StandardizedTransaction> standardizedTransactions
-    ) {
-        // Note: Individual transactions are saved via saveStandardizedLedgerTransaction
-        // and saveStandardizedBankTransaction to handle specific pgvector requirements.
     }
 
     public void saveMatchHypotheses(List<MatchHypothesis> hypotheses) {

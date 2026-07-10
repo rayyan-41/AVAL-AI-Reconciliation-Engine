@@ -21,7 +21,7 @@
     >
       <VBox alignment="TOP_LEFT" spacing="2">
           <Label text="AIRE" styleClass="splash-aval" />
-          <Label text="V1.00.2" styleClass="splash-aire" />
+          <Label text="V1.0.0" styleClass="splash-aire" />
       </VBox>
 
       <Label

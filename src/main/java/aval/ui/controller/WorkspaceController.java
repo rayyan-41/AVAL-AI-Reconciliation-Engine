@@ -240,10 +240,6 @@ public class WorkspaceController implements IWorkspaceController {
         tabReport.setSelected(true);
     }
 
-    private void showView(Node view) {
-        showView(view, null);
-    }
-
     private void showView(Node view, Runnable onShown) {
         if (view == null) {
             return;

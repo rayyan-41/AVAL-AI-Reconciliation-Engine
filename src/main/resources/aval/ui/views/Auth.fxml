@@ -18,7 +18,7 @@
   <VBox styleClass="auth-left" HBox.hgrow="ALWAYS" spacing="0">
     <HBox styleClass="auth-wordmark" alignment="CENTER_LEFT" spacing="4">
       <Label text="AIRE" styleClass="auth-wm-aval" />
-      <Label text="V1.00.2" styleClass="auth-wm-aire" />
+      <Label text="V1.0.0" styleClass="auth-wm-aire" />
     </HBox>
     <Label
                 text="Intelligent Reconciliation&#10;For Modern Finance."

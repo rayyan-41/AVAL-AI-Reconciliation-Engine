@@ -114,32 +114,4 @@ public class PDFBankStatementParser
         return new File(filePath).exists() && filePath.endsWith(".pdf");
     }
 
-    @Override
-    public String getSupportedFormat() { return "PDF"; }
-
-    @Override
-    public List<String[]> extractRawRows(String filePath) {
-        List<String[]> rawRows = new ArrayList<>();
-        try (PDDocument document = Loader.loadPDF(new File(filePath))) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            String text = stripper.getText(document);
-            String[] lines = text.split("\\r?\\n");
-            for (String line : lines) {
-                if (!line.trim().isEmpty()) {
-                    rawRows.add(new String[] { line.trim() });
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rawRows;
-    }
-
-    public List<String[]> extractTableRows(String filePath) {
-        return new ArrayList<>();
-    }
-
-    public String normalizeNarrative(String raw) {
-        return raw.trim().replaceAll("\\s+", " ");
-    }
 }

@@ -292,68 +292,6 @@ public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
         return result;
     }
 
-    private int[] detectColumnTypes(Sheet sheet, int numCols) {
-        int[] result = {-1, -1, -1, -1, -1}; // date, amount, desc, debit, credit
-        Row headerRow = sheet.getRow(0);
-        if (headerRow == null) return result;
-
-        // First pass: match by header name
-        for (int c = 0; c < numCols; c++) {
-            String header = getCellValue(headerRow.getCell(c)).toLowerCase().trim();
-            if (header.isEmpty()) continue;
-
-            if (result[0] == -1 && DATE_HEADERS.stream().anyMatch(h -> header.contains(h))) {
-                result[0] = c; // date
-            } else if (result[3] == -1 && header.contains("debit")) {
-                result[3] = c; // debit
-            } else if (result[4] == -1 && header.contains("credit")) {
-                result[4] = c; // credit
-            } else if (result[1] == -1 && (header.contains("amount") || header.contains("value"))) {
-                result[1] = c; // amount
-            } else if (result[2] == -1 && DESC_HEADERS.stream().anyMatch(h -> header.contains(h))) {
-                result[2] = c; // description
-            }
-        }
-
-        // Second pass: if not all found, detect by content type
-        if (result[0] == -1 || result[1] == -1) {
-            Row dataRow = sheet.getRow(1);
-            if (dataRow != null) {
-                for (int c = 0; c < numCols; c++) {
-                    String val = getCellValue(dataRow.getCell(c));
-                    if (val.isEmpty()) continue;
-
-                    // Detect date column
-                    if (result[0] == -1 && isDate(val)) {
-                        result[0] = c;
-                    }
-                    // Detect amount column (numeric with optional decimal)
-                    else if (result[1] == -1 && isNumeric(val) && !isDate(val)) {
-                        result[1] = c;
-                    }
-                }
-            }
-        }
-
-        // Fallback: assume first column is date, first numeric is amount
-        if (result[0] == -1) result[0] = 0;
-        if (result[1] == -1 && result[3] == -1 && result[4] == -1) {
-            // Look for any numeric column
-            Row dataRow = sheet.getRow(1);
-            if (dataRow != null) {
-                for (int c = 0; c < numCols; c++) {
-                    String val = getCellValue(dataRow.getCell(c));
-                    if (c != result[0] && isNumeric(val)) {
-                        result[1] = c;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return result;
-    }
-
     private boolean isNumeric(String val) {
         if (val == null || val.isEmpty()) return false;
         String cleaned = val.replaceAll("[^\\d.,-]", "").trim();
@@ -390,28 +328,5 @@ public class ExcelLedgerParser implements DocumentParser<RawInternalLedger> {
     @Override
     public boolean validate(String filePath) {
         return new java.io.File(filePath).exists() && filePath.endsWith(".xlsx");
-    }
-
-    //-------------- Methods ----------------------//
-    @Override
-    public String getSupportedFormat() { return "XLSX"; }
-
-    @Override
-    public List<String[]> extractRawRows(String filePath) {
-        List<String[]> rawRows = new ArrayList<>();
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = WorkbookFactory.create(fis)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            for (Row row : sheet) {
-                String[] r = new String[row.getLastCellNum()];
-                for (int i = 0; i < row.getLastCellNum(); i++) {
-                    r[i] = getCellValue(row.getCell(i));
-                }
-                rawRows.add(r);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rawRows;
     }
 }

@@ -81,11 +81,11 @@ Key Tables:
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Language** | Java 21 | Core backend and application logic. |
-| **GUI** | JavaFX 21 | Desktop application interface (`AppController.java`). |
+| **GUI** | JavaFX 21 | Desktop application interface (FXML views + controllers in `aval/ui`). |
 | **AI / LLM** | LangChain4j (`0.30.0`) | Framework for orchestrating embeddings and LLM calls. |
 | **Local Models** | Ollama | Runs local, privacy-preserving embedding models (`nomic-embed-text`). |
 | **Database** | PostgreSQL + `pgvector` | Relational storage and Vector Similarity Search. |
-| **Document Parsing** | Apache PDFBox, POI, Commons CSV | Extracts raw data from PDFs, Excel sheets, and CSVs. |
+| **Document Parsing** | Apache PDFBox, POI | Extracts raw data from PDF bank statements and Excel ledgers (Commons CSV powers report export). |
 | **Build Tool** | Maven Wrapper (`mvnw`) | Dependency management and build lifecycle. |
 | **Containerization**| Docker Compose | Seamless infrastructure setup. |
 
@@ -145,11 +145,12 @@ AVAL-AI-Reconciliation-Engine/
 ├── db-init/                  # SQL scripts run automatically on DB creation
 │   └── 01-init.sql           # Table and Vector extension definitions
 ├── data/                     # Sample scenario data for testing
-│   └── scenario_01_retail_ecommerce/
-│       ├── bank_statement_pacific_trust.pdf
-│       └── company_ledger_brightline.xlsx
-├── complete_documentation/   # Comprehensive UML, Domain, and Sequence diagrams
-└── src/aval/
+│   ├── scenario_01_retail_ecommerce/
+│   │   ├── bank_statement_pacific_trust.pdf
+│   │   └── company_ledger_brightline.xlsx
+│   └── scenario_02_uc9_uc10/
+├── docs/                     # Comprehensive UML, Domain, and Sequence diagrams
+└── src/main/java/aval/
     ├── Main.java             # JavaFX Application Entry Point
     ├── common/enums/         # Shared Enums (DatasetStatus, MatchType, etc.)
     ├── domain/               # POJOs and Entity Models
@@ -185,8 +186,8 @@ You can use these files within the JavaFX UI to test the end-to-end ingestion, p
 
 ## Documentation & Design Artifacts
 
-The `complete_documentation/` folder contains extensive architectural artifacts:
-- **AVAL Class Diagram** (`AVAL_Class_Diagram.png`)
+The `docs/` folder contains extensive architectural artifacts:
+- **AVAL Class Diagram** (`AVAL_Class_Diagram.svg`)
 - **Sequence Diagrams** (`UC1` through `UC12` `.svg` files)
 - **Manifesto & Use Case Specifications** (`Manifesto.pdf`, `Fully_Dressed_Usecases.docx`)
 - **Domain & System Sequence Diagrams** (`Domain and SSD.pdf`)
